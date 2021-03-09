@@ -2,7 +2,7 @@
 #include <vector>
 #include <algorithm>
 
-std::map<std::string, std::string>* pathparser::splitIntoMap(std::string s, char sp1, char sp2)
+std::map<std::string, std::string>* PathParser::splitIntoMap(std::string s, char sp1, char sp2)
 {
 	std::vector<std::string> v;
 	std::map<std::string, std::string>* ret = new std::map<std::string, std::string>();
@@ -28,7 +28,7 @@ std::map<std::string, std::string>* pathparser::splitIntoMap(std::string s, char
 	return ret;
 }
 
-pathparser::pathparser(const std::string& s)
+PathParser::PathParser(const std::string& s)
 {
 	size_t i;
 	for (i = 0 ; (i < s.size()) && s[i] != '#' && s[i] != '?'; i++);
@@ -46,7 +46,7 @@ pathparser::pathparser(const std::string& s)
 		fragment = s.substr(i);
 }
 
-pathparser::~pathparser()
+PathParser::~PathParser()
 {
 	if (query)
 		delete query;
