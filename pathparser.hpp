@@ -9,6 +9,7 @@ public:
 	std::map<std::string, std::string>* query;
 	std::string fragment;
 public:
+	PathParser();
 	PathParser(const std::string& s);
 	virtual ~PathParser();
 private:

@@ -28,6 +28,7 @@ std::map<std::string, std::string>* PathParser::splitIntoMap(std::string s, char
 	return ret;
 }
 
+PathParser::PathParser() {}
 PathParser::PathParser(const std::string& s)
 {
 	size_t i;
