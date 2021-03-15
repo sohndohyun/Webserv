@@ -6,7 +6,7 @@ std::string jachoi::FileIO::read(int n = std::string::npos)
 {
 	char buf[1];
 	bool eof = false;
-	int fd = open(_path.c_str(), O_RDWR);
+	int fd = open(_path.c_str(), O_RDONLY);
 	if (fd == -1)
 		throw "file not exist";
 	_buf.clear();
@@ -23,7 +23,7 @@ std::string jachoi::FileIO::read(int n = std::string::npos)
 
 bool jachoi::FileIO::write(const std::string& content)
 {
-	int fd = open(_path.c_str(), O_CREAT, 0644);
+	int fd = open(_path.c_str(), O_CREAT | O_WRONLY, 0644);
 	if (fd == -1)
 		return false;
 	::write(fd, content.c_str(), content.size());
