@@ -12,10 +12,17 @@ std::string jachoi::FileIO::read(int n = std::string::npos)
 	_buf.clear();
 	for (int i = 0 ; i < n  && !eof; i++)
 	{
-		if (::read(fd, buf, 1) == 0)
-			eof = true;
-		else
+		switch (::read(fd, buf, 1))
+		{
+		case 1:
 			_buf.push_back(buf[0]);
+			break;
+		case -1:
+			throw "read failed";
+		case 0:
+			eof = true;
+			break;
+		}
 	}
 	close(fd);
 	return std::string(_buf.begin(), _buf.end());
