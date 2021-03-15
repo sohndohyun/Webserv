@@ -75,3 +75,8 @@ const std::string& RequestParser::getMethod() const
 {
 	return _method;
 }
+
+bool RequestParser::versionSpecified() const
+{
+	return _http_version_specified;
+}
