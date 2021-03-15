@@ -35,7 +35,7 @@ PathParser::PathParser(const std::string& s)
 	for (i = 0 ; (i < s.size()) && s[i] != '#' && s[i] != '?'; i++);
 	path = s.substr(0, i);
 	if (path[0] != '/')
-		throw;	//invalid path
+		throw "invalid path";
 	if (s[i++] == '?')
 	{
 		size_t j = i;

@@ -32,6 +32,7 @@ RequestParser::RequestParser(const std::string& req)
 				body = req.substr(last + 2);
 			else
 				_badreq = true;
+			break;
 		}
 	};
 }
