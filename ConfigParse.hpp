@@ -5,8 +5,8 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: jinkim <jinkim@student.42seoul.kr>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2021/03/13 16:15:29 by jinkim            #+#    #+#             */
-/*   Updated: 2021/03/13 20:04:22 by jinkim           ###   ########.fr       */
+/*   Created: 2021/03/15 02:05:47 by jinkim            #+#    #+#             */
+/*   Updated: 2021/03/15 19:02:11 by jinkim           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,45 +16,57 @@
 # include <iostream>
 # include <string>
 # include <map>
-# include <fstream>
+# include <vector>
+# include <fcntl.h>
+# include <unistd.h>
 
 # define CONFIG_PATH "./config.ini"
 
 typedef struct s_location
 {
-    std::string root;
-    std::string *index;
-    std::string *method;
-    std::string cgi;
-    bool        autoindex;
+	std::string	root;
+	std::vector<std::string> index;
+	std::vector<std::string> method;
+	std::string	cgi;
+	bool		autoindex;
 
 }t_location;
 
 typedef struct s_server
 {
-    int         port;
-    std::string host;
-    std::string name;
-    std::string clientMaxBodySize;
-    std::string errorRoot;
-    std::map<int, std::string> errorPage;
-    t_location  server;
+	int			port;
+	std::string	host;
+	std::string	name;
+	std::string	client_max_body_size;
+	std::string	error_root;
+	std::map<int, std::string> error_page;
+	t_location	loca;
 }t_server;
 
 class ConfigParse{
 private:
-    void createLocation(std::string type, std::string str);
-    
+	void sectionParse(std::string str);
+	void serverParse(std::string *section);
+	void locationParse(std::string *section);
+
 public:
-    ConfigParse();
-    virtual ~ConfigParse();
-    ConfigParse(ConfigParse const &copy);
-    ConfigParse &operator=(ConfigParse const &ref);
+	ConfigParse();
+	virtual ~ConfigParse();
+	ConfigParse(ConfigParse const &copy);
+	ConfigParse &operator=(ConfigParse const &ref);
 
-    std::map<std::string ,t_location> location;
-    t_server server;
-    
+	class FileNotOpenException: public std::exception {
+		virtual const char *what() const throw();
+	};
 
+	class InvalidConfigException: public std::exception {
+		virtual const char *what() const throw();
+	};
+
+	std::map<std::string ,t_location> loca_map;
+	t_server *server;
+
+	std::string *splitString(std::string str, char c);
 };
 
 #endif
