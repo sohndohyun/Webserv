@@ -9,14 +9,40 @@ RequestParser::RequestParser(const std::string& req)
 	_badreq = true;
 	if (checkRequestValid(reqinfo))
 		_badreq = false;
-	//RequestHeaderParser
-	//RequestBodyParser
+	std::string tmp;
+	int last = reqend + 2;
+	while (true)
+	{
+		int end = req.find("\r\n", last);
+		tmp = req.substr(last, end - last);
+		if (tmp.size())
+		{
+			size_t colon_pos = tmp.find(":");
+			if (colon_pos == std::string::npos)
+			{
+				_badreq = true;
+				break;
+			}
+			header[tmp.substr(0, colon_pos)] = jachoi::ltrim(tmp.substr(colon_pos + 1));
+			last = end + 2;
+		}
+		else
+		{
+			body = req.substr(last);
+		}
+	};
 }
 
 bool RequestParser::isBadRequest() const
 {
 	return _badreq;
 } 
+
+RequestParser::~RequestParser()
+{
+	if (pathparser)
+		delete pathparser;
+}
 
 bool RequestParser::checkRequestValid(const std::string& reqhead)
 {
@@ -31,7 +57,7 @@ bool RequestParser::checkRequestValid(const std::string& reqhead)
 	size_t last = reqhead.find_last_of(' ');
 	_method = reqhead.substr(0, first);
 	_http_version = reqhead.substr(last, reqhead.size());
-	pathparser = PathParser(reqhead.substr(first + 1, last));
+	pathparser = new PathParser(reqhead.substr(first + 1, last));
 	errorcode = 0;
 	if (std::find(_known_methods, _known_methods + 8, _method) == _known_methods + 8)
 		errorcode = 400;
