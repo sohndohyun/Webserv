@@ -28,7 +28,10 @@ RequestParser::RequestParser(const std::string& req)
 		}
 		else
 		{
-			body = req.substr(last);
+			if (req.substr(last, 2) == "\r\n")
+				body = req.substr(last + 2);
+			else
+				_badreq = true;
 		}
 	};
 }
@@ -56,8 +59,8 @@ bool RequestParser::checkRequestValid(const std::string& reqhead)
 	size_t first = reqhead.find_first_of(' ');
 	size_t last = reqhead.find_last_of(' ');
 	_method = reqhead.substr(0, first);
-	_http_version = reqhead.substr(last, reqhead.size());
-	pathparser = new PathParser(reqhead.substr(first + 1, last));
+	_http_version = reqhead.substr(last + 1, reqhead.size());
+	pathparser = new PathParser(reqhead.substr(first + 1, last - first -1));
 	errorcode = 0;
 	if (std::find(_known_methods, _known_methods + 8, _method) == _known_methods + 8)
 		errorcode = 400;
@@ -65,4 +68,9 @@ bool RequestParser::checkRequestValid(const std::string& reqhead)
 		errorcode = 505;
 	_http_version_specified = static_cast<bool>(_http_version.size());
 	return errorcode != 400 && errorcode != 505;
+}
+
+const std::string& RequestParser::getMethod() const
+{
+	return _method;
 }
