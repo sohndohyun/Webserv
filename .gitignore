@@ -2,6 +2,8 @@
 !/**/
 !.gitignore
 !*.cpp
+!*.c
 !*.hpp
 !*.html
 !*.ini
+!Makefile
