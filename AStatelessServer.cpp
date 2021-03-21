@@ -35,8 +35,8 @@ void AStatelessServer::run(int port)
 	sockaddr_in servAddr;
 	ft_memset(&servAddr, 0, sizeof(sockaddr_in));
 	servAddr.sin_family = AF_INET;
-	servAddr.sin_port = htons(port);					//TODO : htons htonl should be recode
-	servAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	servAddr.sin_port = ft_htons(port);
+	servAddr.sin_addr.s_addr = ft_htonl(INADDR_ANY);
 
 	if (bind(listenSocket, (sockaddr*)&servAddr, sizeof(sockaddr_in)) == -1)
 	{
