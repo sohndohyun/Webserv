@@ -8,7 +8,7 @@ class EchoServer : public AStatelessServer
 public:
 	virtual void OnRecv(int fd, std::string const &str);
 	virtual void OnSend(int fd);
-	virtual void OnAccept(int fd);
+	virtual void OnAccept(int fd, int port);
 };
 
 #endif
