@@ -6,7 +6,7 @@
 /*   By: jinkim <jinkim@student.42seoul.kr>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/03/13 18:58:53 by jinkim            #+#    #+#             */
-/*   Updated: 2021/03/15 06:41:26 by jinkim           ###   ########.fr       */
+/*   Updated: 2021/03/24 23:59:55 by jinkim           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,22 +30,22 @@ int main()
 			it_ep++;
 		}
 		std::cout << "root : " << conf.server->loca.root << std::endl;
-		for(int i = 0; i < conf.server->loca.index.size(); i++)
+		for(int i = 0; i < (int)conf.server->loca.index.size(); i++)
 			std::cout << "index : " << conf.server->loca.index[i] << std::endl;
-		for(int i = 0; i < conf.server->loca.method.size(); i++)
+		for(int i = 0; i < (int)conf.server->loca.method.size(); i++)
 			std::cout << "method : " << conf.server->loca.method[i] << std::endl;
 		std::cout << "autoindex : " << conf.server->loca.autoindex << std::endl;
 		std::cout << "cgi : " << conf.server->loca.cgi << std::endl;
 
 		std::cout << "-------------" << std::endl;
-		std::map<std::string, t_location>::iterator it_loca = conf.loca_map.begin();
+		std::map<std::string, ConfigParse::t_location>::iterator it_loca = conf.loca_map.begin();
 		while (it_loca != conf.loca_map.end())
 		{
 			std::cout << it_loca->first << std::endl;
 			std::cout << "root : " << it_loca->second.root << std::endl;
-			for(int i = 0; i < it_loca->second.index.size(); i++)
+			for(int i = 0; i < (int)it_loca->second.index.size(); i++)
 				std::cout << "index : " << it_loca->second.index[i] << std::endl;
-			for(int i = 0; i < it_loca->second.method.size(); i++)
+			for(int i = 0; i < (int)it_loca->second.method.size(); i++)
 				std::cout << "method : " << it_loca->second.method[i] << std::endl;
 			std::cout << "autoindex : " << it_loca->second.autoindex << std::endl;
 			std::cout << "cgi : " << it_loca->second.cgi << std::endl;
