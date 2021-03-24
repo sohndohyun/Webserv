@@ -30,18 +30,18 @@ protected:
 	};
 
 private:
-	std::vector<Client*> _clients;
+	std::vector<Client*> clients;  
 
 public:
 	AStatelessServer();
 	virtual ~AStatelessServer();
 
-	void run(int port);
+	void run(std::string ip, std::vector<int> ports);
 	void sendStr(int fd, std::string const &str);
 
 	virtual void OnRecv(int fd, std::string const &str) = 0;
 	virtual void OnSend(int fd) = 0;
-	virtual void OnAccept(int fd) = 0;
+	virtual void OnAccept(int fd, int port) = 0;
 };
 
 #endif
