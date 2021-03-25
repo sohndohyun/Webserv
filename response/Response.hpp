@@ -7,17 +7,18 @@
 # include <time.h>
 # include "Iresponse.hpp"
 # include "ft_utils.hpp"
+# include "../parser/requestparser.hpp"
 
 class Response: public Iresponse
 {
 public:
-	Response(std::string http_v, std::string status_code, std::string status_msg, ConfigParse::t_server *conf_server, std::string content_type, std::string content_length);
+	Response(std::string status_code, std::string status_msg, ConfigParse::t_server *conf_server, std::string content_type, std::map<std::string, std::string> req_header, std::string content_length);
 	virtual ~Response();
 
 	void setDate();
 	void setServer(ConfigParse::t_server *conf_server);
 	void setContentType(std::string content_type);
-	void setContentLength(std::string content_length);
+	void setContentLength(std::map<std::string, std::string> req_header, std::string content_length);
 };
 
 

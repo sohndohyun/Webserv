@@ -12,7 +12,7 @@ public:
 	virtual void setDate() = 0;
 	virtual void setServer(ConfigParse::t_server *conf_server) = 0;
 	virtual void setContentType(std::string content_type) = 0;
-	virtual void setContentLength(std::string content_length) = 0;
+	virtual void setContentLength(std::map<std::string, std::string> req_header, std::string content_length) = 0;
 
 	std::map<std::string, std::string> header;
 };

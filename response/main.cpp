@@ -3,7 +3,11 @@
 int main()
 {
 	ConfigParse conf;
-	Response res("1.1", "200", "OK", conf.server, "text/html; charset=utf-8", "1846");
+	std::string req_str = "GET /index?name=value HTTP/1.1\r\nTransfer-Encoding: chunked";
+	//req_str = "GET /index?name=value HTTP/1.1\r\nTransfer-Encoding: identity";
+	//req_str = "GET / HTTP/1.1\r\n";
+	RequestParser req(req_str);
+	Response res("200", "OK", conf.server, "text.html", req.header, "123");
 	std::cout << "HTTP/" << res.header["http"] << " " << res.header["status_code"] << " " << res.header["status_msg"] << std::endl;
 	std::cout << "Date: " << res.header["Date"] << std::endl;
 	std::cout << "Server: " << res.header["Server"] << std::endl;
