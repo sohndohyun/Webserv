@@ -2,7 +2,7 @@ NAME = Webserv
 FLAGS =	-Wall -Wextra -Werror
 HEADER = -I.
 CC = clang++
-SRCS = ft_utils.cpp AStatelessServer.cpp main.cpp EchoServer.cpp
+SRCS = ft_utils.cpp AServer.cpp main.cpp EchoServer.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 all: $(NAME)
