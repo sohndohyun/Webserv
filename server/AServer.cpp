@@ -111,18 +111,7 @@ void AServer::run(std::string ip, std::vector<int> ports)
 				this->OnAccept(clntSocket, ports[i]);
 			}
 		}
-		for (std::vector<AServer::Client*>::iterator it = clients.begin(); it != clients.end();)
-		{
-			Client *cl = (*it);
-			if (cl->willDie && !(FD_ISSET(cl->fd, &rset)) && cl->str.size() <= 0)
-			{
-				close(cl->fd);
-				delete cl;
-				it = clients.erase(it);
-				continue;
-			}
-			it++;
-		}
+		
 		for (std::vector<AServer::Client*>::iterator it = clients.begin(); it != clients.end();)
 		{
 			Client *cl = (*it);
@@ -133,6 +122,7 @@ void AServer::run(std::string ip, std::vector<int> ports)
 				if (str_len <= 0)
 				{
 					OnDisconnect(cl->fd);
+					FD_CLR(cl->fd, &rset);
 					close(cl->fd);
 					delete cl;
 					it = clients.erase(it);
@@ -148,6 +138,7 @@ void AServer::run(std::string ip, std::vector<int> ports)
 				if (ret <= 0)
 				{
 					OnDisconnect(cl->fd);
+					FD_CLR(cl->fd, &wset);
 					close(cl->fd);
 					delete cl;
 					it = clients.erase(it);
@@ -163,7 +154,19 @@ void AServer::run(std::string ip, std::vector<int> ports)
 			}
 			++it;
 		}
-
+		for (std::vector<AServer::Client*>::iterator it = clients.begin(); it != clients.end();)
+		{
+			Client *cl = (*it);
+			if (cl->willDie && FD_ISSET(cl->fd, &rset) == 0 && cl->str.size() <= 0)
+			{
+				OnDisconnect(cl->fd);
+				close(cl->fd);
+				delete cl;
+				it = clients.erase(it);
+				continue;
+			}
+			it++;
+		}
 	}
 	for (size_t i = 0;i < listenSocks.size();i++)
 		close(listenSocks[i]);
