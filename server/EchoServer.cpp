@@ -18,3 +18,9 @@ void EchoServer::OnAccept(int fd, int port)
 	(void)&port;
 	std::cout << fd << "(" << port << "): accepted!" << "\n";
 }
+
+void EchoServer::OnDisconnect(int fd)
+{
+	(void)&fd;
+	std::cout << fd << ": disconnected!" << "\n";
+}

@@ -1,11 +1,11 @@
-#ifndef astatelessserver_hpp
-#define astatelessserver_hpp
+#ifndef AServer_hpp
+#define AServer_hpp
 
 #include <string>
 #include <exception>
 #include <vector>
 
-class AStatelessServer
+class AServer
 {
 public:
 	class ServerException : public std::exception
@@ -26,6 +26,7 @@ protected:
 	public:
 		Client(int, std::string const &);
 		int fd;
+		bool willDie;
 		std::string str;
 	};
 
@@ -33,15 +34,17 @@ private:
 	std::vector<Client*> clients;  
 
 public:
-	AStatelessServer();
-	virtual ~AStatelessServer();
+	AServer();
+	virtual ~AServer();
 
 	void run(std::string ip, std::vector<int> ports);
 	void sendStr(int fd, std::string const &str);
+	void disconnect(int fd);
 
 	virtual void OnRecv(int fd, std::string const &str) = 0;
 	virtual void OnSend(int fd) = 0;
 	virtual void OnAccept(int fd, int port) = 0;
+	virtual void OnDisconnect(int fd) = 0;
 };
 
 #endif
