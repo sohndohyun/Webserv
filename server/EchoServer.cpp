@@ -4,6 +4,7 @@
 void EchoServer::OnRecv(int fd, std::string const &str)
 {
 	this->sendStr(fd, str);
+	this->disconnect(fd);
 	std::cout << fd << ": " << str << "\n";
 }
 
