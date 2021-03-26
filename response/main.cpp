@@ -1,12 +1,22 @@
+#include "ResponseHeader.hpp"
 #include "Response.hpp"
+#include "../parser/RequestParser.hpp"
 
 int main()
 {
 	ConfigParse conf;
-	Response res("1.1", "200", "OK", conf.server, "text/html; charset=utf-8", "1846");
-	std::cout << "HTTP/" << res.header["http"] << " " << res.header["status_code"] << " " << res.header["status_msg"] << std::endl;
-	std::cout << "Date: " << res.header["Date"] << std::endl;
-	std::cout << "Server: " << res.header["Server"] << std::endl;
-	std::cout << "Content-Type: " << res.header["Content-Type"] << std::endl;
-	std::cout << "Content-Length: " << res.header["Content-Length"] << std::endl;
+	std::string body = "<html>\r\n<body>\r\n<h1>Hello, World!</h1>\r\n</body>\r\n</html>";
+	std::string req_str = "GET / HTTP/1.1\r\n";
+	RequestParser req2(req_str);
+	Response res2(body);
+	res2.makeRes(200, conf.server, "text.html", req2.header, std::to_string(body.length()));
+	std::cout << res2.res_str << std::endl;
+
+	std::cout << "--------------------" << std::endl;
+	req_str = "GET /index?name=value HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n";
+	//req_str = "GET /index?name=value HTTP/1.1\r\nTransfer-Encoding: identity";
+	RequestParser req(req_str);
+	Response res(body);
+	res.makeRes(300, conf.server, "image", req.header, std::to_string(body.length()));
+	std::cout << res.res_str << std::endl;
 }

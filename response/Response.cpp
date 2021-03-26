@@ -1,44 +1,25 @@
 #include "Response.hpp"
 
-Response::Response(std::string http_v, std::string status_code, std::string status_msg, ConfigParse::t_server *conf_server, std::string content_type, std::string content_length)
+Response::Response(std::string body):
+	body(body)
 {
-	header.insert(make_pair("http", http_v));
-	header.insert(make_pair("status_code", status_code));
-	header.insert(make_pair("status_msg", status_msg));
-
-	setDate();
-	setServer(conf_server);
-	setContentType(content_type);
-	setContentLength(content_length);
 }
 
-Response::~Response() {};
-
-void Response::setDate()
+Response::~Response()
 {
-	struct timeval curr;
-	struct tm time;
-
-	gettimeofday(&curr, NULL);
-	strptime(std::to_string(curr.tv_sec).c_str(), "%s", &time);
-	header.insert(make_pair("Date", ft_makeGMT(time.tm_zone, curr.tv_sec)));
 }
 
-void Response::setServer(ConfigParse::t_server *conf_server)
+void Response::makeRes(int status_code, ConfigParse::t_server *conf_server, std::string content_type, std::map<std::string, std::string> req_header, std::string content_length)
 {
-	header.insert(make_pair("Server", conf_server->name));
-}
+	ResponseHeader res(status_code, conf_server, content_type, req_header, content_length);
 
-void Response::setContentType(std::string content_type)
-{
-	header.insert(make_pair("Content-Type", content_type));
-}
-
-void Response::setContentLength(std::string content_length)
-{
-	header.insert(make_pair("Content-Length", content_length));
-
-	//https://developer.mozilla.org/ko/docs/Web/HTTP/Headers/Content-Type
-	//Content-Type: text/html; charset=utf-8
-	//Content-Type: multipart/form-data; boundary=something
+	res_str = "HTTP/" + res.header["http"] + " " + res.header["status_code"] + " " + res.header["status_msg"] + "\r\n"
+				+ "Date: " + res.header["Date"] + "\r\n"
+				+ "Server: " + res.header["Server"] + "\r\n"
+				+ "Content-Type: " + res.header["Content-Type"] + "\r\n";
+	if (res.header.find("Content-Length") != res.header.end())
+		res_str += "Content-Length: " + res.header["Content-Length"] + "\r\n";
+	res_str += "\r\n";
+	if (res.header["status_code"] != "201" && res.header["status_code"] != "204")
+		res_str += body;
 }
