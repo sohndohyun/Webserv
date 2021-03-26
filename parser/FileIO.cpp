@@ -1,4 +1,4 @@
-#include "fileio.hpp"
+#include "FileIO.hpp"
 
 jachoi::FileIO::FileIO(const std::string& path):_path(path){}
 
