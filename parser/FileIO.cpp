@@ -9,7 +9,7 @@ std::string jachoi::FileIO::read(int n = std::string::npos)
 	bool eof = false;
 	int fd = open(_path.c_str(), O_RDONLY);
 	if (fd == -1)
-		throw Exception("File not exist");
+		throw Exception("FileIO: File not exist");
 	_buf.clear();
 	for (int i = 0 ; i < n  && !eof; i++)
 	{
@@ -19,7 +19,7 @@ std::string jachoi::FileIO::read(int n = std::string::npos)
 			_buf.push_back(buf[0]);
 			break;
 		case -1:
-			throw Exception("Read failed");
+			throw Exception("FileIO: Read failed");
 		case 0:
 			eof = true;
 			break;
