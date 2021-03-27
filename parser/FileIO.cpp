@@ -1,4 +1,5 @@
 #include "FileIO.hpp"
+#include "Exception.hpp"
 
 jachoi::FileIO::FileIO(const std::string& path):_path(path){}
 
@@ -8,7 +9,7 @@ std::string jachoi::FileIO::read(int n = std::string::npos)
 	bool eof = false;
 	int fd = open(_path.c_str(), O_RDONLY);
 	if (fd == -1)
-		throw "file not exist";
+		throw Exception("File not exist");
 	_buf.clear();
 	for (int i = 0 ; i < n  && !eof; i++)
 	{
@@ -18,7 +19,7 @@ std::string jachoi::FileIO::read(int n = std::string::npos)
 			_buf.push_back(buf[0]);
 			break;
 		case -1:
-			throw "read failed";
+			throw Exception("Read failed");
 		case 0:
 			eof = true;
 			break;
@@ -31,6 +32,16 @@ std::string jachoi::FileIO::read(int n = std::string::npos)
 bool jachoi::FileIO::write(const std::string& content)
 {
 	int fd = open(_path.c_str(), O_CREAT | O_WRONLY, 0644);
+	if (fd == -1)
+		return false;
+	::write(fd, content.c_str(), content.size());
+	close(fd);
+	return true;
+}
+
+bool jachoi::FileIO::append(const std::string& content)
+{
+	int fd = open(_path.c_str(), O_CREAT | O_APPEND | O_WRONLY, 0644);
 	if (fd == -1)
 		return false;
 	::write(fd, content.c_str(), content.size());

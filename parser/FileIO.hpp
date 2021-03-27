@@ -14,5 +14,6 @@ namespace jachoi
 		FileIO(const std::string& path);
 		std::string read(int n);
 		bool write(const std::string& content);
+		bool append(const std::string& content);
 	};
-} // namespace jachoi
+}

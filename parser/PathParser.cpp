@@ -1,6 +1,7 @@
 #include "PathParser.hpp"
 #include <vector>
 #include <algorithm>
+#include "Exception.hpp"
 
 std::map<std::string, std::string>* PathParser::splitIntoMap(std::string s, char sp1, char sp2)
 {
@@ -34,8 +35,9 @@ PathParser::PathParser(const std::string& s)
 	size_t i;
 	for (i = 0 ; (i < s.size()) && s[i] != '#' && s[i] != '?'; i++);
 	path = s.substr(0, i);
+	query = 0;
 	if (path[0] != '/')
-		throw "invalid path";
+		throw Exception("Invalid path");
 	if (s[i++] == '?')
 	{
 		size_t j = i;
