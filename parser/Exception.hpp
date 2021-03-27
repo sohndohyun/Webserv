@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <iostream>
+#include <exception>
 #ifndef _NOEXCEPT
 #define _NOEXCEPT throw()
 #endif
