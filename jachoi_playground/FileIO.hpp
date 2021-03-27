@@ -12,7 +12,7 @@ namespace jachoi
 		std::vector<char> _buf;
 	public:
 		FileIO(const std::string& path);
-		std::string read(int n);
+		std::string read(size_t n = std::string::npos);
 		bool write(const std::string& content);
 		bool append(const std::string& content);
 	};

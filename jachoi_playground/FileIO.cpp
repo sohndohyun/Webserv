@@ -3,7 +3,7 @@
 
 jachoi::FileIO::FileIO(const std::string& path):_path(path){}
 
-std::string jachoi::FileIO::read(int n = std::string::npos)
+std::string jachoi::FileIO::read(size_t n)
 {
 	char buf[1];
 	bool eof = false;
@@ -11,7 +11,7 @@ std::string jachoi::FileIO::read(int n = std::string::npos)
 	if (fd == -1)
 		throw Exception("FileIO: File not exist");
 	_buf.clear();
-	for (int i = 0 ; i < n  && !eof; i++)
+	for (size_t i = 0 ; i < n  && !eof; i++)
 	{
 		switch (::read(fd, buf, 1))
 		{
