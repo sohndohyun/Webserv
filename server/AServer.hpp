@@ -13,9 +13,9 @@ public:
 	private:
 		std::string msg;
 	public:
-		ServerException(std::string const &msg) _NOEXCEPT;
-		virtual ~ServerException() _NOEXCEPT;
-		virtual char const *what() const _NOEXCEPT;
+		ServerException(std::string const &msg) throw();
+		virtual ~ServerException() throw();
+		virtual char const *what() const throw();
 	};
 
 protected:
