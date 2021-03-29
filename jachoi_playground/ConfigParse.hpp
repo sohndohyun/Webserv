@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigParse.hpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jinkim <jinkim@student.42seoul.kr>         +#+  +:+       +#+        */
+/*   By: jachoi <jachoi@student.42seoul.kr>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/03/15 02:05:47 by jinkim            #+#    #+#             */
-/*   Updated: 2021/03/25 00:01:14 by jinkim           ###   ########.fr       */
+/*   Updated: 2021/03/28 16:35:34 by jachoi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,26 +20,17 @@
 # include <fcntl.h>
 # include <unistd.h>
 
-# define CONFIG_PATH "/Users/jinkim/webserv/config/config2.ini"
+# define DEFAULT_CONFPATH "config.ini"
 
 class ConfigParse{
-private:
-	void sectionParse(std::string str);
-	void serverParse(std::string *section);
-	void locationParse(std::string *section);
-
+// Class, Struct
 public:
-	ConfigParse();
-	virtual ~ConfigParse();
-
 	class FileNotOpenException: public std::exception {
 		virtual const char *what() const throw();
 	};
-
 	class InvalidConfigException: public std::exception {
 		virtual const char *what() const throw();
 	};
-
 	typedef struct s_location
 	{
 		std::string	root;
@@ -49,7 +40,6 @@ public:
 		bool		autoindex;
 
 	}t_location;
-
 	typedef struct s_server
 	{
 		int			port;
@@ -61,9 +51,19 @@ public:
 		t_location	loca;
 	}t_server;
 
+
+public:
 	std::map<std::string ,t_location> loca_map;
 	t_server *server;
-
+	std::string configpath;
+// Methods
+private:
+	void sectionParse(std::string str);
+	void serverParse(std::string *section);
+	void locationParse(std::string *section);
+public:
+	ConfigParse(std::string configpath = DEFAULT_CONFPATH);
+	virtual ~ConfigParse();
 	std::string *splitString(std::string str, char c);
 };
 

@@ -59,11 +59,11 @@ bool RequestParser::checkRequestValid(const std::string& reqhead)
 	};
 	size_t first = reqhead.find_first_of(' ');
 	size_t last = reqhead.find_last_of(' ');
-	_method = reqhead.substr(0, first);
+	method = reqhead.substr(0, first);
 	_http_version = reqhead.substr(last + 1, reqhead.size());
 	pathparser = new PathParser(reqhead.substr(first + 1, last - first -1));
 	errorcode = 0;
-	if (std::find(_known_methods, _known_methods + 8, _method) == _known_methods + 8)
+	if (std::find(_known_methods, _known_methods + 8, method) == _known_methods + 8)
 		errorcode = 400;
 	if (_http_version.size() && (std::find(_supported_version, _supported_version + 2, _http_version) == _supported_version + 2))
 		errorcode = 505;
@@ -73,7 +73,7 @@ bool RequestParser::checkRequestValid(const std::string& reqhead)
 
 const std::string& RequestParser::getMethod() const
 {
-	return _method;
+	return method;
 }
 
 bool RequestParser::versionSpecified() const

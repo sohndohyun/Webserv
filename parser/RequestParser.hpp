@@ -4,7 +4,7 @@ class RequestParser
 {
 private:
 	bool		_badreq;
-	std::string	_method;
+	std::string	method;
 	std::string	_http_version;
 	bool		_http_version_specified;
 public:
