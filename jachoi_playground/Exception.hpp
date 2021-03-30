@@ -10,5 +10,5 @@ private:
 public:
 	Exception(const std::string& msg);
 	virtual const char* what()const throw();
-	virtual ~Exception();
+	virtual ~Exception() throw();
 };

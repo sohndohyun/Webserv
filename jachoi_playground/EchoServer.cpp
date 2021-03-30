@@ -11,10 +11,10 @@ void EchoServer::OnRecv(int fd, std::string const &str)
 	
 	switch (req.getMethodType())
 	{
-	case MethodType::GET: // fallthrought
-	case MethodType::POST:
-	case MethodType::HEAD:
-	case MethodType::PUT:
+	case GET: // fallthrought
+	case POST:
+	case HEAD:
+	case PUT:
 	{
 		Response res("jachoi server");
 		cout << "method: " << req.method << endl;
@@ -32,8 +32,9 @@ void EchoServer::OnRecv(int fd, std::string const &str)
 	cout << "================= orig =====================" << endl;
 	cout << str << endl;
 	cout << "================= parse =====================" << endl;
-	for (auto& x: req.header)
-		cout << x.first << ": " << x.second << endl;
+	
+	for (std::map<string, string>::iterator it = req.header.begin(); it != req.header.end() ; it++)
+		cout << it->first << ": " << it->second << endl;
 	cout << "body: " <<  req.body << endl;
 }
 

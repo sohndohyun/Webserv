@@ -8,8 +8,8 @@ int main()
 	EchoServer echoServer;
 	try
 	{
-		ConfigParse conf;	
-		echoServer.run("0.0.0.0", {3000});
+		ConfigParse conf;
+		echoServer.run("0.0.0.0", vector<int>(1, conf.server->port));
 	}
 	catch(const std::exception& e) 
 	{
