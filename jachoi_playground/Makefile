@@ -1,8 +1,8 @@
 NAME = Webserv
-FLAGS =	-Wall -Wextra -Werror
+FLAGS =	-Wall -Wextra -Werror -g -std=c++98
 HEADER = -I.
-CC = clang++
-SRCS = Utils.cpp AServer.cpp main.cpp EchoServer.cpp RequestParser.cpp PathParser.cpp Exception.cpp Response.cpp FileIO.cpp
+CC = g++
+SRCS = Utils.cpp AServer.cpp main.cpp EchoServer.cpp RequestParser.cpp PathParser.cpp Exception.cpp Response.cpp FileIO.cpp ConfigParse.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 all: $(NAME)

@@ -1,5 +1,12 @@
 #include <string>
 #include <algorithm>
+#ifdef htons 
+#undef htons
+#endif
+#ifdef htonl
+#undef htonl
+#endif
+
 namespace jachoi
 {
 	std::string ltrim(std::string s);

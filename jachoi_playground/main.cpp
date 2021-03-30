@@ -1,14 +1,18 @@
 #include "EchoServer.hpp"
+#include "ConfigParse.hpp"
 #include <iostream>
 int main()
 {
+	using namespace std;
+	
 	EchoServer echoServer;
-	std::vector<int> a;
-	a.push_back(3000);
 	try
 	{
-		echoServer.run("0.0.0.0", a);
-	} catch(const std::exception& e) {
+		ConfigParse conf;
+		echoServer.run("0.0.0.0", vector<int>(1, conf.server->port));
+	}
+	catch(const std::exception& e) 
+	{
 		std::cerr << e.what() << '\n';
 	}
 	return (0);

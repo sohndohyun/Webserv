@@ -3,25 +3,23 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigParse.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jinkim <jinkim@student.42seoul.kr>         +#+  +:+       +#+        */
+/*   By: jachoi <jachoi@student.42seoul.kr>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/03/15 02:07:57 by jinkim            #+#    #+#             */
-/*   Updated: 2021/03/17 01:30:01 by jinkim           ###   ########.fr       */
+/*   Updated: 2021/03/28 16:44:43 by jachoi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ConfigParse.hpp"
 
-ConfigParse::ConfigParse():
-	server(NULL)
+ConfigParse::ConfigParse(std::string configpath):server(NULL), configpath(configpath)
 {
-	int configFD = open(CONFIG_PATH, O_RDONLY);
+	int configFD = open(configpath.c_str(), O_RDONLY);
 	char buf;
+	std::string section_str, str;
+	
 	if (configFD < 0)
 		throw ConfigParse::FileNotOpenException();
-
-	std::string section_str = "";
-	std::string str = "";
 	while (read(configFD, &buf, 1))
 	{
 		str += buf;
@@ -29,16 +27,16 @@ ConfigParse::ConfigParse():
 		{
 			if (section_str != "")
 				sectionParse(section_str);
-			section_str = "";
-			str = "";
+			section_str.clear();
+			str.clear();
 		}
 		else if (buf == '\n')
 		{
 			section_str += str;
-			str = "";
+			str.clear();
 		}
 	}
-	if (section_str != "")
+	if (section_str.size())
 		sectionParse(section_str);
 	close(configFD);
 }
@@ -176,15 +174,6 @@ ConfigParse::~ConfigParse()
 		delete server;
 }
 
-const char *ConfigParse::FileNotOpenException::what() const throw()
-{
-	return ("Exception : File doesn't open");
-}
-
-const char *ConfigParse::InvalidConfigException::what() const throw()
-{
-	return ("Exception : Invalid Config File");
-}
 
 std::string *ConfigParse::splitString(std::string str, char c)
 {
@@ -210,4 +199,16 @@ std::string *ConfigParse::splitString(std::string str, char c)
 	}
 	rtn[idx] = "";
 	return (rtn);
+}
+
+// Exception Class
+
+const char *ConfigParse::FileNotOpenException::what() const throw()
+{
+	return ("Exception : File doesn't open");
+}
+
+const char *ConfigParse::InvalidConfigException::what() const throw()
+{
+	return ("Exception : Invalid Config File");
 }
