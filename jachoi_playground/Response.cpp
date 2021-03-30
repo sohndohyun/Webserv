@@ -9,24 +9,24 @@ std::string Response::Status(int statuscode)
 {
 	switch (statuscode)
 	{
-		case	100: return "Continue"; 
-		case	101: return "Switching Protocols"; 
-		case	103: return "Early Hints"; 
-		case	200: return "OK"; 
-		case	201: return "Created"; 
+		case	100: return "Continue";
+		case	101: return "Switching Protocols";
+		case	103: return "Early Hints";
+		case	200: return "OK";
+		case	201: return "Created";
 		case	202: return "Accepted";
-		case	203: return "Non-Authoritativ Information"; 
-		case	204: return "No Content"; 
+		case	203: return "Non-Authoritativ Information";
+		case	204: return "No Content";
 		case	205: return "Reset Content";
 		case	206: return "Partial Content";
 		case	300: return "Multiple Choices";
 		case	301: return "Moved Permanently";
-		case	302: return "Found"; 
+		case	302: return "Found";
 		case	303: return "See Other";
 		case	304: return "Not Modified";
-		case	307: return "Temporary Redirect"; 
-		case	308: return "Permanent Redirect"; 
-		case	400: return "Bad Request"; 
+		case	307: return "Temporary Redirect";
+		case	308: return "Permanent Redirect";
+		case	400: return "Bad Request";
 		case	401: return "Unauthorized";
 		case	402: return "Payment Required";
 		case	403: return "Forbidden";
@@ -35,8 +35,8 @@ std::string Response::Status(int statuscode)
 		case	406: return "Not Acceptable";
 		case	407: return "Proxy Authentication Required";
 		case	408: return "Request Timeout";
-		case	409: return "Conflict"; 
-		case	410: return "Gone"; 
+		case	409: return "Conflict";
+		case	410: return "Gone";
 		case	411: return "Length Required";
 		case	412: return "Precondition Failed";
 		case	413: return "Payload Too Large";
@@ -112,7 +112,6 @@ std::string Response::makeResFromText(int statuscode, const std::string& content
 		(void)chunked;
 	else
 		response += content;
-	response += "\r\n";
 	return response;
 }
 
@@ -136,7 +135,6 @@ std::string Response::makeResFromFile(int statuscode, const std::string& filepat
 		(void)chunked;
 	else
 		response += content;
-	response += "\r\n";
 	return response;
 
 }
