@@ -40,7 +40,7 @@ void ConfigParse::sectionParse(std::string str)
 	if (section[0] == "[server]")
 	{
 		if (server)
-			throw Exception("ConfigParse: Doesn't exist server section");
+			throw Exception("ConfigParse: Already have a server section");
 		serverParse(section);
 	}
 	else
@@ -49,6 +49,8 @@ void ConfigParse::sectionParse(std::string str)
 			throw Exception("ConfigParse: The same location section cannot exist");
 		locationParse(section);
 	}
+	if (!server)
+		throw Exception("ConfigParse: Doesn't exist server section");
 }
 
 void ConfigParse::serverParse(std::vector<std::string> section)
