@@ -1,18 +1,21 @@
-#ifndef echoserver_hpp
-#define echoserver_hpp
-
+#ifndef webserver_hpp
+#define webserver_hpp
 #include "AServer.hpp"
-#include "RequestParser.hpp"
 
-class EchoServer : public AServer
+class RequestParser;
+
+class WebServer : public AServer
 {
 private:
+	std::string reqStr;
+
+public:
 	virtual void OnRecv(int fd, std::string const &str);
 	virtual void OnSend(int fd);
 	virtual void OnAccept(int fd, int port);
 	virtual void OnDisconnect(int fd);
-public:
-	virtual void OnRequest(RequestParser const &req) = 0;
+
+	void request_process(int fd, RequestParser const &req);
 };
 
 #endif

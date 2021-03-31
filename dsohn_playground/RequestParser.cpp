@@ -7,9 +7,13 @@ RequestParser::RequestParser(const std::string& req)
 {
 	size_t reqend = req.find("\r\n");
 	std::string reqinfo = req.substr(0, reqend);
+
 	_badreq = true;
+	_header_not_end = false;
+
 	if (checkRequestValid(reqinfo))
 		_badreq = false;
+
 	std::string tmp;
 	int last = reqend + 2;
 	while (true)
@@ -32,7 +36,10 @@ RequestParser::RequestParser(const std::string& req)
 			if (req.substr(last, 2) == "\r\n")
 				body = req.substr(last + 2);
 			else
-				_badreq = true;
+			{
+//				_badreq = true;
+				_header_not_end = true;
+			}
 			break;
 		}
 	};
@@ -88,4 +95,29 @@ int RequestParser::getMethodType() const
 bool RequestParser::versionSpecified() const
 {
 	return _http_version_specified;
+}
+
+bool RequestParser::needRecvMore() const
+{
+	std::map<std::string, std::string>::const_iterator hit;
+
+	if (_header_not_end)
+		return true;
+	switch (getMethodType())
+	{
+		case POST: case PUT: case CONNECT: case TRACE:
+		{
+			hit = header.find("Transfer-Encoding");
+			if (hit != header.end() && hit->second.find("chunked") != std::string::npos)
+				return false;
+			else
+			{
+				hit = header.find("Content-Length");
+				if (hit != header.end() && atoi(hit->second.c_str()) > static_cast<int>(body.size()))
+					return true;
+			}
+			break;
+		}
+	}
+	return false;
 }
