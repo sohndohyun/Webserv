@@ -27,7 +27,7 @@ public:
 
 	void setStatus(int status_code);
 	void setContentType(std::string content_type);
-	void makeRes(std::string body, bool chuncked = false);
+	void makeRes(std::string body, bool chunked = false);
 };
 
 #endif
