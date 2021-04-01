@@ -3,18 +3,31 @@
 
 # include <iostream>
 # include <string>
-# include "ResponseHeader.hpp"
+# include <sys/time.h>
+# include <time.h>
+# include <map>
+# include "ft_utils.hpp"
+# include "../parser/RequestParser.hpp"
+# include "../config/ConfigParse.hpp"
+# include "../exception/Exception.hpp"
 
 class Response
 {
-public:
-	Response(std::string body);
-	virtual ~Response();
+private:
+	std::string initStatus(int status_code);
+	void setDate();
 
-	std::string body;
+public:
+	std::map<std::string, std::string> header;
 	std::string res_str;
 
-	void makeRes(int status_code, ConfigParse::t_server *conf_server, std::string content_type, std::map<std::string, std::string> req_header, std::string content_length);
+public:
+	Response(std::string server_name);
+	virtual ~Response();
+
+	void setStatus(int status_code);
+	void setContentType(std::string content_type);
+	void makeRes(std::string body, std::string trans_encoded);
 };
 
 #endif

@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   ConfigParse.cpp                                    :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: jinkim <jinkim@student.42seoul.kr>         +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2021/03/15 02:07:57 by jinkim            #+#    #+#             */
-/*   Updated: 2021/03/17 01:30:01 by jinkim           ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "ConfigParse.hpp"
 
 ConfigParse::ConfigParse():
@@ -18,7 +6,7 @@ ConfigParse::ConfigParse():
 	int configFD = open(CONFIG_PATH, O_RDONLY);
 	char buf;
 	if (configFD < 0)
-		throw ConfigParse::FileNotOpenException();
+		throw Exception("ConfigParse : Config file doesn't open");
 
 	std::string section_str = "";
 	std::string str = "";
@@ -45,38 +33,40 @@ ConfigParse::ConfigParse():
 
 void ConfigParse::sectionParse(std::string str)
 {
-	std::string *section = splitString(str, '\n');
+	std::vector<std::string> section = splitString(str, '\n');
 
 	if (section[0][0] != '[' || section[0][section[0].size() - 1] != ']')
-		throw ConfigParse::InvalidConfigException();
-
+		throw Exception("ConfigParse: Invalid section name");
 	if (section[0] == "[server]")
 	{
 		if (server)
-			throw ConfigParse::InvalidConfigException();
+			throw Exception("ConfigParse: Already have a server section");
 		serverParse(section);
 	}
 	else
 	{
 		if (loca_map.find(section[0]) != loca_map.end())
-			throw ConfigParse::InvalidConfigException();
+			throw Exception("ConfigParse: The same location section cannot exist");
 		locationParse(section);
 	}
-	delete[] section;
+	if (!server)
+		throw Exception("ConfigParse: Doesn't exist server section");
 }
 
-void ConfigParse::serverParse(std::string *section)
+void ConfigParse::serverParse(std::vector<std::string> section)
 {
 	server = new t_server;
 	int findIdx;
 	std::string key;
 	std::string value;
 
-	for(int idx = 1; section[idx] != ""; idx++)
+	std::vector<std::string>::iterator iter;
+	for(iter = section.begin() + 1; iter != section.end(); iter++)
 	{
-		findIdx = section[idx].find("=");
-		key = section[idx].substr(0, findIdx);
-		value = section[idx].substr(findIdx + 1, section[idx].size() - findIdx);
+		std::string str = *iter;
+		findIdx = str.find("=");
+		key = str.substr(0, findIdx);
+		value = str.substr(findIdx + 1, str.size() - findIdx);
 		if (key == "port")
 			server->port = std::stoi(value);
 		else if (key == "host")
@@ -89,32 +79,23 @@ void ConfigParse::serverParse(std::string *section)
 			server->error_root = value;
 		else if (key == "error_page")
 		{
-			std::string *errors = splitString(value, ' ');
-			for(int i = 0; errors[i] != ""; i++)
+			std::vector<std::string> errors = splitString(value, ' ');
+			std::vector<std::string>::iterator errors_iter;
+			for(errors_iter = errors.begin(); errors_iter != errors.end(); errors_iter++)
 			{
-				findIdx = errors[i].find(":");
-				key = errors[i].substr(0, findIdx);
-				value = errors[i].substr(findIdx + 1, errors[i].size() - findIdx);
+				std::string errors_str = *errors_iter;
+				findIdx = errors_str.find(":");
+				key = errors_str.substr(0, findIdx);
+				value = errors_str.substr(findIdx + 1, errors_str.size() - findIdx);
 				server->error_page.insert(make_pair(std::stoi(key), value));
 			}
-			delete[] errors;
 		}
 		else if (key == "root")
 			server->loca.root = value;
 		else if (key == "index")
-		{
-			std::string *indexes = splitString(value, ' ');
-			for(int i = 0; indexes[i] != ""; i++)
-				server->loca.index.push_back(indexes[i]);
-			delete[] indexes;
-		}
+			server->loca.index = splitString(value, ' ');
 		else if (key == "method")
-		{
-			std::string *methods = splitString(value, ' ');
-			for(int i = 0; methods[i] != ""; i++)
-				server->loca.method.push_back(methods[i]);
-			delete[] methods;
-		}
+			server->loca.method = splitString(value, ' ');
 		else if (key == "cgi")
 			server->loca.cgi = value;
 		else if (key == "autoindex")
@@ -124,11 +105,11 @@ void ConfigParse::serverParse(std::string *section)
 				server->loca.autoindex = true;
 		}
 		else
-			throw ConfigParse::InvalidConfigException();
+			throw Exception("ConfigParse: Invalid key: " + key);
 	}
 }
 
-void ConfigParse::locationParse(std::string *section)
+void ConfigParse::locationParse(std::vector<std::string> section)
 {
 	int findIdx;
 	std::string key;
@@ -136,27 +117,19 @@ void ConfigParse::locationParse(std::string *section)
 	t_location loca;
 	loca.autoindex = false;
 
-	for(int idx = 1; section[idx] != ""; idx++)
+	std::vector<std::string>::iterator iter;
+	for(iter = section.begin() + 1; iter != section.end(); iter++)
 	{
-		findIdx = section[idx].find("=");
-		key = section[idx].substr(0, findIdx);
-		value = section[idx].substr(findIdx + 1, section[idx].size() - findIdx);
+		std::string str = *iter;
+		findIdx = str.find("=");
+		key = str.substr(0, findIdx);
+		value = str.substr(findIdx + 1, str.size() - findIdx);
 		if (key == "root")
 			loca.root = value;
 		else if (key == "index")
-		{
-			std::string *indexes = splitString(value, ' ');
-			for(int i = 0; indexes[i] != ""; i++)
-				loca.index.push_back(indexes[i]);
-			delete[] indexes;
-		}
+			loca.index = splitString(value, ' ');
 		else if (key == "method")
-		{
-			std::string *methods = splitString(value, ' ');
-			for(int i = 0; methods[i] != ""; i++)
-				loca.method.push_back(methods[i]);
-			delete[] methods;
-		}
+			loca.method = splitString(value, ' ');
 		else if (key == "cgi")
 			loca.cgi = value;
 		else if (key == "autoindex")
@@ -165,7 +138,7 @@ void ConfigParse::locationParse(std::string *section)
 				loca.autoindex = true;
 		}
 		else
-			throw ConfigParse::InvalidConfigException();
+			throw Exception("ConfigParse: Invalid key: " + key);
 	}
 	loca_map.insert(make_pair(section[0], loca));
 }
@@ -176,21 +149,26 @@ ConfigParse::~ConfigParse()
 		delete server;
 }
 
-const char *ConfigParse::FileNotOpenException::what() const throw()
+std::vector<std::string> ConfigParse::splitString(std::string str, char c)
 {
-	return ("Exception : File doesn't open");
-}
+	std::vector<std::string> rtn;
+	int start, end;
+	for(start = 0; str[start] == c && start < (int)str.length(); start++) ;
+	for(end = str.length() - 1; str[end] == c && end >= 0; end--) ;
+	str = str.substr(start, end - start + 1);
 
-const char *ConfigParse::InvalidConfigException::what() const throw()
-{
-	return ("Exception : Invalid Config File");
-}
+	std::string tmp;
+	tmp += str[0];
+	for(int i = 1; i < (int)str.length(); i++)
+	{
+		if (str[i] == c && str[i - 1] == c)
+			continue ;
+		tmp += str[i];
+	}
+	str = tmp;
 
-std::string *ConfigParse::splitString(std::string str, char c)
-{
 	int count = 0;
-	int idx = 0;
-	for(; str[idx]; idx++)
+	for(int idx = 0; str[idx]; idx++)
 	{
 		if (str[idx] == c)
 			count++;
@@ -198,16 +176,11 @@ std::string *ConfigParse::splitString(std::string str, char c)
 	if (count != 0 || (count == 0 && str != ""))
 		count++;
 
-	std::string *rtn = new std::string[count + 1];
-	int len = 0;
-	idx = 0;
 	for(int i = 0; i < count; i++)
 	{
-		len = str.find(c);
-		if (str[0] != c)
-			rtn[idx++] = str.substr(0, len);
+		int len = str.find(c);
+		rtn.push_back(str.substr(0, len));
 		str = str.substr(len + 1, str.size() - len);
 	}
-	rtn[idx] = "";
 	return (rtn);
 }

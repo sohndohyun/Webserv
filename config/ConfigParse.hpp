@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   ConfigParse.hpp                                    :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: jinkim <jinkim@student.42seoul.kr>         +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2021/03/15 02:05:47 by jinkim            #+#    #+#             */
-/*   Updated: 2021/03/25 00:01:14 by jinkim           ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #ifndef CONFIGPARSE_HPP
 # define CONFIGPARSE_HPP
 
@@ -19,27 +7,17 @@
 # include <vector>
 # include <fcntl.h>
 # include <unistd.h>
+# include "../exception/Exception.hpp"
 
-# define CONFIG_PATH "/Users/jinkim/webserv/config/config2.ini"
+# define CONFIG_PATH "/Users/jinkim/webserv/config/config.ini"
 
 class ConfigParse{
 private:
 	void sectionParse(std::string str);
-	void serverParse(std::string *section);
-	void locationParse(std::string *section);
+	void serverParse(std::vector<std::string> section);
+	void locationParse(std::vector<std::string> section);
 
 public:
-	ConfigParse();
-	virtual ~ConfigParse();
-
-	class FileNotOpenException: public std::exception {
-		virtual const char *what() const throw();
-	};
-
-	class InvalidConfigException: public std::exception {
-		virtual const char *what() const throw();
-	};
-
 	typedef struct s_location
 	{
 		std::string	root;
@@ -61,10 +39,15 @@ public:
 		t_location	loca;
 	}t_server;
 
+public:
 	std::map<std::string ,t_location> loca_map;
 	t_server *server;
 
-	std::string *splitString(std::string str, char c);
+public:
+	ConfigParse();
+	virtual ~ConfigParse();
+
+	std::vector<std::string> splitString(std::string str, char c);
 };
 
 #endif
