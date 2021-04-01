@@ -11,11 +11,11 @@ void WebServer::OnRecv(int fd, std::string const &str)
 	{
 		return ;
 	}
-          
+
 	std::cout << "-------str----------\n";
 	std::cout << reqStr << std::endl;
 	std::cout << "===================\n";
-	
+
 	request_process(fd, req);
 	reqStr.clear();
 	disconnect(fd);
@@ -37,26 +37,26 @@ void WebServer::request_process(int fd, RequestParser const &req)
 			if (req.pathparser->path == "/directory/oulalala")
 			{
 				res.setStatus(404);
-				res.makeRes(body, req.header.find("Transfer-Encoding")->second);
+				res.makeRes(body);
 				sendStr(fd, res.res_str);
 				return;
 			}
 			res.setStatus(200);
-			res.makeRes(body, req.header.find("Transfer-Encoding")->second);
+			res.makeRes(body);
 			sendStr(fd, res.res_str);
 			break;
 		}
 		case POST:
 		{
 			res.setStatus(405);
-			res.makeRes("1", "none");
+			res.makeRes(body);
 			sendStr(fd, res.res_str);
 			break;
 		}
 		case HEAD:
 		{
 			res.setStatus(405);
-			res.makeRes(body, req.header.find("Transfer-Encoding")->second);
+			res.makeRes(body);
 			sendStr(fd, res.res_str);
 			break;
 		}
