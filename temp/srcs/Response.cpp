@@ -109,20 +109,17 @@ void Response::setContentType(std::string content_path)
 	//	header["Content-Type"] = "bmp";
 }
 
-void Response::makeRes(std::string body, bool chuncked)
+void Response::makeRes(std::string body, bool chunked)
 {
 	setDate();
-	if (chuncked == false)
-		header.insert(make_pair("Content-Length", std::to_string(body.length())));
 	res_str = "HTTP/" + header["http"] + " " + header["status_code"] + " " + header["status_msg"] + "\r\n"
 				+ "Date: " + header["Date"] + "\r\n"
 				+ "Server: " + header["Server"] + "\r\n"
 				+ "Content-Type: " + header["Content-Type"] + "\r\n";
-	if (header.find("Content-Length") != header.end())
-		res_str += "Content-Length: " + header["Content-Length"] + "\r\n";
+	if (chunked == false)
+		res_str += "Content-Length: " + std::to_string(body.length()) + "\r\n";
 	else
 		res_str += "Transfer-Encoding: chunked\r\n";
-
 	res_str += "\r\n";
 	if (header["status_code"] != "201" && header["status_code"] != "204")
 		res_str += body;
