@@ -25,7 +25,8 @@ RequestParser::RequestParser(const std::string& req)
 			size_t colon_pos = tmp.find(":");
 			if (colon_pos == std::string::npos)
 			{
-				_badreq = true;
+//				_badreq = true;
+				_header_not_end = true;
 				break;
 			}
 			header[tmp.substr(0, colon_pos)] = jachoi::ltrim(tmp.substr(colon_pos + 1));

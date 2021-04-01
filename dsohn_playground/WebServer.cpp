@@ -6,14 +6,16 @@
 void WebServer::OnRecv(int fd, std::string const &str)
 {
 	reqStr.append(str);
-	std::cout << "-------str----------\n";
-	std::cout << reqStr << std::endl;
-	std::cout << "===================\n";
 	RequestParser req(reqStr);
 	if (req.needRecvMore())
 	{
 		return ;
 	}
+
+	std::cout << "-------str----------\n";
+	std::cout << reqStr << std::endl;
+	std::cout << "===================\n";
+	
 	request_process(fd, req);
 	reqStr.clear();
 	disconnect(fd);
