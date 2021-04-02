@@ -3,6 +3,11 @@
 #include "Utils.hpp"
 #include "FileIO.hpp"
 #include <sys/time.h>
+
+
+#include <iostream>
+using namespace std;
+
 Response::Response(const std::string& servername):servername(servername){}
 
 std::string Response::Status(int statuscode)
@@ -111,7 +116,10 @@ std::string Response::makeResFromText(int statuscode, const std::string& content
 		//TODO: Chunked Send
 		(void)chunked;
 	else
-		response += content;
+		response += content; 
+	cout << "=== res: "<< content.size() << " ===" << endl;
+	cout << response.substr(0, 200) << endl;
+	cout << "=== res end ===\n";
 	return response;
 }
 
