@@ -3,6 +3,11 @@
 #include <algorithm>
 #include "Utils.hpp"
 
+
+
+#include <iostream>
+using namespace std;
+
 namespace jachoi
 {
 	std::string ltrim(std::string s)
@@ -84,4 +89,29 @@ namespace jachoi
 		strftime(buf, sizeof(buf), "%a, %d %b %G %T GMT", &time);
 		return (buf);
 	}
+
+	int htoi(const std::string& num)
+	{
+		int ret = 0;
+		const std::string hex = "0123456789abcdef";
+		for (size_t i = 0 ; i < num.size(); i++)
+		{
+			size_t idx = hex.find(num[i]);
+			if (idx == std::string::npos)
+			{
+				cout << "htoi: " <<  ret << endl;
+				return ret;
+			}
+			ret *= 16;
+			ret += idx;
+		}
+		return ret;
+	}
+
+	std::string to_string(long num)
+	{
+		(void)num;
+		return "";
+	}
+
 }
