@@ -7,9 +7,9 @@
 # include <vector>
 # include <fcntl.h>
 # include <unistd.h>
-# include "../exception/Exception.hpp"
+# include "Exception.hpp"
 
-# define CONFIG_PATH "/Users/jinkim/webserv/config/config.ini"
+# define CONFIG_PATH "./config/config.ini"
 
 class ConfigParse{
 private:

@@ -6,10 +6,10 @@
 # include <sys/time.h>
 # include <time.h>
 # include <map>
-# include "ft_utils.hpp"
-# include "../parser/RequestParser.hpp"
-# include "../config/ConfigParse.hpp"
-# include "../exception/Exception.hpp"
+# include "Utils.hpp"
+# include "RequestParser.hpp"
+# include "ConfigParse.hpp"
+# include "Exception.hpp"
 
 class Response
 {
@@ -27,7 +27,7 @@ public:
 
 	void setStatus(int status_code);
 	void setContentType(std::string content_type);
-	void makeRes(std::string body, std::string trans_encoded);
+	void makeRes(std::string body, bool chunked = false);
 };
 
 #endif

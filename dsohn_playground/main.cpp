@@ -1,4 +1,4 @@
-#include "EchoServer.hpp"
+#include "WebServer.hpp"
 #include "ConfigParse.hpp"
 #include <iostream>
 
@@ -6,13 +6,13 @@ int main()
 {
 	using namespace std;
 
-	EchoServer echoServer;
-#if deubg
+	WebServer webServer;
+#if debug
 	try
 	{
 #endif
 		ConfigParse conf;
-		echoServer.run("0.0.0.0", vector<int>(1, conf.server->port));
+		webServer.run("0.0.0.0", vector<int>(1, conf.server->port));
 
 #if debug
 	}

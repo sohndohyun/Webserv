@@ -8,8 +8,6 @@ void EchoServer::OnRecv(int fd, std::string const &str)
 	using namespace std;
 	(void)fd;
 
-
-
 	cout << "-------str----------\n";
 	cout << str << endl;
 	cout << "===================\n";
