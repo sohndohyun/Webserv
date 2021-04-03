@@ -147,7 +147,6 @@ std::string Response::makeResFromFile(int statuscode, const std::string& filepat
 
 }
 
-
 // const std::string& Response::makeRes(int status_code, ConfigParse::t_server *conf_server, std::string content_type, std::map<std::string, std::string> req_header, std::string content_length)
 // {
 // 	ResponseHeader res(status_code, conf_server, content_type, req_header, content_length);

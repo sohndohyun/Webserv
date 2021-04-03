@@ -3,10 +3,11 @@
 #include <algorithm>
 #include "Utils.hpp"
 
-
-
+#define debug
+#ifdef debug
 #include <iostream>
 using namespace std;
+#endif
 
 namespace jachoi
 {
@@ -98,10 +99,7 @@ namespace jachoi
 		{
 			size_t idx = hex.find(num[i]);
 			if (idx == std::string::npos)
-			{
-				cout << "htoi: " <<  ret << endl;
 				return ret;
-			}
 			ret *= 16;
 			ret += idx;
 		}

@@ -2,6 +2,8 @@
 #include "RequestParser.hpp"
 #include "Response.hpp"
 #include "ChunkParser.hpp"
+#include "FileIO.hpp"
+#include "CGIStub.hpp"
 #include <iostream>
 
 void EchoServer::OnRecv(int fd, std::string const &str)
@@ -9,10 +11,8 @@ void EchoServer::OnRecv(int fd, std::string const &str)
 	using namespace std;
 	(void)fd;
 
-
-
-	cout << "-------str----------\n";
-	cout << str.substr(0,100) << endl;
+	cout << "-------str " << str.size() <<  "----------\n";
+	cout << str.substr(0,200) << endl;
 	cout << "===================\n";
 	RequestParser req(str);
 	Response res("jachoi server");
@@ -49,10 +49,10 @@ void EchoServer::OnRecv(int fd, std::string const &str)
 		{
 			if (req.pathparser->path == "/directory/youpi.bla")
 			{
-				std::string s =  ChunkParser(req.body).getData();
-				cout << "s: " << s.length() << endl;
-				// cout << s.substr(0, 100) << endl;
-				sendStr(fd, res.makeResFromText(200, s));
+				cout << "Recved post data" << endl;
+				std::string cgiresult = CGIStub(str).getCGIResult();
+				cout << "cgi : " << endl;
+				sendStr(fd, cgiresult);
 				disconnect(fd);
 				return;
 			}
