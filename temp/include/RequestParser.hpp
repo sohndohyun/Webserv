@@ -31,6 +31,7 @@ public:
 
 public:
 	RequestParser(const std::string& req);
+
 	bool isBadRequest() const;
 	int getMethodType() const;
 	bool versionSpecified() const;
