@@ -4,7 +4,7 @@
 class ChunkParser
 {
 private:
-	std::string data;
+	std::string _data;
 public:
 	ChunkParser(const std::string& body);
 	virtual ~ChunkParser();

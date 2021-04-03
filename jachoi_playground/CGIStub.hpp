@@ -1,6 +1,10 @@
 #pragma once
 #include <string>
+#ifdef __linux__
 #define DEFAULT_CGIPATH  "./ubuntu_cgi_tester"
+#else
+#define DEFAULT_CGIPATH "./cgi_tester"
+#endif
 class CGIStub
 {
 private:
