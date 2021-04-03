@@ -51,8 +51,10 @@ void EchoServer::OnRecv(int fd, std::string const &str)
 			{
 				cout << "Recved post data" << endl;
 				std::string cgiresult = CGIStub(str).getCGIResult();
-				cout << "cgi : " << endl;
-				sendStr(fd, cgiresult);
+				cout << "cgi : " << cgiresult << endl;
+				jachoi::FileIO f("./directory/youpi.bla");
+				f.write(cgiresult);
+				sendStr(fd, f.read());
 				disconnect(fd);
 				return;
 			}

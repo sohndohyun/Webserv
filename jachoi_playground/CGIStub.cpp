@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <iostream>
-
+#include "Utils.hpp"
 #define debug
 
 // 환경변수를 설정해서 넘겨주는 것이 필요하다 
@@ -22,53 +22,44 @@ CGIStub::CGIStub(const std::string& req, const std::string& cgipath): cgipath(cg
 	int pipes[2];
 	if ((-1 == pipe(pipes)))
 		throw Exception("cgi pipe error");
-
-	cout << "cgi stub started" << endl;
 	pid_t pid = fork();
 	if (pid == -1)
 		throw Exception("cgi Fork error");
 	if (pid == 0)
 	{
-		dup2(pipes[1], 1);
-		dup2(pipes[0], 0);
-		cerr << "dup2 " << endl;
 		RequestParser r(req);
-		std::string body = r.body;
-		if (r.header["Transfer-Encoding"] == "chunked")
-		{
-			cerr << "chunked 에욤" << endl;
-			body = ChunkParser(r.body).getData();
-		}
-		cerr << "body size : " << body.size() << endl;
-		cerr << body.substr(0 , 100 ) << endl;
-		write(1, body.c_str(), body.size());
-		// cout << body.c_str();
-		cerr << "write 함" << endl;
-	//argv make
+		std::string body;
 		char* const argv[] = {const_cast<char*>(cgipath.c_str()), 0};
 
-	//envp make
-		std::string req_method = "REQUEST_METHOD=" + r.method;
-		std::string serv_protocol = "SERVER_PROTOCOL=HTTP/1.1";
-		std::string path_info ="PATH_INFO=" + r.pathparser->path;
-		char* const envp[] = {const_cast<char*>(req_method.c_str()), const_cast<char*>(serv_protocol.c_str()), const_cast<char*>(path_info.c_str()), 0};
-		cerr << "Execve 시작" << endl;
+		cerr << "setup envs" << endl;
+		jachoi::set_env("REQUEST_METHOD", r.method);
+		jachoi::set_env("SERVER_PROTOCOL", "HTTP/1.1");
+		jachoi::set_env("PATH_INFO", r.pathparser->path);
+		char ** envp = jachoi::get_envp();
+
+		cerr << "chunking... " << endl;
+		dup2(pipes[1], 1);
+		dup2(pipes[0], 0);
+		if (r.header["Transfer-Encoding"] == "chunked")
+			body = ChunkParser(r.body).getData();
+		else
+			body = r.body;
+		cerr << "writing..." << endl;
+		write(1, body.c_str(), body.size());
+		cerr << "executing..." << endl;
 		execve(cgipath.c_str(), argv, envp);
-		throw Exception("Invalid cgi executables");
+		cerr << "Exec failed" << endl;
+		exit(1);
 	}
 	else
 	{
+		cout << "child pid : " << pid << endl;
 		waitpid(pid, 0, 0);
-		cerr << "대기 완료" << endl;
 		close(pipes[1]);
 		char buf[1];
 		while (read(pipes[0], buf, 1) > 0)
 			result += buf[0];
 		close(pipes[0]);
-#ifdef debug
-		using namespace std;
-		cout << "result size : " << result.size() << endl;
-#endif
 	}
 }
 
