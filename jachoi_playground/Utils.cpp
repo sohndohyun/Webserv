@@ -158,7 +158,7 @@ namespace jachoi
 			memcpy(&ret[i][it->first.size() + 1], it->second.data(), it->second.size());
 			ret[i][sz] = 0;
 		}
-		print_2darr(ret);
+		// print_2darr(ret);
 		return ret;
 	}
 }

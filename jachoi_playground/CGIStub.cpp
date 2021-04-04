@@ -6,7 +6,11 @@
 #include <sys/wait.h>
 #include <iostream>
 #include "Utils.hpp"
+#include "FileIO.hpp"
+
 #define debug
+
+#include "errno.h"
 
 // 환경변수를 설정해서 넘겨주는 것이 필요하다 
 // 1. REQUEST_METHOD = GET , POST , PUT 기타 등등
@@ -19,9 +23,6 @@ CGIStub::CGIStub(const std::string& req, const std::string& cgipath): cgipath(cg
 #ifdef debug
 	using namespace std;
 #endif
-	int pipes[2];
-	if ((-1 == pipe(pipes)))
-		throw Exception("cgi pipe error");
 	pid_t pid = fork();
 	if (pid == -1)
 		throw Exception("cgi Fork error");
@@ -29,37 +30,36 @@ CGIStub::CGIStub(const std::string& req, const std::string& cgipath): cgipath(cg
 	{
 		RequestParser r(req);
 		std::string body;
-		char* const argv[] = {const_cast<char*>(cgipath.c_str()), 0};
-
+		// char* const argv[] = {const_cast<char*>(cgipath.c_str()), 0};
+		char *const argv[] = {const_cast<char*>("/usr/bin/cat"), 0};
 		cerr << "setup envs" << endl;
 		jachoi::set_env("REQUEST_METHOD", r.method);
 		jachoi::set_env("SERVER_PROTOCOL", "HTTP/1.1");
 		jachoi::set_env("PATH_INFO", r.pathparser->path);
 		char ** envp = jachoi::get_envp();
-
 		cerr << "chunking... " << endl;
-		dup2(pipes[1], 1);
-		dup2(pipes[0], 0);
 		if (r.header["Transfer-Encoding"] == "chunked")
 			body = ChunkParser(r.body).getData();
 		else
 			body = r.body;
-		cerr << "writing..." << endl;
-		write(1, body.c_str(), body.size());
-		cerr << "executing..." << endl;
-		execve(cgipath.c_str(), argv, envp);
-		cerr << "Exec failed" << endl;
+		cerr << "writing..." << body.size() << endl;
+		jachoi::FileIO(".tmp_cgi").write(body);
+		dup2(open(".tmp_cgi", O_WRONLY), 1);
+		// dup2(open(".cgi_result", O_CREAT | O_TRUNC | O_WRONLY, 0644), 1);
+		cerr << "executing..." << cgipath << endl;
+		cerr << cgipath << endl;
+		cerr << argv[0] << endl;
+		cerr <<argv[1] << endl;
+		// execve(cgipath.c_str(), argv, envp);
+		execve("/usr/bin/cat", argv, envp);
+		cerr << "Exec failed : " << errno << endl;
 		exit(1);
 	}
 	else
 	{
 		cout << "child pid : " << pid << endl;
 		waitpid(pid, 0, 0);
-		close(pipes[1]);
-		char buf[1];
-		while (read(pipes[0], buf, 1) > 0)
-			result += buf[0];
-		close(pipes[0]);
+		// result = jachoi::FileIO(".cgi_result").read();
 	}
 }
 

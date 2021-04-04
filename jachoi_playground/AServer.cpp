@@ -136,7 +136,7 @@ void AServer::run(std::string ip, std::vector<int> ports)
 				{
 					temp.append(buf, str_len);
 					// cout << "recv: " << str_len << endl;
-					for (int i = 0 ; i < 1000000;i++);
+					usleep(1000);
 				}
 
 				// if (str_len <= 0)
