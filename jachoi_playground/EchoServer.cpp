@@ -49,12 +49,11 @@ void EchoServer::OnRecv(int fd, std::string const &str)
 		{
 			if (req.pathparser->path == "/directory/youpi.bla")
 			{
-				cout << "Recved post data" << endl;
+				cout << "Recved post data" << str.size() << endl;
 				std::string cgiresult = CGIStub(str).getCGIResult();
+				cout <<"==================" << endl;
 				cout << "cgi : " << cgiresult << endl;
-				jachoi::FileIO f("./directory/youpi.bla");
-				f.write(cgiresult);
-				sendStr(fd, f.read());
+				sendStr(fd, res.makeResFromText(200, cgiresult));
 				disconnect(fd);
 				return;
 			}

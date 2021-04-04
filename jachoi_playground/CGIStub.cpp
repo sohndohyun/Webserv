@@ -36,7 +36,6 @@ CGIStub::CGIStub(const std::string& req, const std::string& cgipath): cgipath(cg
 		jachoi::set_env("SERVER_PROTOCOL", "HTTP/1.1");
 		jachoi::set_env("PATH_INFO", r.pathparser->path);
 		char ** envp = jachoi::get_envp();
-
 		cerr << "chunking... " << endl;
 		dup2(pipes[1], 1);
 		dup2(pipes[0], 0);
@@ -44,8 +43,11 @@ CGIStub::CGIStub(const std::string& req, const std::string& cgipath): cgipath(cg
 			body = ChunkParser(r.body).getData();
 		else
 			body = r.body;
-		cerr << "writing..." << endl;
-		write(1, body.c_str(), body.size());
+		cerr << "writing..." << body.size() << endl;
+		const char *_body = body.c_str();
+		int sz = static_cast<int>(body.size());
+		write(1, _body, sz); //-> why so slow
+		// write(1, "\x1a", 1); // eof??
 		cerr << "executing..." << endl;
 		execve(cgipath.c_str(), argv, envp);
 		cerr << "Exec failed" << endl;
