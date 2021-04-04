@@ -31,7 +31,7 @@ std::string jachoi::FileIO::read(size_t n)
 
 bool jachoi::FileIO::write(const std::string& content)
 {
-	int fd = open(_path.c_str(), O_CREAT | O_WRONLY, 0644);
+	int fd = open(_path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644);
 	if (fd == -1)
 		return false;
 	::write(fd, content.c_str(), content.size());
