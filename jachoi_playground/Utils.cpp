@@ -131,6 +131,7 @@ namespace jachoi
 
 	void set_env(const std::string key, const std::string value)
 	{
+		cerr <<  key << "=" << value << endl;
 		g_envp[key] = value;
 	}
 

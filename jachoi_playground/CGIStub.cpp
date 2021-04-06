@@ -30,28 +30,36 @@ CGIStub::CGIStub(const std::string& req, const std::string& cgipath): cgipath(cg
 	{
 		RequestParser r(req);
 		std::string body;
-		// char* const argv[] = {const_cast<char*>(cgipath.c_str()), 0};
-		char *const argv[] = {const_cast<char*>("/usr/bin/cat"), 0};
+		char* const argv[] = {const_cast<char*>(cgipath.c_str()), 0};
+		// char *const argv[] = {const_cast<char*>("/u"), 0};
 		cerr << "setup envs" << endl;
+		// for (auto it : r.header)
+		// 	jachoi::set_env(it.first, it.second);
 		jachoi::set_env("REQUEST_METHOD", r.method);
 		jachoi::set_env("SERVER_PROTOCOL", "HTTP/1.1");
 		jachoi::set_env("PATH_INFO", r.pathparser->path);
 		char ** envp = jachoi::get_envp();
+		if (r.header.find("X-Secret-Header-For-Test") != r.header.end())
+		{
+			jachoi::set_env("HTTP_X_SECRET_HEADER_FOR_TEST", r.header["X-Secret-Header-For-Test"]);
+			cerr << "===========" << endl;
+			for (int i = 0 ; envp[i] ; i++)
+				cerr << envp[i] << endl;
+		}
 		cerr << "chunking... " << endl;
 		if (r.header["Transfer-Encoding"] == "chunked")
 			body = ChunkParser(r.body).getData();
 		else
 			body = r.body;
 		cerr << "writing..." << body.size() << endl;
+
 		jachoi::FileIO(".tmp_cgi").write(body);
-		dup2(open(".tmp_cgi", O_WRONLY), 1);
-		// dup2(open(".cgi_result", O_CREAT | O_TRUNC | O_WRONLY, 0644), 1);
-		cerr << "executing..." << cgipath << endl;
-		cerr << cgipath << endl;
-		cerr << argv[0] << endl;
-		cerr <<argv[1] << endl;
-		// execve(cgipath.c_str(), argv, envp);
-		execve("/usr/bin/cat", argv, envp);
+		jachoi::FileIO(".cgi_result").write("");
+		dup2(open(".tmp_cgi", O_RDONLY), 0);
+		dup2(open(".cgi_result", O_CREAT | O_TRUNC | O_WRONLY, 0644), 1);
+
+		cerr << "executing... " << cgipath << endl;
+		execve(cgipath.c_str(), argv, envp);
 		cerr << "Exec failed : " << errno << endl;
 		exit(1);
 	}
@@ -59,7 +67,10 @@ CGIStub::CGIStub(const std::string& req, const std::string& cgipath): cgipath(cg
 	{
 		cout << "child pid : " << pid << endl;
 		waitpid(pid, 0, 0);
-		// result = jachoi::FileIO(".cgi_result").read();
+		result = "HTTP/1.1 200 OK\r\n";
+		result += "Content-Type: text/html; charset=utf-8\r\n";
+		result += jachoi::FileIO(".cgi_result").read();
+		cout << "result : " <<  result.substr(0, 100) << endl;
 	}
 }
 

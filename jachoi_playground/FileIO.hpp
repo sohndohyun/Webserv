@@ -9,7 +9,7 @@ namespace jachoi
 	{
 	private:
 		std::string _path;
-		std::vector<char> _buf;
+		std::string _buf;
 	public:
 		FileIO(const std::string& path);
 		std::string read(size_t n = std::string::npos);
