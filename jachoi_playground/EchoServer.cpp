@@ -47,13 +47,15 @@ void EchoServer::OnRecv(int fd, std::string const &str)
 		}
 		case POST:
 		{
-			if (req.pathparser->path == "/directory/youpi.bla")
+			if (req.pathparser->path == "/directory/youpi.bla" ||
+				req.pathparser->path == "/directory/youpla.bla")
 			{
+				jachoi::FileIO("request").write(str);
 				cout << "Recved post data" << str.size() << endl;
 				std::string cgiresult = CGIStub(str).getCGIResult();
 				cout <<"==================" << endl;
-				cout << "cgi : " << cgiresult << endl;
-				sendStr(fd, res.makeResFromText(200, cgiresult));
+				cout << "cgi : " << cgiresult.substr(0, 2000) << endl;
+				sendStr(fd, cgiresult);
 				disconnect(fd);
 				return;
 			}
