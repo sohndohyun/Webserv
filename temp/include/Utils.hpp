@@ -16,4 +16,5 @@ namespace jachoi
 	short htons(short n);
 	long htonl(long n);
 	std::string makeGMT(const char *time_zone, time_t tv_sec);
+	int htoi(const std::string& num);
 }

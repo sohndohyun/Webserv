@@ -37,8 +37,8 @@ public:
 	bool versionSpecified() const;
 	virtual ~RequestParser();
 
-	//dsohn added
 	bool needRecvMore() const;
 private:
 	bool checkRequestValid(const std::string& reqhead);
+	bool checkChunkBodyValid() const;
 };

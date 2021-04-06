@@ -106,9 +106,7 @@ bool RequestParser::versionSpecified() const
 bool RequestParser::needRecvMore() const
 {
 	if (_header_not_end)
-	{
 		return true;
-	}
 	switch (getMethodType())
 	{
 		case POST: case PUT: case CONNECT: case TRACE:
@@ -116,7 +114,7 @@ bool RequestParser::needRecvMore() const
 			std::map<std::string, std::string>::const_iterator hit;
 			hit = header.find("Transfer-Encoding");
 			if (hit != header.end() && hit->second.find("chunked") != std::string::npos)
-				return false;
+				return !checkChunkBodyValid();
 			else
 			{
 				hit = header.find("Content-Length");
@@ -125,6 +123,37 @@ bool RequestParser::needRecvMore() const
 			}
 			break;
 		}
+	}
+	return false;
+}
+
+bool RequestParser::checkChunkBodyValid() const 
+{
+	int no = -1;
+	int last = 0;
+	while (true)
+	{
+		int end = body.find("\r\n", last);
+		std::string temp = body.substr(last, end - last);
+		if (no == -1)
+		{
+			if (temp.size())
+				no = jachoi::htoi(temp);
+			else
+				return false;
+		}
+		else
+		{
+			if (temp.size() < no)
+				return false;
+			if (no == 0)
+			{
+				if (body.substr(last, 4) == "\r\n\r\n")
+					return true;
+			}
+			no = -1;
+		}
+		last = end + 2;
 	}
 	return false;
 }
