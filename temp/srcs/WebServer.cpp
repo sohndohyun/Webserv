@@ -1,15 +1,34 @@
 #include "WebServer.hpp"
 #include "RequestParser.hpp"
 #include "Response.hpp"
+#include "ConfigParse.hpp"
+#include "FileIO.hpp"
+#include "ConfigCheck.hpp"
+#include "ChunkParser.hpp"
 #include <iostream>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+WebServer::WebServer(ConfigParse &conf): conf(conf){}
 
 void WebServer::OnRecv(int fd, std::string const &str)
 {
 	reqStr.append(str);
+try{
+		RequestParser req2(reqStr);
+}
+catch(std::exception &e) {std::cout << "reqStr : " << reqStr << std::endl;}
+
 	RequestParser req(reqStr);
 	if (req.needRecvMore())
 	{
 		return ;
+	}
+	if (req.header["Transfer-Encoding"] == "chunked")
+	{
+		ChunkParser chunk(req.body);
+		req.body = chunk.getData();
 	}
 
 	std::cout << "-------str----------\n";
@@ -23,44 +42,38 @@ void WebServer::OnRecv(int fd, std::string const &str)
 
 void WebServer::request_process(int fd, RequestParser const &req)
 {
-	Response res("webserv");
-	std::string body = "<html>\r\n<body>\r\n<h1>Hello, World!</h1>\r\n</body>\r\n</html>";
-	std::string req_str = "GET / HTTP/1.1\r\n";
-	res.setContentType("text.html");
+	//ConfigParse conf;
+	Response res(conf.server->name);
+	std::cout << "=path=====================================\n";
+	std::cout <<  req.pathparser->path << std::endl;
+	std::cout << "=path=====================================\n";
 	switch (req.getMethodType())
 	{
 		case GET: // fallthrought
 		{
-			std::cout << "=path=====================================\n";
-			std::cout <<  req.pathparser->path << std::endl;
-			std::cout << "=path=====================================\n";
-			if (req.pathparser->path == "/directory/oulalala")
-			{
-				res.setStatus(404);
-				res.makeRes(body);
-				sendStr(fd, res.res_str);
-				return;
-			}
-			res.setStatus(200);
-			res.makeRes(body);
-			sendStr(fd, res.res_str);
+			methodGET(res, req.pathparser->path);
 			break;
 		}
 		case POST:
 		{
-			res.setStatus(405);
-			res.makeRes(body);
-			sendStr(fd, res.res_str);
+			methodPOST(res, req);
 			break;
 		}
 		case HEAD:
 		{
-			res.setStatus(405);
-			res.makeRes(body);
-			sendStr(fd, res.res_str);
+			methodHEAD(res, req.pathparser->path);
+			break;
+		}
+		case PUT:
+		{
+			methodPUT(res, req);
 			break;
 		}
 	}
+	std::cout << "----------response---------" << std::endl;
+	std::cout << res.res_str << std::endl;
+	std::cout << "---------------------------" << std::endl;
+	sendStr(fd, res.res_str);
 }
 
 void WebServer::OnSend(int fd)
@@ -78,5 +91,126 @@ void WebServer::OnAccept(int fd, int port)
 void WebServer::OnDisconnect(int fd)
 {
 	(void)&fd;
-	std::cout << fd << ": disconnected!" << "\n";
+	std::cout << fd << ": disconnected!" << "\n\n";
+}
+
+void WebServer::methodGET(Response &res, std::string req_path)
+{
+	ConfigCheck cfg_check(conf);
+	std::string body;
+	std::string path = cfg_check.makeFilePath(req_path);
+
+	res.setContentType(path);
+	if (path == "")
+	{
+		path = conf.server->error_root + conf.server->error_page[404];
+		res.setStatus(404);
+	}
+	else if (cfg_check.methodCheck("GET", req_path) == false)
+	{
+		path = conf.server->error_root + conf.server->error_page[405];
+		res.setStatus(405);
+	}
+	else
+		res.setStatus(200);
+	body = jachoi::FileIO(path).read();
+	res.makeRes(body);
+}
+
+void WebServer::methodHEAD(Response &res, std::string req_path)
+{
+	ConfigCheck cfg_check(conf);
+	std::string body;
+	std::string path = cfg_check.makeFilePath(req_path);
+
+	res.setContentType(path);
+	if (path == "")
+	{
+		path = conf.server->error_root + conf.server->error_page[404];
+		res.setStatus(404);
+		body = jachoi::FileIO(path).read();
+	}
+	else if (cfg_check.methodCheck("HEAD", req_path) == false)
+	{
+		path = conf.server->error_root + conf.server->error_page[405];
+		res.setStatus(405);
+		body = jachoi::FileIO(path).read();
+	}
+	else
+	{
+		res.setStatus(200);
+		body = "";
+	}
+	res.makeRes(body);
+}
+
+void WebServer::methodPUT(Response &res, RequestParser const &req)
+{
+	ConfigCheck cfg_check(conf);
+	std::string body;
+	std::string path = cfg_check.findPath(req.pathparser->path);
+	struct stat sb;
+
+	res.setContentType(path);
+	int stat_rtn = stat(path.c_str(), &sb);
+	if (stat_rtn == 0 && S_ISDIR(sb.st_mode))
+	{
+		// 400 error?
+	}
+	else if (cfg_check.methodCheck("PUT", req.pathparser->path) == false)
+	{
+		path = conf.server->error_root + conf.server->error_page[405];
+		res.setStatus(405);
+	}
+	else if (stat_rtn == -1)
+	{
+		jachoi::FileIO(path).write(req.body);
+		res.setStatus(201);
+	}
+	//else if (stat_rtn == 0 && S_ISREG(sb.st_mode) && req.body == "")
+	//{
+	//	res.setStatus(204);
+	//}
+	else if (stat_rtn == 0 && S_ISREG(sb.st_mode))
+	{
+		jachoi::FileIO(path).append(req.body);
+		res.setStatus(200);
+	}
+	body = jachoi::FileIO(path).read();
+	res.makeRes(body);
+}
+
+
+void WebServer::methodPOST(Response &res, RequestParser const &req)
+{
+	ConfigCheck cfg_check(conf);
+	std::string body;
+	std::string path = cfg_check.findPath(req.pathparser->path);
+	struct stat sb;
+	int stat_rtn = stat(path.c_str(), &sb);
+
+	//post name???
+	if (stat_rtn == 0 && S_ISDIR(sb.st_mode))
+	{
+		path += "/post1";
+		stat_rtn = stat(path.c_str(), &sb);
+	}
+
+	res.setContentType(path);
+	if (cfg_check.methodCheck("POST", req.pathparser->path) == false)
+	{
+		path = conf.server->error_root + conf.server->error_page[405];
+		res.setStatus(405);
+		body = jachoi::FileIO(path).read();
+	}
+	else// if (stat_rtn == -1)
+	{
+		jachoi::FileIO(path).write(req.body);
+		res.setStatus(201);
+		res.setContentType(".text/plain");
+		res.setContentLocation(req.pathparser->path);
+		body = "";
+		//std::cout << "status code : 201" << std::endl;
+	}
+	res.makeRes(body);
 }

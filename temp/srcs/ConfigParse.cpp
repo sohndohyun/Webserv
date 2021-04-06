@@ -1,4 +1,7 @@
 #include "ConfigParse.hpp"
+#include <fcntl.h>
+#include <unistd.h>
+#include "Exception.hpp"
 
 ConfigParse::ConfigParse():
 	server(NULL)
@@ -91,7 +94,11 @@ void ConfigParse::serverParse(std::vector<std::string> section)
 			}
 		}
 		else if (key == "root")
+		{
+			if (value[value.length() - 1] != '/')
+				value += '/';
 			server->loca.root = value;
+		}
 		else if (key == "index")
 			server->loca.index = splitString(value, ' ');
 		else if (key == "method")
@@ -125,7 +132,11 @@ void ConfigParse::locationParse(std::vector<std::string> section)
 		key = str.substr(0, findIdx);
 		value = str.substr(findIdx + 1, str.size() - findIdx);
 		if (key == "root")
+		{
+			if (value[value.length() - 1] != '/')
+				value += '/';
 			loca.root = value;
+		}
 		else if (key == "index")
 			loca.index = splitString(value, ' ');
 		else if (key == "method")
@@ -140,7 +151,7 @@ void ConfigParse::locationParse(std::vector<std::string> section)
 		else
 			throw Exception("ConfigParse: Invalid key: " + key);
 	}
-	loca_map.insert(make_pair(section[0], loca));
+	loca_map.insert(make_pair(section[0].substr(1, section[0].length() - 2), loca));
 }
 
 ConfigParse::~ConfigParse()

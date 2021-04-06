@@ -7,6 +7,7 @@
 #include <sys/time.h>
 #include <sys/select.h>
 #include <fcntl.h>
+#include <iostream>
 #include "Utils.hpp"
 
 AServer::ServerException::ServerException(std::string const &msg) throw() : msg(msg){}
@@ -112,7 +113,7 @@ void AServer::run(std::string ip, std::vector<int> ports)
 				this->OnAccept(clntSocket, ports[i]);
 			}
 		}
-		
+
 		for (std::vector<AServer::Client*>::iterator it = clients.begin(); it != clients.end();)
 		{
 			Client *cl = (*it);
@@ -169,8 +170,8 @@ void AServer::run(std::string ip, std::vector<int> ports)
 			it++;
 		}
 	}
-	for (size_t i = 0;i < listenSocks.size();i++)
-		close(listenSocks[i]);
+	//for (size_t i = 0;i < listenSocks.size();i++)
+	//	close(listenSocks[i]);
 }
 
 void AServer::disconnect(int fd)

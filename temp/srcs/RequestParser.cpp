@@ -5,11 +5,18 @@
 
 RequestParser::RequestParser(const std::string& req)
 {
+	pathparser = NULL;
+	_header_not_end = false;
+	if (req.find("\r\n\r\n") == std::string::npos)
+	{
+		_header_not_end = true;
+		return ;
+	}
+
 	size_t reqend = req.find("\r\n");
 	std::string reqinfo = req.substr(0, reqend);
 
 	_badreq = true;
-	_header_not_end = false;
 
 	if (checkRequestValid(reqinfo))
 		_badreq = false;
@@ -25,8 +32,7 @@ RequestParser::RequestParser(const std::string& req)
 			size_t colon_pos = tmp.find(":");
 			if (colon_pos == std::string::npos)
 			{
-//				_badreq = true;
-				_header_not_end = true;
+				_badreq = true;
 				break;
 			}
 			header[tmp.substr(0, colon_pos)] = jachoi::ltrim(tmp.substr(colon_pos + 1));
@@ -37,10 +43,7 @@ RequestParser::RequestParser(const std::string& req)
 			if (req.substr(last, 2) == "\r\n")
 				body = req.substr(last + 2);
 			else
-			{
-//				_badreq = true;
-				_header_not_end = true;
-			}
+				_badreq = true;
 			break;
 		}
 	};
@@ -49,7 +52,7 @@ RequestParser::RequestParser(const std::string& req)
 bool RequestParser::isBadRequest() const
 {
 	return _badreq;
-} 
+}
 
 RequestParser::~RequestParser()
 {
@@ -61,7 +64,7 @@ bool RequestParser::checkRequestValid(const std::string& reqhead)
 {
 	// parse methods
 	const char* _known_methods[] = {
-		"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE" 
+		"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE"
 	};
 	const char* _supported_version[] = {
 		"HTTP/1.1", "HTTP/1.0"
@@ -83,7 +86,7 @@ bool RequestParser::checkRequestValid(const std::string& reqhead)
 int RequestParser::getMethodType() const
 {
 	const char* _known_methods[] = {
-		"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE" 
+		"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE"
 	};
 	for (size_t i = 0 ; i < sizeof(*_known_methods) ; i++)
 	{
@@ -100,14 +103,15 @@ bool RequestParser::versionSpecified() const
 
 bool RequestParser::needRecvMore() const
 {
-	std::map<std::string, std::string>::const_iterator hit;
-
 	if (_header_not_end)
+	{
 		return true;
+	}
 	switch (getMethodType())
 	{
 		case POST: case PUT: case CONNECT: case TRACE:
 		{
+			std::map<std::string, std::string>::const_iterator hit;
 			hit = header.find("Transfer-Encoding");
 			if (hit != header.end() && hit->second.find("chunked") != std::string::npos)
 				return false;

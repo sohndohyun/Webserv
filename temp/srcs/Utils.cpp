@@ -21,7 +21,7 @@ namespace jachoi
 	{
 		return ltrim(rtrim(s));
 	}
-	
+
 	void	*memset(void *s, int c, unsigned long n)
 	{
 		unsigned char	*ptr;
@@ -31,7 +31,7 @@ namespace jachoi
 			*ptr++ = c;
 		return (s);
 	}
-	
+
 	bool islittelendian()
 	{
 		int n = 1;
@@ -83,5 +83,20 @@ namespace jachoi
 		strptime(std::to_string(gmt_time).c_str(), "%s", &time);
 		strftime(buf, sizeof(buf), "%a, %d %b %G %T GMT", &time);
 		return (buf);
+	}
+
+	int htoi(const std::string& num)
+	{
+		int ret = 0;
+		const std::string hex = "0123456789abcdef";
+		for (size_t i = 0 ; i < num.size(); i++)
+		{
+			size_t idx = hex.find(num[i]);
+			if (idx == std::string::npos)
+				return ret;
+			ret *= 16;
+			ret += idx;
+		}
+		return ret;
 	}
 }

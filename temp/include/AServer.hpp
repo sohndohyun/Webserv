@@ -31,7 +31,7 @@ protected:
 	};
 
 private:
-	std::vector<Client*> clients;  
+	std::vector<Client*> clients;
 
 public:
 	AServer();
