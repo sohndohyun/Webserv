@@ -1,5 +1,5 @@
 NAME = Webserv
-FLAGS =	-Wall -Wextra -Werror -g
+FLAGS =	-g
 HEADER = -I.
 CC = g++
 SRCS = Utils.cpp AServer.cpp main.cpp EchoServer.cpp RequestParser.cpp PathParser.cpp Exception.cpp Response.cpp FileIO.cpp ConfigParse.cpp ChunkParser.cpp CGIStub.cpp
@@ -14,5 +14,5 @@ clean:
 
 fclean: clean
 	rm -f $(NAME)
-	
+
 re: fclean all

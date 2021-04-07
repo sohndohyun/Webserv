@@ -6,13 +6,13 @@
 std::map<std::string, std::string> g_envp;
 
 
-#if debug	
+#if debug
 using namespace std;
 #endif
 int main(int argc, char** argv, char** envp)
 {
 	(void)argc;
-	(void)argv;	
+	(void)argv;
 	g_envp = jachoi::make_envp(envp);
 	EchoServer echoServer;
 #if deubg
@@ -20,7 +20,7 @@ int main(int argc, char** argv, char** envp)
 	{
 #endif
 		ConfigParse conf;
-		echoServer.run("0.0.0.0", {conf.server->port});
+		echoServer.run("0.0.0.0", std::vector<int>(1,conf.server->port));
 
 #if debug
 	}

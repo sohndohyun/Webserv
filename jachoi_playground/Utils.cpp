@@ -30,7 +30,7 @@ namespace jachoi
 	{
 		return ltrim(rtrim(s));
 	}
-	
+
 	void	*memset(void *s, int c, unsigned long n)
 	{
 		unsigned char	*ptr;
@@ -40,7 +40,7 @@ namespace jachoi
 			*ptr++ = c;
 		return (s);
 	}
-	
+
 	bool islittelendian()
 	{
 		int n = 1;
@@ -159,7 +159,8 @@ namespace jachoi
 			memcpy(&ret[i][it->first.size() + 1], it->second.data(), it->second.size());
 			ret[i][sz] = 0;
 		}
-		// print_2darr(ret);
+		ret[g_envp.size()] = 0;
+		print_2darr(ret);
 		return ret;
 	}
 }

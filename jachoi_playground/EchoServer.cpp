@@ -12,7 +12,7 @@ void EchoServer::OnRecv(int fd, std::string const &str)
 	(void)fd;
 
 	cout << "-------str " << str.size() <<  "----------\n";
-	cout << str.substr(0,200) << endl;
+	cout << str.substr(0,500) << endl;
 	cout << "===================\n";
 	RequestParser req(str);
 	Response res("jachoi server");

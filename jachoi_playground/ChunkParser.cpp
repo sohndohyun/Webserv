@@ -15,7 +15,8 @@ ChunkParser::ChunkParser(const std::string& body)
 	{
 		// cout << "hex : " <<  body.substr(idx, 5) << endl;
 		while (data[idx++] != '\n');
-		_data += body.substr(idx + 1, len);
+		// _data += body.substr(idx + 1, len);
+		_data.append(body.substr(idx + 1, len));
 		idx += len + 2;
 	}
 }
