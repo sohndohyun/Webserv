@@ -132,21 +132,12 @@ void AServer::run(std::string ip, std::vector<int> ports)
 
 				int str_len;
 				std::string temp;
-_recv:
 				while ((str_len = recv(cl->fd, buf, BUFSIZ, 0)) > 0)
+				{
 					temp.append(buf, str_len);
-
-				// if (str_len <= 0)
-				// {
-				// 	OnDisconnect(cl->fd);
-				// 	FD_CLR(cl->fd, &rset);
-				// 	close(cl->fd);
-				// 	delete cl;
-				// 	it = clients.erase(it);
-				// 	continue;
-				// }
-				if (!this->OnRecv(cl->fd, temp))
-					goto _recv;
+					usleep(13000);
+				}
+				this->OnRecv(cl->fd, temp);
 			}
 			else if (FD_ISSET(cl->fd, &wset))
 			{

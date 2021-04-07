@@ -41,7 +41,7 @@ public:
 	void sendStr(int fd, std::string const &str);
 	void disconnect(int fd);
 
-	virtual bool OnRecv(int fd, std::string const &str) = 0;
+	virtual void OnRecv(int fd, std::string const &str) = 0;
 	virtual void OnSend(int fd) = 0;
 	virtual void OnAccept(int fd, int port) = 0;
 	virtual void OnDisconnect(int fd) = 0;

@@ -7,13 +7,13 @@
 #include "Exception.hpp"
 #include <iostream>
 
-bool EchoServer::OnRecv(int fd, std::string const &str)
+void EchoServer::OnRecv(int fd, std::string const &str)
 {
 	using namespace std;
 	(void)fd;
 
 
-	try{
+
 	RequestParser req(str);
 	cout << "-------str " << str.size() <<  "----------\n";
 	cout << str.substr(0,500) << endl;
@@ -30,19 +30,19 @@ bool EchoServer::OnRecv(int fd, std::string const &str)
 			{
 				sendStr(fd, res.makeResFromText(404, "ss"));
 				disconnect(fd);
-				return true;
+				break;
 			}
 			else if (req.pathparser->path == "/directory/nop/other.pouac")
 			{
 				sendStr(fd, res.makeResFromText(404, "ss"));
 				disconnect(fd);
-				return true;
+				break;
 			}
 			else if (req.pathparser->path == "/directory/Yeah")
 			{
 				sendStr(fd, res.makeResFromText(404, "ss"));
 				disconnect(fd);
-				return true;
+				break;
 			}
 			sendStr(fd, res.makeResFromText(200, "hello world"));
 			disconnect(fd);
@@ -59,7 +59,7 @@ bool EchoServer::OnRecv(int fd, std::string const &str)
 				cout << "cgi : " << cgiresult.substr(0, 2000) << endl;
 				sendStr(fd, cgiresult);
 				disconnect(fd);
-				return true;
+				break;
 			}
 			else if (req.pathparser->path == "/post_body")
 			{
@@ -73,7 +73,7 @@ bool EchoServer::OnRecv(int fd, std::string const &str)
 					sendStr(fd, res.makeResFromText(200, std::string(v.begin(), v.end())));
 					disconnect(fd);
 				}
-				return true;
+				break;
 			}
 			sendStr(fd, res.makeResFromText(405, "1"));
 			disconnect(fd);
@@ -91,22 +91,18 @@ bool EchoServer::OnRecv(int fd, std::string const &str)
 			cout << chunk.getData().size() << endl;
 			// cout << chunk.getData() << endl;
 			sendStr(fd, res.makeResFromText(200, chunk.getData()));
+			break;
 		}
-		return true;
 	}
 	// for (std::map<string, string>::iterator it = req.header.begin(); it != req.header.end() ; it++)
 	// 	cout << it->first << ": " << it->second << endl;
 	// cout << "body: " <<  req.body << endl;
-	}
-	catch(...)
-	{
-		return false;
-	}
 }
 
 void EchoServer::OnSend(int fd)
 {
 	(void)&fd;
+	std::cerr << "send" << std::endl;
 }
 
 void EchoServer::OnAccept(int fd, int port)
