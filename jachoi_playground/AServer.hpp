@@ -31,7 +31,7 @@ protected:
 	};
 
 private:
-	std::vector<Client*> clients;  
+	std::vector<Client*> clients;
 
 public:
 	AServer();
@@ -41,7 +41,7 @@ public:
 	void sendStr(int fd, std::string const &str);
 	void disconnect(int fd);
 
-	virtual void OnRecv(int fd, std::string const &str) = 0;
+	virtual bool OnRecv(int fd, std::string const &str) = 0;
 	virtual void OnSend(int fd) = 0;
 	virtual void OnAccept(int fd, int port) = 0;
 	virtual void OnDisconnect(int fd) = 0;
