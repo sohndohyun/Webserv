@@ -16,7 +16,7 @@
 #ifdef BUFSIZ
 #undef BUFSIZ
 #endif
-#define BUFSIZ 32768
+#define BUFSIZ 65536
 using namespace std;
 #endif
 AServer::ServerException::ServerException(std::string const &msg) throw() : msg(msg){}
@@ -135,19 +135,8 @@ void AServer::run(std::string ip, std::vector<int> ports)
 				while ((str_len = recv(cl->fd, buf, BUFSIZ, 0)) > 0)
 				{
 					temp.append(buf, str_len);
-					// cout << "recv: " << str_len << endl;
-					usleep(50000);
+					usleep(13000);
 				}
-
-				// if (str_len <= 0)
-				// {
-				// 	OnDisconnect(cl->fd);
-				// 	FD_CLR(cl->fd, &rset);
-				// 	close(cl->fd);
-				// 	delete cl;
-				// 	it = clients.erase(it);
-				// 	continue;
-				// }
 				this->OnRecv(cl->fd, temp);
 			}
 			else if (FD_ISSET(cl->fd, &wset))

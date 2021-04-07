@@ -7,3 +7,5 @@
 !*.html
 !*.ini
 !Makefile
+!tester
+!cgi_tester
