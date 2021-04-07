@@ -7,7 +7,7 @@ std::string jachoi::FileIO::read(size_t n)
 {
 	char buf[1];
 	bool eof = false;
-	int fd = open(_path.c_str(), O_RDONLY);
+	int fd = open(_path.c_str(), O_CREAT| O_RDONLY, 0644);
 	if (fd == -1)
 		throw Exception("FileIO: File not exist");
 	_buf.clear();
@@ -16,7 +16,7 @@ std::string jachoi::FileIO::read(size_t n)
 		switch (::read(fd, buf, 1))
 		{
 		case 1:
-			_buf.push_back(buf[0]);
+			_buf += buf[0];
 			break;
 		case -1:
 			throw Exception("FileIO: Read failed");
@@ -26,7 +26,7 @@ std::string jachoi::FileIO::read(size_t n)
 		}
 	}
 	close(fd);
-	return std::string(_buf.begin(), _buf.end());
+	return _buf;
 }
 
 bool jachoi::FileIO::write(const std::string& content)
