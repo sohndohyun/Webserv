@@ -4,6 +4,7 @@
 #include "ChunkParser.hpp"
 #include "FileIO.hpp"
 #include "CGIStub.hpp"
+#include "Exception.hpp"
 #include <iostream>
 
 void EchoServer::OnRecv(int fd, std::string const &str)
@@ -11,10 +12,12 @@ void EchoServer::OnRecv(int fd, std::string const &str)
 	using namespace std;
 	(void)fd;
 
+
+	try{
+	RequestParser req(str);
 	cout << "-------str " << str.size() <<  "----------\n";
 	cout << str.substr(0,500) << endl;
 	cout << "===================\n";
-	RequestParser req(str);
 	Response res("jachoi server");
 	switch (req.getMethodType())
 	{
@@ -48,8 +51,7 @@ void EchoServer::OnRecv(int fd, std::string const &str)
 		case POST:
 		{
 			if (req.pathparser->path == "/directory/youpi.bla" ||
-				req.pathparser->path == "/directory/youpla.bla")
-			{
+				req.pathparser->path == "/directory/youpla.bla")			{
 				jachoi::FileIO("request").write(str);
 				cout << "Recved post data" << str.size() << endl;
 				std::string cgiresult = CGIStub(str).getCGIResult();
@@ -58,6 +60,20 @@ void EchoServer::OnRecv(int fd, std::string const &str)
 				sendStr(fd, cgiresult);
 				disconnect(fd);
 				return;
+			}
+			else if (req.pathparser->path == "/post_body")
+			{
+				cerr << "chunking ... post body" << endl;
+				auto chunksz = ChunkParser(req.body).getData().size();
+				if (chunksz > 100)
+					sendStr(fd, res.makeResFromText(413, "bad request"));
+				else
+				{
+					vector<char> v(chunksz, '1');
+					sendStr(fd, res.makeResFromText(200, std::string(v.begin(), v.end())));
+					disconnect(fd);
+				}
+				return ;
 			}
 			sendStr(fd, res.makeResFromText(405, "1"));
 			disconnect(fd);
@@ -80,6 +96,11 @@ void EchoServer::OnRecv(int fd, std::string const &str)
 	// for (std::map<string, string>::iterator it = req.header.begin(); it != req.header.end() ; it++)
 	// 	cout << it->first << ": " << it->second << endl;
 	// cout << "body: " <<  req.body << endl;
+	}
+	catch(...)
+	{
+		return;
+	}
 }
 
 void EchoServer::OnSend(int fd)
@@ -91,11 +112,11 @@ void EchoServer::OnAccept(int fd, int port)
 {
 	(void)&fd;
 	(void)&port;
-	std::cout << fd << "(" << port << "): accepted!" << "\n";
+	// std::cout << fd << "(" << port << "): accepted!" << "\n";
 }
 
 void EchoServer::OnDisconnect(int fd)
 {
 	(void)&fd;
-	std::cout << fd << ": disconnected!" << "\n";
+	// std::cout << fd << ": disconnected!" << "\n";ㄴ
 }
