@@ -1,5 +1,6 @@
 #include <string>
 #include <algorithm>
+#include <map>
 #ifdef htons
 #undef htons
 #endif
@@ -17,4 +18,7 @@ namespace jachoi
 	long htonl(long n);
 	std::string makeGMT(const char *time_zone, time_t tv_sec);
 	int htoi(const std::string& num);
+	std::map<std::string, std::string> make_envp(char** envp);
+	char** get_envp();
+	void set_env(const std::string key, const std::string value);
 }

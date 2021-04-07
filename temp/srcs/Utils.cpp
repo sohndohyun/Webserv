@@ -2,6 +2,9 @@
 #include <map>
 #include <algorithm>
 #include "Utils.hpp"
+#include "Exception.hpp"
+
+extern std::map<std::string, std::string> g_envp;
 
 namespace jachoi
 {
@@ -96,6 +99,41 @@ namespace jachoi
 				return ret;
 			ret *= 16;
 			ret += idx;
+		}
+		return ret;
+	}
+
+	std::map<std::string, std::string> make_envp(char** envp)
+	{
+		for (size_t i = 0 ; envp[i]; i++)
+		{
+			std::string env(envp[i]);
+			size_t eq_pos = env.find('=');
+			if (eq_pos == std::string::npos)
+				throw Exception("invalide envp");
+			g_envp[env.substr(0, eq_pos)] = env.substr(eq_pos + 1);
+		}
+		return g_envp;
+	}
+
+	void set_env(const std::string key, const std::string value)
+	{
+		std::cerr <<  key << "=" << value << std::endl;
+		g_envp[key] = value;
+	}
+
+	char** get_envp()
+	{
+		char** ret = new char*[g_envp.size() + 1];
+		size_t i = 0;
+		for (std::map<std::string, std::string>::iterator it = g_envp.begin(); it != g_envp.end() ; it++, i++)
+		{
+			size_t sz = it->first.size() + it->second.size() + 1;
+			ret[i] = new char[sz + 1];
+			memcpy(ret[i], it->first.data(), it->first.size());
+			ret[i][it->first.size()] = '=';
+			memcpy(&ret[i][it->first.size() + 1], it->second.data(), it->second.size());
+			ret[i][sz] = 0;
 		}
 		return ret;
 	}

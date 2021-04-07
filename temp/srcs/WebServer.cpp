@@ -206,6 +206,9 @@ void WebServer::methodPOST(Response &res, RequestParser const &req)
 	else// if (stat_rtn == -1)
 	{
 		jachoi::FileIO(path).write(req.body);
+
+		std::string cgiresult = CGIStub(req.body).getCGIResult();
+
 		res.setStatus(201);
 		res.setContentType(".text/plain");
 		res.setContentLocation(req.pathparser->path);

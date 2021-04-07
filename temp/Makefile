@@ -13,6 +13,7 @@ SRCS =	srcs/Utils.cpp \
 		srcs/ConfigParse.cpp \
 		srcs/ConfigCheck.cpp \
 		srcs/ChunkParser.cpp \
+		srcs/CGIStub.cpp \
 		main.cpp
 
 OBJS = $(SRCS:.cpp=.o)
