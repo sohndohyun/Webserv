@@ -68,7 +68,7 @@ void AServer::run(std::string ip, std::vector<int> ports)
 			close(listenSocket);
 			throw AServer::ServerException("AServer: bind error");
 		}
-		if (listen(listenSocket, 40) == -1)
+		if (listen(listenSocket, 3000) == -1)
 		{
 			for (i = 0;i < listenSocks.size();i++)
 				close(listenSocks[i]);
