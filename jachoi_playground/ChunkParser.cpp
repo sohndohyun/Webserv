@@ -3,22 +3,24 @@
 #define debug
 #ifdef debug
 #include <iostream>
-
+#include <ctime>
 using namespace std;
 #endif
 ChunkParser::ChunkParser(const std::string& body)
 {
 	size_t idx = 0;
 	int len;
+	clock_t start = clock();
 	const char* data = body.data();
 	while ((len = jachoi::htoi(&data[idx])))
 	{
-		// cout << "hex : " <<  body.substr(idx, 5) << endl;
 		while (data[idx++] != '\n');
-		// _data += body.substr(idx + 1, len);
 		_data.append(body.substr(idx + 1, len));
 		idx += len + 2;
 	}
+	clock_t end = clock();
+	cout << "body size : " << body.size() << endl;
+	cout << "chunk time : "<< (double)(end-start)/CLOCKS_PER_SEC<< endl;
 }
 
 ChunkParser::~ChunkParser()

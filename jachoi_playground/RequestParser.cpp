@@ -5,6 +5,7 @@
 
 RequestParser::RequestParser(const std::string& req)
 {
+try{
 	size_t reqend = req.find("\r\n");
 	std::string reqinfo = req.substr(0, reqend);
 	_badreq = true;
@@ -37,11 +38,16 @@ RequestParser::RequestParser(const std::string& req)
 		}
 	};
 }
+catch(...)
+{
+	std::cout << "RequestParser Error : " << req << std::endl;
+}
+}
 
 bool RequestParser::isBadRequest() const
 {
 	return _badreq;
-} 
+}
 
 RequestParser::~RequestParser()
 {
@@ -53,7 +59,7 @@ bool RequestParser::checkRequestValid(const std::string& reqhead)
 {
 	// parse methods
 	const char* _known_methods[] = {
-		"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE" 
+		"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE"
 	};
 	const char* _supported_version[] = {
 		"HTTP/1.1", "HTTP/1.0"
@@ -75,7 +81,7 @@ bool RequestParser::checkRequestValid(const std::string& reqhead)
 int RequestParser::getMethodType() const
 {
 	const char* _known_methods[] = {
-		"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE" 
+		"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE"
 	};
 	for (size_t i = 0 ; i < sizeof(*_known_methods) ; i++)
 	{

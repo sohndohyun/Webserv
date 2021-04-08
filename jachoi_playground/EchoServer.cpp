@@ -44,6 +44,12 @@ void EchoServer::OnRecv(int fd, std::string const &str)
 				disconnect(fd);
 				break;
 			}
+			else if (req.pathparser->path == "/directory/nop")
+			{
+				sendStr(fd, res.makeResFromText(200, "ss"));
+				disconnect(fd);
+				break;
+			}
 			sendStr(fd, res.makeResFromText(200, "hello world"));
 			disconnect(fd);
 			break;
