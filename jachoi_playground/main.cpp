@@ -20,7 +20,7 @@ int main(int argc, char** argv, char** envp)
 	{
 #endif
 		ConfigParse conf;
-		echoServer.run("0.0.0.0", std::vector<int>(1,conf.server->port));
+		echoServer.run("0.0.0.0", std::vector<int>(1, conf.server->port));
 
 #if debug
 	}

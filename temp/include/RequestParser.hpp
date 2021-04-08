@@ -31,13 +31,14 @@ public:
 
 public:
 	RequestParser(const std::string& req);
+
 	bool isBadRequest() const;
 	int getMethodType() const;
 	bool versionSpecified() const;
 	virtual ~RequestParser();
 
-	//dsohn added
 	bool needRecvMore() const;
 private:
 	bool checkRequestValid(const std::string& reqhead);
+	bool checkChunkBodyValid() const;
 };

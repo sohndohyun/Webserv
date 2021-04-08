@@ -5,11 +5,18 @@
 
 RequestParser::RequestParser(const std::string& req)
 {
+	pathparser = NULL;
+	_header_not_end = false;
+	if (req.find("\r\n\r\n") == std::string::npos)
+	{
+		_header_not_end = true;
+		return ;
+	}
+
 	size_t reqend = req.find("\r\n");
 	std::string reqinfo = req.substr(0, reqend);
 
 	_badreq = true;
-	_header_not_end = false;
 
 	if (checkRequestValid(reqinfo))
 		_badreq = false;
@@ -25,8 +32,7 @@ RequestParser::RequestParser(const std::string& req)
 			size_t colon_pos = tmp.find(":");
 			if (colon_pos == std::string::npos)
 			{
-//				_badreq = true;
-				_header_not_end = true;
+				_badreq = true;
 				break;
 			}
 			header[tmp.substr(0, colon_pos)] = jachoi::ltrim(tmp.substr(colon_pos + 1));
@@ -37,14 +43,13 @@ RequestParser::RequestParser(const std::string& req)
 			if (req.substr(last, 2) == "\r\n")
 				body = req.substr(last + 2);
 			else
-			{
-//				_badreq = true;
-				_header_not_end = true;
-			}
+				_badreq = true;
 			break;
 		}
 	};
 }
+
+
 
 bool RequestParser::isBadRequest() const
 {
@@ -100,17 +105,16 @@ bool RequestParser::versionSpecified() const
 
 bool RequestParser::needRecvMore() const
 {
-	std::map<std::string, std::string>::const_iterator hit;
-
 	if (_header_not_end)
 		return true;
 	switch (getMethodType())
 	{
 		case POST: case PUT: case CONNECT: case TRACE:
 		{
+			std::map<std::string, std::string>::const_iterator hit;
 			hit = header.find("Transfer-Encoding");
 			if (hit != header.end() && hit->second.find("chunked") != std::string::npos)
-				return false;
+				return !checkChunkBodyValid();
 			else
 			{
 				hit = header.find("Content-Length");
@@ -119,6 +123,37 @@ bool RequestParser::needRecvMore() const
 			}
 			break;
 		}
+	}
+	return false;
+}
+
+bool RequestParser::checkChunkBodyValid() const 
+{
+	int no = -1;
+	int last = 0;
+	while (true)
+	{
+		int end = body.find("\r\n", last);
+		std::string temp = body.substr(last, end - last);
+		if (no == -1)
+		{
+			if (temp.size())
+				no = jachoi::htoi(temp);
+			else
+				return false;
+		}
+		else
+		{
+			if (temp.size() < no)
+				return false;
+			if (no == 0)
+			{
+				if (body.substr(last, 4) == "\r\n\r\n")
+					return true;
+			}
+			no = -1;
+		}
+		last = end + 2;
 	}
 	return false;
 }

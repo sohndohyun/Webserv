@@ -1,5 +1,5 @@
 NAME = Webserv
-FLAGS =	-g
+FLAGS = -Wall -Werror -Wextra -g
 HEADER = -I.
 CC = g++
 SRCS = Utils.cpp AServer.cpp main.cpp EchoServer.cpp RequestParser.cpp PathParser.cpp Exception.cpp Response.cpp FileIO.cpp ConfigParse.cpp ChunkParser.cpp CGIStub.cpp

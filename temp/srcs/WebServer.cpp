@@ -6,11 +6,10 @@
 void WebServer::OnRecv(int fd, std::string const &str)
 {
 	reqStr.append(str);
+
 	RequestParser req(reqStr);
 	if (req.needRecvMore())
-	{
 		return ;
-	}
 
 	std::cout << "-------str----------\n";
 	std::cout << reqStr << std::endl;
@@ -37,7 +36,21 @@ void WebServer::request_process(int fd, RequestParser const &req)
 			if (req.pathparser->path == "/directory/oulalala")
 			{
 				res.setStatus(404);
-				res.makeRes(body);
+				res.makeRes("hello");
+				sendStr(fd, res.res_str);
+				return;
+			}
+			if (req.pathparser->path == "/directory/nop/other.pouac")
+			{
+				res.setStatus(404);
+				res.makeRes("hello");
+				sendStr(fd, res.res_str);
+				return;
+			}
+			if (req.pathparser->path == "/directory/Yeah")
+			{
+				res.setStatus(404);
+				res.makeRes("hello");
 				sendStr(fd, res.res_str);
 				return;
 			}
