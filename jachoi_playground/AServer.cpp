@@ -30,10 +30,7 @@ AServer::ServerException::~ServerException() throw() {}
 AServer::Client::Client(int fd, std::string const &str) : fd(fd), str(str){willDie = false;}
 
 AServer::AServer() {}
-AServer::~AServer()
-{
-
-}
+AServer::~AServer(){}
 
 void AServer::run(std::string ip, std::vector<int> ports)
 {
@@ -71,14 +68,13 @@ void AServer::run(std::string ip, std::vector<int> ports)
 			close(listenSocket);
 			throw AServer::ServerException("AServer: bind error");
 		}
-		if (listen(listenSocket, 5) == -1)
+		if (listen(listenSocket, 40) == -1)
 		{
 			for (i = 0;i < listenSocks.size();i++)
 				close(listenSocks[i]);
 			close(listenSocket);
 			throw AServer::ServerException("AServer: listen error");
 		}
-
 		listenSocks.push_back(listenSocket);
 	}
 
@@ -99,7 +95,8 @@ void AServer::run(std::string ip, std::vector<int> ports)
 		}
 		int selRet = select(fdMax + 1, &rset, &wset, NULL, NULL);
 		if (selRet == -1)
-			throw AServer::ServerException("AServer: select error");
+			// throw AServer::ServerException("AServer: select error");
+			continue;
 		else if (selRet == 0)
 			continue ;
 		for (size_t i = 0;i < listenSocks.size();i++)
@@ -137,11 +134,14 @@ void AServer::run(std::string ip, std::vector<int> ports)
 					temp.append(buf, str_len);
 					usleep(13000);
 				}
-				this->OnRecv(cl->fd, temp);
+				if (temp.size())
+					this->OnRecv(cl->fd, temp);
 			}
 			else if (FD_ISSET(cl->fd, &wset))
 			{
-				int ret = send(cl->fd, cl->str.c_str(), cl->str.size(), 0);
+				int ret;
+				if (cl->str.size())
+					ret = send(cl->fd, cl->str.c_str(), cl->str.size(), 0);
 				if (ret <= 0)
 				{
 					OnDisconnect(cl->fd);
@@ -193,6 +193,8 @@ void AServer::disconnect(int fd)
 
 void AServer::sendStr(int fd, std::string const &str)
 {
+	if (str.size() == 0)
+		return;
 	for (size_t i = 0;i < clients.size();i++)
 	{
 		if (clients[i]->fd == fd)

@@ -59,14 +59,12 @@ CGIStub::CGIStub(const std::string& req, const std::string& cgipath): cgipath(cg
 				ChunkParser(r.body).getData() : r.body;
 			result.append("HTTP/1.1 200 OK\r\n");
 			result.append("Content-Type: text/html; charset=utf-8\r\n");
-			cout << "pipe start " << endl;
 			int rdbytes = -1;
 			int wrbytes = 0;
 			while (true)
 			{
 				if (wrbytes == body.size())
 					break;
-				cout << "wrbytes : " << wrbytes << "rdbytes : " << rdbytes  << endl;
 				if (wrbytes + 30000 < body.size())
 					wrbytes += write(rpipe[1], body.c_str() + wrbytes, 30000);
 				else if (body.size() - wrbytes > 0)
@@ -76,7 +74,6 @@ CGIStub::CGIStub(const std::string& req, const std::string& cgipath): cgipath(cg
 			}
 			cout << result.size() << endl;
 			cout << result.substr(0, 100) << endl;
-			cout << "pipe end" << endl;
 			close(wpipe[0]);
 			close(wpipe[1]);
 			close(rpipe[0]);
