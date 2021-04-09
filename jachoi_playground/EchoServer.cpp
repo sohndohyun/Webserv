@@ -13,8 +13,8 @@ void EchoServer::OnRecv(Client& cl)
 
 	RequestParser req(cl.request);
 	Response res("jachoi server");
-	cout << "*******************************************************\n";
-	cout << cl.request.substr(0, 1000) << endl;
+	// cout << "*******************************************************\n";
+	// cout << cl.request.substr(0, 1000) << endl;
 	// cout << req.pathparser->path <<" request size: " << cl.request.size()  << "req body size : " << req.body.size() << endl;
 #ifdef PRINT
 	cout << cl.request << endl;
@@ -103,8 +103,8 @@ void EchoServer::OnSend(Client& cl)
 {
 	(void)&cl;
 	using namespace std;
-	cout << "*******************************************************\n";
-	cout << cl.response.substr(0, 1000) << endl;
+	// cout << "*******************************************************\n";
+	// cout << cl.response.substr(0, 1000) << endl;
 	// std::cout << "ressize: " << cl.response.size() << std::endl;
 	// std::cout <<"============ repsonse ========\n";
 	// std::cout << cl.response << std::endl;
@@ -114,12 +114,12 @@ void EchoServer::OnSend(Client& cl)
 void EchoServer::OnAccept(Client& cl)
 {
 	(void)&cl;
-	// std::cout << cl << "(" << port << "): accepted!" << "\n";
+	std::cout << cl.fd << " : accepted!" << "\n";
 }
 
 void EchoServer::OnDisconnect(Client& cl)
 {
 	(void)&cl;
 	using namespace std;
-	// std::cout << cl.fd << ": disconnected!" << "\n";
+	std::cout << cl.fd << ": disconnected!" << "\n";
 }
