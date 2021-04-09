@@ -8,15 +8,14 @@
 #include <sys/select.h>
 #include <fcntl.h>
 #include "Utils.hpp"
-
-
 #define debug
-#ifdef debug
-#include <iostream>
 #ifdef BUFSIZ
 #undef BUFSIZ
+#define BUFSIZ 65535
 #endif
-#define BUFSIZ 65536
+#ifdef debug
+#include <iostream>
+
 using namespace std;
 #endif
 AServer::ServerException::ServerException(std::string const &msg) throw() : msg(msg){}
@@ -27,7 +26,6 @@ char const *AServer::ServerException::what() const throw()
 
 AServer::ServerException::~ServerException() throw() {}
 
-AServer::Client::Client(int fd, std::string const &str) : fd(fd), str(str){willDie = false;}
 
 AServer::AServer() {}
 AServer::~AServer(){}
@@ -41,6 +39,7 @@ void AServer::run(std::string ip, std::vector<int> ports)
 		throw AServer::ServerException("AServer: wrong ip");
 	std::vector<int> listenSocks;
 	int fdMax = -1;
+	signal(SIGPIPE, SIG_IGN);
 	for (size_t i = 0;i < ports.size();i++)
 	{
 		int listenSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -68,7 +67,7 @@ void AServer::run(std::string ip, std::vector<int> ports)
 			close(listenSocket);
 			throw AServer::ServerException("AServer: bind error");
 		}
-		if (listen(listenSocket, 40) == -1)
+		if (listen(listenSocket, 3000) == -1)
 		{
 			for (i = 0;i < listenSocks.size();i++)
 				close(listenSocks[i]);
@@ -88,17 +87,18 @@ void AServer::run(std::string ip, std::vector<int> ports)
 			FD_SET(listenSocks[i], &rset);
 		for (size_t i = 0;i < clients.size();i++)
 		{
-			if (clients[i]->str.size() > 0)
+			if (clients[i]->done)
 				FD_SET(clients[i]->fd, &wset);
 			else
 				FD_SET(clients[i]->fd, &rset);
 		}
+
 		int selRet = select(fdMax + 1, &rset, &wset, NULL, NULL);
-		if (selRet == -1)
-			// throw AServer::ServerException("AServer: select error");
+		if (selRet <= 0)
+		{
 			continue;
-		else if (selRet == 0)
-			continue ;
+		}
+
 		for (size_t i = 0;i < listenSocks.size();i++)
 		{
 			if (FD_ISSET(listenSocks[i], &rset))
@@ -111,62 +111,83 @@ void AServer::run(std::string ip, std::vector<int> ports)
 				fcntl(clntSocket, F_SETFL, O_NONBLOCK);
 				if (fdMax < clntSocket)
 					fdMax = clntSocket;
-
-				Client* cl = new Client(clntSocket, "");
+				Client* cl = new Client(clntSocket);
 				if (cl == NULL)
 					continue;
 				clients.push_back(cl);
-				this->OnAccept(clntSocket, ports[i]);
+				this->OnAccept(*cl);
 			}
 		}
 
-		for (std::vector<AServer::Client*>::iterator it = clients.begin(); it != clients.end();)
+		for (std::vector<Client*>::iterator it = clients.begin(); it != clients.end();)
 		{
 			Client *cl = (*it);
+
 			if (FD_ISSET(cl->fd, &rset))
 			{
 				char buf[BUFSIZ];
 
 				int str_len;
-				std::string temp;
-				while ((str_len = recv(cl->fd, buf, BUFSIZ, 0)) > 0)
+				str_len = recv(cl->fd, buf, BUFSIZ, 0);
+				// if (str_len)
+				// 	cout << str_len << endl;
+				if (str_len == -1 && cl->request.empty())
 				{
-					temp.append(buf, str_len);
-					usleep(13000);
-				}
-				if (temp.size())
-					this->OnRecv(cl->fd, temp);
-			}
-			else if (FD_ISSET(cl->fd, &wset))
-			{
-				int ret;
-				if (cl->str.size())
-					ret = send(cl->fd, cl->str.c_str(), cl->str.size(), 0);
-				if (ret <= 0)
-				{
-					OnDisconnect(cl->fd);
-					FD_CLR(cl->fd, &wset);
+					OnDisconnect(*cl);
+					FD_CLR(cl->fd, &rset);
 					close(cl->fd);
 					delete cl;
 					it = clients.erase(it);
 					continue;
 				}
-				if (ret < static_cast<int>(cl->str.size()))
-					cl->str = cl->str.substr(ret);
-				else
+				if (str_len > 0)
+					cl->request.append(buf, str_len);
+				bool ischunk = cl->request.size() > 30 && std::string::npos != cl->request.find("\r\nTransfer-Encoding: chunked\r\n");
+				if (cl->request.size() > 5 &&((ischunk && cl->request.substr(cl->request.size() - 5) == "0\r\n\r\n") ||
+					(!ischunk && cl->request.substr(cl->request.size() - 4) == "\r\n\r\n")))
 				{
-					cl->str.clear();
-					this->OnSend(cl->fd);
+					OnRecv(*cl);
 				}
+			}
+			else if (FD_ISSET(cl->fd, &wset))
+			{
+				size_t sendsize = std::min(static_cast<size_t>(BUFSIZ), cl->response.size() - cl->writtenCount);
+				int ret = send(cl->fd, cl->response.c_str() + cl->writtenCount , sendsize, 0);
+				// cout << "sendsize : " << sendsize  <<  "   ret :  " << ret << "    ressize : " << cl->response.size() << endl;
+				if (ret <= sendsize)
+				{
+					cl->writtenCount += ret;
+				}
+				if (ret == 0)
+				{
+					// cout << "========================\n";
+					OnSend(*cl);
+					cl->done = false;
+					cl->writtenCount = 0;
+					cl->response.clear();
+					cl->request.clear();
+				}
+				// if (ret <= 0)
+				// {
+				// 	OnDisconnect(*cl);
+				// 	FD_CLR(cl->fd, &wset);
+				// 	close(cl->fd);
+				// 	delete cl;
+				// 	it = clients.erase(it);
+				// 	continue;
+				// }
 			}
 			++it;
 		}
-		for (std::vector<AServer::Client*>::iterator it = clients.begin(); it != clients.end();)
+
+		//Disconnect stub
+		for (std::vector<Client*>::iterator it = clients.begin(); it != clients.end();)
 		{
 			Client *cl = (*it);
-			if (cl->willDie && FD_ISSET(cl->fd, &rset) == 0 && cl->str.size() <= 0)
+			if (cl->willDie && FD_ISSET(cl->fd, &rset) == 0 && cl->response.size() <= 0)
+			// if (cl->willDie && !FD_ISSET(cl->fd, &rset) && cl->done)
 			{
-				OnDisconnect(cl->fd);
+				OnDisconnect(*cl);
 				close(cl->fd);
 				delete cl;
 				it = clients.erase(it);
@@ -179,28 +200,36 @@ void AServer::run(std::string ip, std::vector<int> ports)
 		close(listenSocks[i]);
 }
 
-void AServer::disconnect(int fd)
+void AServer::disconnect(Client& cl)
 {
-	for (size_t i = 0;i < clients.size();i++)
-	{
-		if (clients[i]->fd == fd)
-		{
-			clients[i]->willDie = true;
-			break;
-		}
-	}
+	cl.willDie = true;
+	// for (size_t i = 0;i < clients.size();i++)
+	// {
+	// 	if (clients[i]->fd == fd)
+	// 	{
+	// 		clients[i]->willDie = true;
+	// 		break;
+	// 	}
+	// }
 }
 
-void AServer::sendStr(int fd, std::string const &str)
+void AServer::sendStr(Client& cl, std::string const &str)
 {
 	if (str.size() == 0)
 		return;
-	for (size_t i = 0;i < clients.size();i++)
-	{
-		if (clients[i]->fd == fd)
-		{
-			clients[i]->str.append(str);
-			break;
-		}
-	}
+
+	// cout << "from sendstr" << endl;
+	// cout << str << endl;
+
+	cl.response.append(str);
+	cl.done = true;
+	// for (size_t i = 0;i < clients.size();i++)
+	// {
+	// 	if (clients[i]->fd == cl.fd)
+	// 	{
+	// 		clients[i]->send_buf.append(str);
+	// 		clients[i]->done = true;
+	// 		break;
+	// 	}
+	// }
 }
