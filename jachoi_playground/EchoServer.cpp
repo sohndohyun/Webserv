@@ -102,6 +102,9 @@ void EchoServer::OnRecv(Client& cl)
 void EchoServer::OnSend(Client& cl)
 {
 	(void)&cl;
+	using namespace std;
+	cout << "*******************************************************\n";
+	cout << cl.response.substr(0, 1000) << endl;
 	// std::cout << "ressize: " << cl.response.size() << std::endl;
 	// std::cout <<"============ repsonse ========\n";
 	// std::cout << cl.response << std::endl;

@@ -39,6 +39,7 @@ void AServer::run(std::string ip, std::vector<int> ports)
 		throw AServer::ServerException("AServer: wrong ip");
 	std::vector<int> listenSocks;
 	int fdMax = -1;
+	signal(SIGPIPE, SIG_IGN);
 	for (size_t i = 0;i < ports.size();i++)
 	{
 		int listenSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -152,14 +153,14 @@ void AServer::run(std::string ip, std::vector<int> ports)
 			{
 				size_t sendsize = std::min(static_cast<size_t>(BUFSIZ), cl->response.size() - cl->writtenCount);
 				int ret = send(cl->fd, cl->response.c_str() + cl->writtenCount , sendsize, 0);
-				cout << "sendsize : " << sendsize  <<  "   ret :  " << ret << "    ressize : " << cl->response.size() << endl;
+				// cout << "sendsize : " << sendsize  <<  "   ret :  " << ret << "    ressize : " << cl->response.size() << endl;
 				if (ret <= sendsize)
 				{
 					cl->writtenCount += ret;
 				}
 				if (ret == 0)
 				{
-					cout << "========================\n";
+					// cout << "========================\n";
 					OnSend(*cl);
 					cl->done = false;
 					cl->writtenCount = 0;
