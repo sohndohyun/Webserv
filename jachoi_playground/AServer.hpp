@@ -4,6 +4,7 @@
 #include <string>
 #include <exception>
 #include <vector>
+#include "Client.hpp"
 
 class AServer
 {
@@ -18,18 +19,6 @@ public:
 		virtual char const *what() const throw();
 	};
 
-protected:
-	class Client
-	{
-	private:
-		Client();
-	public:
-		Client(int, std::string const &);
-		int fd;
-		bool willDie;
-		std::string str;
-	};
-
 private:
 	std::vector<Client*> clients;
 
@@ -38,13 +27,13 @@ public:
 	virtual ~AServer();
 
 	void run(std::string ip, std::vector<int> ports);
-	void sendStr(int fd, std::string const &str);
-	void disconnect(int fd);
+	void sendStr(Client& cl, std::string const &str);
+	void disconnect(Client& cl);
 
-	virtual void OnRecv(int fd, std::string const &str) = 0;
-	virtual void OnSend(int fd) = 0;
-	virtual void OnAccept(int fd, int port) = 0;
-	virtual void OnDisconnect(int fd) = 0;
+	virtual void OnRecv(Client& cl) = 0;
+	virtual void OnSend(Client& cl) = 0;
+	virtual void OnAccept(Client& cl) = 0;
+	virtual void OnDisconnect(Client& cl) = 0;
 };
 
 #endif

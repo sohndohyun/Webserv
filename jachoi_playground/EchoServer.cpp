@@ -7,96 +7,90 @@
 #include "Exception.hpp"
 #include <iostream>
 
-void EchoServer::OnRecv(int fd, std::string const &str)
+void EchoServer::OnRecv(Client& cl)
 {
 	using namespace std;
-	(void)fd;
 
-
-
-	RequestParser req(str);
-	cout << "-------str " << str.size() <<  "----------\n";
-	cout << str.substr(0,500) << endl;
-	cout << "===================\n";
+	RequestParser req(cl.request);
 	Response res("jachoi server");
+	// cout << "*******************************************************\n";
+	// cout << cl.request.substr(0, 1000) << endl;
+	// cout << req.pathparser->path <<" request size: " << cl.request.size()  << "req body size : " << req.body.size() << endl;
+#ifdef PRINT
+	cout << cl.request << endl;
+	cout << "===================\n";
+#endif
 	switch (req.getMethodType())
 	{
 		case GET:
 		{
-			cout << "=path=====================================\n";
-			cout <<  req.pathparser->path << endl;
-			cout << "==========================================\n";
 			if (req.pathparser->path == "/directory/oulalala")
 			{
-				sendStr(fd, res.makeResFromText(404, "ss"));
-				disconnect(fd);
+				sendStr(cl, res.makeResFromText(404, "ss"));
+				disconnect(cl);
 				break;
 			}
 			else if (req.pathparser->path == "/directory/nop/other.pouac")
 			{
-				sendStr(fd, res.makeResFromText(404, "ss"));
-				disconnect(fd);
+				sendStr(cl, res.makeResFromText(404, "ss"));
+				disconnect(cl);
 				break;
 			}
 			else if (req.pathparser->path == "/directory/Yeah")
 			{
-				sendStr(fd, res.makeResFromText(404, "ss"));
-				disconnect(fd);
+				sendStr(cl, res.makeResFromText(404, "ss"));
+				disconnect(cl);
 				break;
 			}
 			else if (req.pathparser->path == "/directory/nop")
 			{
-				sendStr(fd, res.makeResFromText(200, "ss"));
-				disconnect(fd);
+				sendStr(cl, res.makeResFromText(200, "ss"));
+				disconnect(cl);
 				break;
 			}
-			sendStr(fd, res.makeResFromText(200, "hello world"));
-			disconnect(fd);
+			sendStr(cl, res.makeResFromText(200, "hello world"));
+			disconnect(cl);
 			break;
 		}
 		case POST:
 		{
 			if (req.pathparser->path == "/directory/youpi.bla" ||
 				req.pathparser->path == "/directory/youpla.bla")			{
-				jachoi::FileIO("request").write(str);
-				cout << "Recved post data" << str.size() << endl;
-				std::string cgiresult = CGIStub(str).getCGIResult();
-				cout <<"==================" << endl;
-				cout << "cgi : " << cgiresult.substr(0, 2000) << endl;
-				sendStr(fd, cgiresult);
-				disconnect(fd);
+				std::string cgiresult = CGIStub(cl.request).getCGIResult();
+				sendStr(cl, cgiresult);
+				disconnect(cl);
 				break;
 			}
 			else if (req.pathparser->path == "/post_body")
 			{
-				cerr << "chunking ... post body" << endl;
 				auto chunksz = ChunkParser(req.body).getData().size();
 				if (chunksz > 100)
-					sendStr(fd, res.makeResFromText(413, "bad request"));
+				{
+					sendStr(cl, res.makeResFromText(413, "bad request"));
+					disconnect(cl);
+				}
 				else
 				{
 					vector<char> v(chunksz, '1');
-					sendStr(fd, res.makeResFromText(200, std::string(v.begin(), v.end())));
-					disconnect(fd);
+					sendStr(cl, res.makeResFromText(200, std::string(v.begin(), v.end())));
+					disconnect(cl);
 				}
 				break;
 			}
-			sendStr(fd, res.makeResFromText(405, "1"));
-			disconnect(fd);
+			sendStr(cl, res.makeResFromText(405, "1"));
+			disconnect(cl);
 			break;
 		}
 		case HEAD:
 		{
-			sendStr(fd, res.makeResFromText(405, "1"));
-			disconnect(fd);
+			sendStr(cl, res.makeResFromText(405, "1"));
+			disconnect(cl);
 			break;
 		}
 		case PUT:
 		{
 			ChunkParser chunk(req.body);
-			cout << chunk.getData().size() << endl;
-			// cout << chunk.getData() << endl;
-			sendStr(fd, res.makeResFromText(200, chunk.getData()));
+			sendStr(cl, res.makeResFromText(200, chunk.getData()));
 			break;
 		}
 	}
@@ -105,21 +99,27 @@ void EchoServer::OnRecv(int fd, std::string const &str)
 	// cout << "body: " <<  req.body << endl;
 }
 
-void EchoServer::OnSend(int fd)
+void EchoServer::OnSend(Client& cl)
 {
-	(void)&fd;
-	std::cerr << "send" << std::endl;
+	(void)&cl;
+	using namespace std;
+	// cout << "*******************************************************\n";
+	// cout << cl.response.substr(0, 1000) << endl;
+	// std::cout << "ressize: " << cl.response.size() << std::endl;
+	// std::cout <<"============ repsonse ========\n";
+	// std::cout << cl.response << std::endl;
+	// std::cout << "=======================\n";
 }
 
-void EchoServer::OnAccept(int fd, int port)
+void EchoServer::OnAccept(Client& cl)
 {
-	(void)&fd;
-	(void)&port;
-	// std::cout << fd << "(" << port << "): accepted!" << "\n";
+	(void)&cl;
+	std::cout << cl.fd << " : accepted!" << "\n";
 }
 
-void EchoServer::OnDisconnect(int fd)
+void EchoServer::OnDisconnect(Client& cl)
 {
-	(void)&fd;
-	// std::cout << fd << ": disconnected!" << "\n";ㄴ
+	(void)&cl;
+	using namespace std;
+	std::cout << cl.fd << ": disconnected!" << "\n";
 }

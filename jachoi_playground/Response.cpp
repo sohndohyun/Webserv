@@ -98,9 +98,11 @@ std::string Response::ContentType(const std::string& filename)
 	return "text/plain";
 }
 
-std::string Response::makeResFromText(int statuscode, const std::string& content, bool chunked , const std::string& contenttype)
+const std::string& Response::makeResFromText(int statuscode, const std::string& content, bool chunked , const std::string& contenttype)
 {
-	std::string response;
+	static std::string response;
+
+	response.clear();
 // header
 	response += "HTTP/1.1 " + std::to_string(statuscode) + " " + Status(statuscode) + "\r\n";
 	response += "Date: " + Date() + "\r\n";
@@ -116,16 +118,14 @@ std::string Response::makeResFromText(int statuscode, const std::string& content
 		//TODO: Chunked Send
 		(void)chunked;
 	else
-		response += content; 
-	cout << "=== res: "<< content.size() << " ===" << endl;
-	cout << response.substr(0, 200) << endl;
-	cout << "=== res end ===\n";
+		response += content;
 	return response;
 }
 
-std::string Response::makeResFromFile(int statuscode, const std::string& filepath, bool chunked)
+const std::string& Response::makeResFromFile(int statuscode, const std::string& filepath, bool chunked)
 {
-	std::string response;
+	static std::string response;
+	response.clear();
 	std::string content = jachoi::FileIO(filepath).read();
 // header
 	response += "HTTP/1.1 " + std::to_string(statuscode) + " " + Status(statuscode) + "\r\n";
@@ -144,7 +144,6 @@ std::string Response::makeResFromFile(int statuscode, const std::string& filepat
 	else
 		response += content;
 	return response;
-
 }
 
 // const std::string& Response::makeRes(int status_code, ConfigParse::t_server *conf_server, std::string content_type, std::map<std::string, std::string> req_header, std::string content_length)

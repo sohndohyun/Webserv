@@ -97,7 +97,7 @@ namespace jachoi
 	int htoi(const std::string& num)
 	{
 		int ret = 0;
-		const std::string hex = "0123456789abcdef";
+		static const std::string hex = "0123456789abcdef";
 		for (size_t i = 0 ; i < num.size(); i++)
 		{
 			size_t idx = hex.find(num[i]);
