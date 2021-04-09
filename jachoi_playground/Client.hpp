@@ -7,7 +7,7 @@ public:
 	int fd;
 	bool willDie;
 	bool done;
-	int sendCount;
+	int writtenCount;
 	std::string response;
 	std::string request;
 public:

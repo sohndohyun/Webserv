@@ -9,8 +9,9 @@
 #include <fcntl.h>
 #include "Utils.hpp"
 #define debug
-#ifndef BUFSIZ
-#define BUFSIZ 1024
+#ifdef BUFSIZ
+#undef BUFSIZ
+#define BUFSIZ 65535
 #endif
 #ifdef debug
 #include <iostream>
@@ -149,21 +150,19 @@ void AServer::run(std::string ip, std::vector<int> ports)
 			}
 			else if (FD_ISSET(cl->fd, &wset))
 			{
-				size_t sendsize = BUFSIZ;
-				if (cl->sendCount * sendsize > cl->response.size())
-					sendsize = cl->response.size() - (cl->sendCount - 1) * BUFSIZ;
-				int ret = send(cl->fd, cl->response.c_str() + (cl->sendCount - 1) * BUFSIZ, sendsize, 0);
-				cout << "sendsize : " << sendsize  <<  "   ret :  " << ret    << "    ressize : " << cl->response.size() << endl;
+				size_t sendsize = std::min(static_cast<size_t>(BUFSIZ), cl->response.size() - cl->writtenCount);
+				int ret = send(cl->fd, cl->response.c_str() + cl->writtenCount , sendsize, 0);
+				cout << "sendsize : " << sendsize  <<  "   ret :  " << ret << "    ressize : " << cl->response.size() << endl;
 				if (ret <= sendsize)
 				{
-					cl->sendCount++;
+					cl->writtenCount += ret;
 				}
-				else if (ret == -1)
+				if (ret == 0)
 				{
 					cout << "========================\n";
 					OnSend(*cl);
 					cl->done = false;
-					cl->sendCount = 1;
+					cl->writtenCount = 0;
 					cl->response.clear();
 					cl->request.clear();
 				}
