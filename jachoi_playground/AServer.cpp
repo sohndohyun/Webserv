@@ -152,7 +152,9 @@ void AServer::run(std::string ip, std::vector<int> ports)
 			else if (FD_ISSET(cl->fd, &wset))
 			{
 				size_t sendsize = std::min(static_cast<size_t>(BUFSIZ), cl->response.size() - cl->writtenCount);
-				int ret = send(cl->fd, cl->response.c_str() + cl->writtenCount , sendsize, 0);
+				int ret = -1;
+				if (cl->response.size())
+					ret = send(cl->fd, cl->response.c_str() + cl->writtenCount , sendsize, 0);
 				// cout << "sendsize : " << sendsize  <<  "   ret :  " << ret << "    ressize : " << cl->response.size() << endl;
 				if (ret <= sendsize)
 				{
@@ -167,15 +169,15 @@ void AServer::run(std::string ip, std::vector<int> ports)
 					cl->response.clear();
 					cl->request.clear();
 				}
-				// if (ret <= 0)
-				// {
-				// 	OnDisconnect(*cl);
-				// 	FD_CLR(cl->fd, &wset);
-				// 	close(cl->fd);
-				// 	delete cl;
-				// 	it = clients.erase(it);
-				// 	continue;
-				// }
+				else if (ret < 0)
+				{
+					OnDisconnect(*cl);
+					FD_CLR(cl->fd, &wset);
+					close(cl->fd);
+					delete cl;
+					it = clients.erase(it);
+					continue;
+				}
 			}
 			++it;
 		}
