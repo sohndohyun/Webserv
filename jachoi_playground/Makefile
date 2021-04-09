@@ -1,14 +1,17 @@
 NAME = Webserv
 FLAGS =	-g
 HEADER = -I.
-CC = g++
-SRCS = Utils.cpp AServer.cpp main.cpp EchoServer.cpp RequestParser.cpp PathParser.cpp Exception.cpp Response.cpp FileIO.cpp ConfigParse.cpp ChunkParser.cpp CGIStub.cpp
+CC = clang++
+SRCS = Utils.cpp Client.cpp AServer.cpp main.cpp EchoServer.cpp RequestParser.cpp PathParser.cpp Exception.cpp Response.cpp FileIO.cpp ConfigParse.cpp ChunkParser.cpp CGIStub.cpp
 OBJS = $(SRCS:.cpp=.o)
 
+%.o: %.cpp
+	$(CC) $(FLAGS) $(HEADER) -c $<
+
 all: $(NAME)
-$(NAME): $(SRCS)
-	$(CC) $(FLAGS) $(HEADER) -c $(SRCS)
-	clang++ $(FLAGS) $(HEADER) $(OBJS) -o $(NAME)
+
+$(NAME): $(OBJS)
+	$(CC) $(FLAGS) $(HEADER) $(OBJS) -o $(NAME)
 clean:
 	rm -f $(OBJS)
 

@@ -10,14 +10,19 @@ ChunkParser::ChunkParser(const std::string& body)
 {
 	size_t idx = 0;
 	int len;
-	const char* data = body.data();
-	_data.reserve(0x10000000);
-	while ((len = jachoi::htoi(&data[idx]))) // hex to int
+	// _data.reserve(0x10000000);
+	// cout << body.size() << endl;
+	// cout <<" ===body=== "<< endl;
+	// cout << body << endl;
+	cout << "chunking..." << endl;
+	while ((len = jachoi::htoi(&body[idx]))) // hex to int
 	{
-		while (data[idx++] != '\n');
-		_data.append(body.substr(idx + 1, len));
+		while (body[idx++] != '\n');
+		_data.append(body.substr(idx, len));
 		idx += len + 2;
+		// cout << body << endl;
 	}
+	cout << _data.size() << endl;
 }
 
 ChunkParser::~ChunkParser()

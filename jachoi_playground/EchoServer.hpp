@@ -6,10 +6,10 @@
 class EchoServer : public AServer
 {
 public:
-	virtual void OnRecv(int fd, std::string const &str);
-	virtual void OnSend(int fd);
-	virtual void OnAccept(int fd, int port);
-	virtual void OnDisconnect(int fd);
+	virtual void OnRecv(Client& cl);
+	virtual void OnSend(Client& cl);
+	virtual void OnAccept(Client& cl);
+	virtual void OnDisconnect(Client& cl);
 };
 
 #endif

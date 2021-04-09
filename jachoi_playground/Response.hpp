@@ -15,6 +15,6 @@ private:
 	std::string ContentType(const std::string& filename);
 public:
 	Response(const std::string& servername);
-	std::string makeResFromText(int statuscode,	const std::string& content, bool chunked = false, const std::string& contenttype = "text/plain");
-	std::string makeResFromFile(int statuscode, const std::string& filepath, bool chunked = false); 
+	const std::string& makeResFromText(int statuscode,	const std::string& content, bool chunked = false, const std::string& contenttype = "text/plain");
+	const std::string& makeResFromFile(int statuscode, const std::string& filepath, bool chunked = false);
 };
