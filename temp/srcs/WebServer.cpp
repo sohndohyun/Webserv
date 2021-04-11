@@ -4,12 +4,12 @@
 
 void WebServer::OnRecv(int fd, std::string const &str)
 {
-	request.add(str);
-	if (request.needRecv())
-		return ;
+	requests[fd]->add(str);
+	if (requests[fd]->needRecv())
+		return;
 	std::cout << "sending...\n";
-	request_process(fd, request);
-	request.init();
+	request_process(fd, *requests[fd]);
+	requests[fd]->init();
 	disconnect(fd);
 }
 
@@ -85,13 +85,20 @@ void WebServer::OnSend(int fd)
 
 void WebServer::OnAccept(int fd, int port)
 {
-	(void)&fd;
-	(void)&port;
 	std::cout << fd << "(" << port << "): accepted!" << "\n";
+	requests.insert(std::pair<int, Request*>(fd, new Request));
 }
 
 void WebServer::OnDisconnect(int fd)
 {
-	(void)&fd;
 	std::cout << fd << ": disconnected!" << "\n";
+	requests.erase(requests.find(fd));
+}
+
+WebServer::~WebServer()
+{
+	std::map<int, Request*>::iterator it = requests.begin();
+	for(;it != requests.end();it++)
+		delete it->second;
+	requests.clear();
 }
