@@ -114,13 +114,18 @@ void WebServer::OnSend(int fd)
 void WebServer::OnAccept(int fd, int port)
 {
 	std::cout << fd << "(" << port << "): accepted!" << "\n";
-	requests.insert(std::pair<int, Request*>(fd, new Request));
+	requests.insert(std::make_pair(fd, new Request()));
 }
 
 void WebServer::OnDisconnect(int fd)
 {
 	std::cout << fd << ": disconnected!" << "\n";
-	requests.erase(requests.find(fd));
+	std::map<int, Request*>::iterator it = requests.find(fd);
+	if (it != requests.end())
+	{
+		delete it->second;
+		requests.erase(it);
+	}
 }
 
 WebServer::~WebServer()
