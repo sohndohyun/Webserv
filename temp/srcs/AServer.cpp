@@ -9,6 +9,11 @@
 #include <fcntl.h>
 #include "Utils.hpp"
 
+#ifdef BUFSIZ
+#undef BUFSIZ
+#define BUFSIZ 65535
+#endif
+
 AServer::ServerException::ServerException(std::string const &msg) throw() : msg(msg){}
 char const *AServer::ServerException::what() const throw()
 {
@@ -61,7 +66,7 @@ void AServer::run(std::string ip, std::vector<int> ports)
 			close(listenSocket);
 			throw AServer::ServerException("AServer: bind error");
 		}
-		if (listen(listenSocket, 5) == -1)
+		if (listen(listenSocket, 3000) == -1)
 		{
 			for (i = 0;i < listenSocks.size();i++)
 				close(listenSocks[i]);

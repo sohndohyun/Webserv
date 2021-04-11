@@ -99,4 +99,18 @@ namespace jachoi
 		}
 		return ret;
 	}
+
+	bool isHex(const std::string &num, size_t begin, size_t end)
+	{
+		if (!num.size() || begin >= end || end == std::string::npos)
+			return false;
+		const std::string hex = "0123456789abcdef";
+		for (size_t i = begin; i < end && i < num.size(); i++)
+		{
+			size_t idx = hex.find(num[i]);
+			if (idx == std::string::npos)
+				return false;
+		}
+		return true;
+	}
 }

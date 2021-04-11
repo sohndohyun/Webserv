@@ -5,13 +5,12 @@ CC = clang++
 SRCS =	srcs/Utils.cpp \
 		srcs/AServer.cpp \
 		srcs/WebServer.cpp \
-		srcs/RequestParser.cpp \
-		srcs/PathParser.cpp \
 		srcs/Exception.cpp \
-		srcs/Response.cpp \
 		srcs/FileIO.cpp \
+		srcs/Response.cpp \
 		srcs/ConfigParse.cpp \
-		main.cpp
+		srcs/Request.cpp \
+		main.cpp 
 
 OBJS = $(SRCS:.cpp=.o)
 
