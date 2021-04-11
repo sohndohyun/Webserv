@@ -12,3 +12,6 @@
 !*.bla
 !*.bad_extension
 !*.pouic
+!tester
+!ubuntu_cgi_tester
+!ubuntu_tester

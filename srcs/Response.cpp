@@ -81,14 +81,14 @@ void Response::setDate()
 	struct tm time;
 
 	gettimeofday(&curr, NULL);
-	strptime(std::to_string(curr.tv_sec).c_str(), "%s", &time);
+	strptime(jachoi::to_string(curr.tv_sec).c_str(), "%s", &time);
 	header.insert(make_pair("Date", jachoi::makeGMT(time.tm_zone, curr.tv_sec)));
 }
 
 void Response::setStatus(int status_code)
 {
 	header["status_msg"] = initStatus(status_code);
-	header["status_code"] = std::to_string(status_code);
+	header["status_code"] = jachoi::to_string(status_code);
 }
 
 void Response::setContentType(std::string content_path)
@@ -131,7 +131,7 @@ void Response::makeRes(std::string body, bool chunked)
 			res_str += iter->first + ": " + iter->second + "\r\n";
 	}
 	if (chunked == false)
-		res_str += "Content-Length: " + std::to_string(body.length()) + "\r\n";
+		res_str += "Content-Length: " + jachoi::to_string(body.length()) + "\r\n";
 	else
 		res_str += "Transfer-Encoding: chunked\r\n";
 	res_str += "\r\n";

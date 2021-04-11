@@ -2,6 +2,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include "Exception.hpp"
+#include "Utils.hpp"
 
 ConfigParse::ConfigParse():
 	server(NULL)
@@ -75,7 +76,7 @@ void ConfigParse::serverParse(std::vector<std::string> section)
 		key = str.substr(0, findIdx);
 		value = str.substr(findIdx + 1, str.size() - findIdx);
 		if (key == "port")
-			server->port = std::stoi(value);
+			server->port = jachoi::stoi(value);
 		else if (key == "host")
 			server->host = value;
 		else if (key == "name")
@@ -92,7 +93,7 @@ void ConfigParse::serverParse(std::vector<std::string> section)
 				findIdx = errors_str.find(":");
 				key = errors_str.substr(0, findIdx);
 				value = errors_str.substr(findIdx + 1, errors_str.size() - findIdx);
-				server->error_page.insert(make_pair(std::stoi(key), value));
+				server->error_page.insert(make_pair(jachoi::stoi(key), value));
 			}
 		}
 		else if (key == "root")
@@ -114,7 +115,7 @@ void ConfigParse::serverParse(std::vector<std::string> section)
 				server->loca.autoindex = true;
 		}
 		else if (key == "client_max_body_size")
-			server->loca.client_max_body_size = std::stoi(value);
+			server->loca.client_max_body_size = jachoi::stoi(value);
 		else
 			throw Exception("ConfigParse: Invalid key: " + key);
 	}
@@ -155,7 +156,7 @@ void ConfigParse::locationParse(std::vector<std::string> section)
 				loca.autoindex = true;
 		}
 		else if (key == "client_max_body_size")
-			loca.client_max_body_size = std::stoi(value);
+			loca.client_max_body_size = jachoi::stoi(value);
 		else
 			throw Exception("ConfigParse: Invalid key: " + key);
 	}

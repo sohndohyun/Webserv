@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 WebServer::WebServer(ConfigParse &conf): conf(conf){}
 
@@ -81,7 +82,6 @@ void WebServer::cgi_stub(std::string const &path, Request &req, std::string &res
 
 		char *const *nll = NULL;
 		execve(path.c_str(), nll, envp);
-		std::cerr << "execve error : " << errno << std::endl;
 		exit(1);
 	}
 
@@ -255,7 +255,7 @@ void WebServer::methodPOST(Response &res, Request &req)
 	else if (path.substr(path.rfind('.') + 1) == "bla")
 	{
 		body.clear();
-		cgi_stub("./cgi_tester", req, body);
+		cgi_stub(CGI_PATH, req, body);
 		jachoi::FileIO(path).write(body);
 		res.setStatus(200);
 		res.makeRes(body);

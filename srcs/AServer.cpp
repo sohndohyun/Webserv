@@ -10,11 +10,6 @@
 #include "Utils.hpp"
 #include "Exception.hpp"
 
-#ifdef BUFSIZ
-#undef BUFSIZ
-#define BUFSIZ 65535
-#endif
-
 AServer::Client::Client(int fd, std::string const &str) : fd(fd),  willDie(false) ,sent(false), str(str)
 {
 	struct timeval tv;
@@ -166,6 +161,8 @@ void AServer::run(std::string ip, std::vector<int> ports)
 					cl->str = cl->str.substr(ret);
 				else
 				{
+					std::cout << "===========================================\n";
+					std::cout << cl->str.substr(0, 200) << std::endl;
 					cl->str.clear();
 					this->OnSend(cl->fd);
 				}
