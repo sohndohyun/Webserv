@@ -8,6 +8,7 @@
 #include <sys/select.h>
 #include <fcntl.h>
 #include "Utils.hpp"
+#include "Exception.hpp"
 #define debug
 #ifdef BUFSIZ
 #undef BUFSIZ
@@ -39,7 +40,6 @@ void AServer::run(std::string ip, std::vector<int> ports)
 		throw AServer::ServerException("AServer: wrong ip");
 	std::vector<int> listenSocks;
 	int fdMax = -1;
-	signal(SIGPIPE, SIG_IGN);
 	for (size_t i = 0;i < ports.size();i++)
 	{
 		int listenSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -87,10 +87,15 @@ void AServer::run(std::string ip, std::vector<int> ports)
 			FD_SET(listenSocks[i], &rset);
 		for (size_t i = 0;i < clients.size();i++)
 		{
+			if (clients[i]->willDie == false)
+			{
 			if (clients[i]->done)
 				FD_SET(clients[i]->fd, &wset);
 			else
 				FD_SET(clients[i]->fd, &rset);
+			}
+			else
+				FD_SET(clients[i]->fd, &wset);
 		}
 
 		int selRet = select(fdMax + 1, &rset, &wset, NULL, NULL);
@@ -107,7 +112,7 @@ void AServer::run(std::string ip, std::vector<int> ports)
 				socklen_t addrsize = sizeof(sockaddr_in);
 				int clntSocket = accept(listenSocks[i], (sockaddr*)&clntAddr, &addrsize);
 				if (clntSocket == -1)
-					continue ;	// TODO: log when accept failed
+					throw Exception("accept failed!") ;	// TODO: log when accept failed
 				fcntl(clntSocket, F_SETFL, O_NONBLOCK);
 				if (fdMax < clntSocket)
 					fdMax = clntSocket;
@@ -126,18 +131,26 @@ void AServer::run(std::string ip, std::vector<int> ports)
 			if (FD_ISSET(cl->fd, &rset))
 			{
 				char buf[BUFSIZ];
-
-				int str_len;
-				str_len = recv(cl->fd, buf, BUFSIZ, 0);
-				// if (str_len)
-				// 	cout << str_len << endl;
-				if (str_len == -1 && cl->request.empty())
+				if (cl->isTimeout())
 				{
 					OnDisconnect(*cl);
 					FD_CLR(cl->fd, &rset);
 					close(cl->fd);
 					delete cl;
 					it = clients.erase(it);
+					continue;
+				}
+				int str_len;
+				str_len = recv(cl->fd, buf, BUFSIZ, 0);
+				// if (str_len)
+					// cout << str_len << endl;
+				if (str_len == -1 && cl->request.empty())
+				{
+					OnDisconnect(*cl);
+					FD_CLR(cl->fd, &rset);
+					close(cl->fd);
+					delete cl;
+				it = clients.erase(it);
 					continue;
 				}
 				if (str_len > 0)
@@ -151,16 +164,16 @@ void AServer::run(std::string ip, std::vector<int> ports)
 			}
 			else if (FD_ISSET(cl->fd, &wset))
 			{
-				size_t sendsize = std::min(static_cast<size_t>(BUFSIZ), cl->response.size() - cl->writtenCount);
+				int sendsize = cl->response.size() - cl->writtenCount;
 				int ret = -1;
 				if (cl->response.size())
 					ret = send(cl->fd, cl->response.c_str() + cl->writtenCount , sendsize, 0);
 				// cout << "sendsize : " << sendsize  <<  "   ret :  " << ret << "    ressize : " << cl->response.size() << endl;
-				if (ret <= sendsize)
+				if (cl->writtenCount < cl->response.size() && ret > 0)
 				{
 					cl->writtenCount += ret;
 				}
-				if (ret == 0)
+				if (cl->writtenCount == cl->response.size())
 				{
 					// cout << "========================\n";
 					OnSend(*cl);
@@ -168,6 +181,8 @@ void AServer::run(std::string ip, std::vector<int> ports)
 					cl->writtenCount = 0;
 					cl->response.clear();
 					cl->request.clear();
+					cl->sent = true;
+					FD_CLR(cl->fd, &wset);
 				}
 				else if (ret < 0)
 				{
@@ -186,11 +201,12 @@ void AServer::run(std::string ip, std::vector<int> ports)
 		for (std::vector<Client*>::iterator it = clients.begin(); it != clients.end();)
 		{
 			Client *cl = (*it);
-			if (cl->willDie && FD_ISSET(cl->fd, &rset) == 0 && cl->response.size() <= 0)
+			if (cl->willDie && !FD_ISSET(cl->fd, &wset) && !FD_ISSET(cl->fd, &rset) && cl->response.size() <= 0)
 			// if (cl->willDie && !FD_ISSET(cl->fd, &rset) && cl->done)
 			{
 				OnDisconnect(*cl);
 				close(cl->fd);
+				cl->fd = -1;
 				delete cl;
 				it = clients.erase(it);
 				continue;
@@ -204,7 +220,8 @@ void AServer::run(std::string ip, std::vector<int> ports)
 
 void AServer::disconnect(Client& cl)
 {
-	cl.willDie = true;
+	(void)cl;
+	// cl.willDie = true;
 	// for (size_t i = 0;i < clients.size();i++)
 	// {
 	// 	if (clients[i]->fd == fd)

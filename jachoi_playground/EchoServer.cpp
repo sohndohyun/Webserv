@@ -27,70 +27,73 @@ void EchoServer::OnRecv(Client& cl)
 			if (req.pathparser->path == "/directory/oulalala")
 			{
 				sendStr(cl, res.makeResFromText(404, "ss"));
-				disconnect(cl);
+				// disconnect(cl);
 				break;
 			}
 			else if (req.pathparser->path == "/directory/nop/other.pouac")
 			{
 				sendStr(cl, res.makeResFromText(404, "ss"));
-				disconnect(cl);
+				// disconnect(cl);
 				break;
 			}
 			else if (req.pathparser->path == "/directory/Yeah")
 			{
 				sendStr(cl, res.makeResFromText(404, "ss"));
-				disconnect(cl);
+				// disconnect(cl);s
 				break;
 			}
 			else if (req.pathparser->path == "/directory/nop")
 			{
 				sendStr(cl, res.makeResFromText(200, "ss"));
-				disconnect(cl);
+				// disconnect(cl);
 				break;
 			}
 			sendStr(cl, res.makeResFromText(200, "hello world"));
-			disconnect(cl);
+			// disconnect(cl);
 			break;
 		}
 		case POST:
 		{
 			if (req.pathparser->path == "/directory/youpi.bla" ||
-				req.pathparser->path == "/directory/youpla.bla")			{
-				std::string cgiresult = CGIStub(cl.request).getCGIResult();
-				sendStr(cl, cgiresult);
-				disconnect(cl);
+				req.pathparser->path == "/directory/youpla.bla")
+			{
+				const std::string& cgiresult = CGIStub(cl.request).getCGIResult();
+				std::cout << "cgi resut size: " <<  cgiresult.size() << std::endl;
+				sendStr(cl, res.makeResFromText(200, cgiresult, false, "text/html; charset=utf-8"));
+				// disconnect(cl);
 				break;
 			}
 			else if (req.pathparser->path == "/post_body")
 			{
-				auto chunksz = ChunkParser(req.body).getData().size();
-				if (chunksz > 100)
+				ChunkParser chk(req.body);
+				if (req.body.size() > 100)
 				{
 					sendStr(cl, res.makeResFromText(413, "bad request"));
-					disconnect(cl);
+					// disconnect(cl);
 				}
 				else
 				{
-					vector<char> v(chunksz, '1');
+					vector<char> v(req.body.size(), '1');
 					sendStr(cl, res.makeResFromText(200, std::string(v.begin(), v.end())));
-					disconnect(cl);
+					// disconnect(cl);
 				}
 				break;
 			}
 			sendStr(cl, res.makeResFromText(405, "1"));
-			disconnect(cl);
+			// disconnect(cl);
 			break;
 		}
 		case HEAD:
 		{
 			sendStr(cl, res.makeResFromText(405, "1"));
-			disconnect(cl);
+			// disconnect(cl);
 			break;
 		}
 		case PUT:
 		{
 			ChunkParser chunk(req.body);
-			sendStr(cl, res.makeResFromText(200, chunk.getData()));
+			sendStr(cl, res.makeResFromText(200, req.body));
+			// disconnect(cl);
 			break;
 		}
 	}
@@ -103,7 +106,9 @@ void EchoServer::OnSend(Client& cl)
 {
 	(void)&cl;
 	using namespace std;
-	// cout << "*******************************************************\n";
+	cout << "onSend: \n";
+	cout << cl.response.substr(0 ,1000) << endl;
+	cout << "*******************************************************\n";
 	// cout << cl.response.substr(0, 1000) << endl;
 	// std::cout << "ressize: " << cl.response.size() << std::endl;
 	// std::cout <<"============ repsonse ========\n";

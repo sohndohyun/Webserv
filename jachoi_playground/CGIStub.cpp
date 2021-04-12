@@ -21,6 +21,9 @@ CGIStub::CGIStub(const std::string& req, const std::string& cgipath): cgipath(cg
 	int wpipe[2];
 	int rpipe[2];
 	RequestParser r(req);
+	fcntl(rpipe[1], F_SETFL, O_NONBLOCK);
+	fcntl(wpipe[0], F_SETFL, O_NONBLOCK);
+
 	if (pipe(wpipe) == -1 || pipe(rpipe) == -1)
 		throw Exception("pipe error");
 	pid_t pid = fork();
@@ -46,6 +49,7 @@ CGIStub::CGIStub(const std::string& req, const std::string& cgipath): cgipath(cg
 
 			// cerr << "writing..." << body.size() << endl;
 			// jachoi::FileIO(".tmp_cgi").write(body);
+
 			dup2(rpipe[0], 0);
 			dup2(wpipe[1], 1);
 			execve(argv[0], argv, envp);
@@ -55,38 +59,35 @@ CGIStub::CGIStub(const std::string& req, const std::string& cgipath): cgipath(cg
 		default: // 부모 프로세스
 		{
 			char bufs[1000000] = {0};
-			std::string body =  r.header["Transfer-Encoding"] == "chunked" ?
-				ChunkParser(r.body).getData() : r.body;
-			result.append("HTTP/1.1 200 OK\r\n");
-			result.append("Content-Type: text/html; charset=utf-8\r\n");
+			// const std::string& body =  r.header["Transfer-Encoding"] == "chunked" ?
+			// 	ChunkParser(const_cast<std::string&>(r.body)).getData() : r.body;
+			ChunkParser chunk(r.body);
 			int rdbytes = -1;
-			int wrbytes = 0;
+			size_t wrbytes = 0;
 			while (true)
 			{
-				if (wrbytes == body.size())
+				if (wrbytes == r.body.size())
 					break;
-				if (wrbytes + 30000 < body.size())
-					wrbytes += write(rpipe[1], body.c_str() + wrbytes, 30000);
-				else if (body.size() - wrbytes > 0)
-					wrbytes += write(rpipe[1], body.c_str() + wrbytes, body.size() - wrbytes);
+				if (wrbytes + 60000 < r.body.size())
+					wrbytes += write(rpipe[1], r.body.c_str() + wrbytes, 60000);
+				else if (r.body.size() - wrbytes > 0)
+					wrbytes += write(rpipe[1], r.body.c_str() + wrbytes, r.body.size() - wrbytes);
 				rdbytes = read(wpipe[0], bufs, sizeof(bufs));
-				result.append(std::string(bufs, 0, rdbytes));
+				result.append(bufs, rdbytes);
 			}
-			cout << result.size() << endl;
-			cout << result.substr(0, 100) << endl;
 			close(wpipe[0]);
 			close(wpipe[1]);
 			close(rpipe[0]);
 			close(rpipe[1]);
 			kill(pid, 9);
-			cout << "result : " <<  result.substr(0, 100) << endl;
+			// cout << "result : " <<  result.substr(0, 100) << endl;
 		}
 	}
 }
 
-const std::string& CGIStub::getCGIResult()
+const std::string CGIStub::getCGIResult()
 {
-	return result;
+	return result.substr(result.find("\r\n\r\n") + 4);
 }
 
 CGIStub::~CGIStub()
