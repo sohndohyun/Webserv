@@ -15,8 +15,8 @@ WebServer::WebServer(ConfigParse &conf): conf(conf){}
 
 void WebServer::OnRecv(int fd, std::string const &str)
 {
-	reqStr.append(str);
-	RequestParser req(reqStr);
+	reqStr[fd] += str;
+	RequestParser req(reqStr[fd]);
 	if (req.needRecvMore())
 	{
 		return ;
@@ -28,11 +28,12 @@ void WebServer::OnRecv(int fd, std::string const &str)
 	}
 
 	std::cout << "-------request----------\n";
-	std::cout << reqStr.substr(0, 500) << std::endl;
+	std::cout << reqStr[fd].substr(0, 500) << std::endl;
 	std::cout << "===================\n";
 
 	request_process(fd, req);
-	reqStr.clear();
+	std::cout << "fd : " << fd << std::endl;
+	reqStr[fd].clear();
 	disconnect(fd);
 }
 

@@ -128,10 +128,7 @@ void AServer::run(std::string ip, std::vector<int> ports)
 				int str_len;
 				std::string temp;
 				while ((str_len = recv(cl->fd, buf, BUFSIZ, 0)) > 0)
-				{
 					temp.append(buf, str_len);
-					usleep(13000);
-				}
 				if (temp.size())
 					this->OnRecv(cl->fd, temp);
 			}

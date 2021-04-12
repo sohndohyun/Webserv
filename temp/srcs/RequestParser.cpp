@@ -2,6 +2,7 @@
 #include "Utils.hpp"
 #include <iostream>
 #include <algorithm>
+#include <stdio.h>
 
 RequestParser::RequestParser(const std::string& req)
 {
@@ -114,11 +115,11 @@ bool RequestParser::needRecvMore() const
 			std::map<std::string, std::string>::const_iterator hit;
 			hit = header.find("Transfer-Encoding");
 			if (hit != header.end() && hit->second.find("chunked") != std::string::npos)
-				return false;
-			else
 			{
+				if (body[body.length() - 5] != '0')
+					return true;
 				hit = header.find("Content-Length");
-				if (hit != header.end() && atoi(hit->second.c_str()) > static_cast<int>(body.size()))
+				if (hit != header.end() && std::stoi(hit->second) > static_cast<int>(body.size()))
 					return true;
 			}
 			break;

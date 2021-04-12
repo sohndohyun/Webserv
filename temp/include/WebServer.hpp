@@ -1,6 +1,7 @@
 #ifndef webserver_hpp
 #define webserver_hpp
 #include "AServer.hpp"
+#include <map>
 
 class RequestParser;
 class ConfigParse;
@@ -9,7 +10,7 @@ class Response;
 class WebServer : public AServer
 {
 private:
-	std::string reqStr;
+	std::map<int, std::string> reqStr;
 	ConfigParse &conf;
 
 public:
