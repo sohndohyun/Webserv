@@ -12,6 +12,6 @@ private:
 	std::string cgipath;
 public:
 	CGIStub(const std::string& path, const std::string& cgipath = DEFAULT_CGIPATH);
-	const std::string& getCGIResult();
+	const std::string getCGIResult();
 	~CGIStub();
 };

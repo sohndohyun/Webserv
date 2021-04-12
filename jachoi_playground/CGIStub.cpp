@@ -55,12 +55,10 @@ CGIStub::CGIStub(const std::string& req, const std::string& cgipath): cgipath(cg
 		default: // 부모 프로세스
 		{
 			char bufs[1000000] = {0};
-			std::string body =  r.header["Transfer-Encoding"] == "chunked" ?
+			const std::string& body =  r.header["Transfer-Encoding"] == "chunked" ?
 				ChunkParser(r.body).getData() : r.body;
-			result.append("HTTP/1.1 200 OK\r\n");
-			result.append("Content-Type: text/html; charset=utf-8\r\n");
 			int rdbytes = -1;
-			int wrbytes = 0;
+			size_t wrbytes = 0;
 			while (true)
 			{
 				if (wrbytes == body.size())
@@ -70,23 +68,21 @@ CGIStub::CGIStub(const std::string& req, const std::string& cgipath): cgipath(cg
 				else if (body.size() - wrbytes > 0)
 					wrbytes += write(rpipe[1], body.c_str() + wrbytes, body.size() - wrbytes);
 				rdbytes = read(wpipe[0], bufs, sizeof(bufs));
-				result.append(std::string(bufs, 0, rdbytes));
+				result.append(bufs, rdbytes);
 			}
-			cout << result.size() << endl;
-			cout << result.substr(0, 100) << endl;
 			close(wpipe[0]);
 			close(wpipe[1]);
 			close(rpipe[0]);
 			close(rpipe[1]);
 			kill(pid, 9);
-			cout << "result : " <<  result.substr(0, 100) << endl;
+			// cout << "result : " <<  result.substr(0, 100) << endl;
 		}
 	}
 }
 
-const std::string& CGIStub::getCGIResult()
+const std::string CGIStub::getCGIResult()
 {
-	return result;
+	return result.substr(result.find("\r\n\r\n") + 4);
 }
 
 CGIStub::~CGIStub()

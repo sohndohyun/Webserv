@@ -7,9 +7,12 @@ public:
 	int fd;
 	bool willDie;
 	bool done;
-	int writtenCount;
+	size_t writtenCount;
+	bool sent;
+	int lasttime;
 	std::string response;
 	std::string request;
 public:
 	Client(int fd);
+	bool isTimeout();
 };
