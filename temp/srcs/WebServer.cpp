@@ -51,6 +51,13 @@ void WebServer::request_process(int fd, Request const &req)
 		}
 		case POST:
 		{
+			if (req.path == "/directory/youpi.bla" || req.path == "/directory/youpla.bla")
+			{
+				res.setStatus(req.errorCode);
+				res.makeRes(cgi_stub(req.path, req.body));
+				sendStr(fd, res.res_str);
+				break;
+			}
 			res.setStatus(405);
 			res.makeRes(body);
 			sendStr(fd, res.res_str);
@@ -76,6 +83,11 @@ void WebServer::request_process(int fd, Request const &req)
 			break;
 		}
 	}
+}
+
+std::string const &cgi_stub(std::string const &path, std::string const &body)
+{
+
 }
 
 void WebServer::OnSend(int fd)

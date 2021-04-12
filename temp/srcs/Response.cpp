@@ -122,5 +122,5 @@ void Response::makeRes(std::string body, bool chunked)
 		res_str += "Transfer-Encoding: chunked\r\n";
 	res_str += "\r\n";
 	if (header["status_code"] != "201" && header["status_code"] != "204")
-		res_str += body;
+		res_str.append(body);
 }

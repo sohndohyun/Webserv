@@ -17,4 +17,5 @@ public:
 	virtual ~WebServer();
 
 	void request_process(int fd, Request const &req);
+	std::string const &cgi_stub(std::string const &path, std::string const &body);
 };

@@ -4,13 +4,11 @@
 
 int main()
 {
-	using namespace std;
-
 	WebServer webServer;
 	try
 	{
 		ConfigParse conf;
-		webServer.run("0.0.0.0", vector<int>(1, conf.server->port));
+		webServer.run("0.0.0.0", std::vector<int>(1, conf.server->port));
 	} catch(const std::exception& e) {
 		std::cerr << e.what() << '\n';
 	}
