@@ -3,21 +3,29 @@
 
 #include <iostream>
 #include <string>
-class ConfigParse;
+#include "ConfigParse.hpp"
 class RequestParser;
 
 class ConfigCheck
 {
 private:
 	ConfigParse &conf;
+	std::string req_path;
+
+private:
+	std::string findLocation();
+	std::string getRootURL();
+	std::string makeAutoIdx(std::string path);
 
 public:
-	ConfigCheck(ConfigParse &conf);
+	ConfigCheck(ConfigParse &conf, std::string req_path);
 	~ConfigCheck();
 
-	std::string makeFilePath(std::string req_path);
-	std::string findPath(std::string req_path);
-	bool methodCheck(std::string method, std::string req_path);
+	std::string makeFilePath();
+	std::string findPath();
+	bool methodCheck(std::string method);
+	bool client_max_body_size_Check(int body_size);
+	std::string autoIdxCheck();
 };
 
 #endif

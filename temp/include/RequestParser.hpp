@@ -4,9 +4,9 @@
 enum MethodType
 {
 	GET,
-	HEAD, 
-	POST, 
-	PUT, 
+	HEAD,
+	POST,
+	PUT,
 	DELETE,
 	CONNECT,
 	OPTIONS,

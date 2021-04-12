@@ -17,6 +17,7 @@ public:
 		std::vector<std::string> method;
 		std::string	cgi;
 		bool		autoindex;
+		int	client_max_body_size;
 	}t_location;
 
 	typedef struct s_server
@@ -24,7 +25,6 @@ public:
 		int			port;
 		std::string	host;
 		std::string	name;
-		std::string	client_max_body_size;
 		std::string	error_root;
 		std::map<int, std::string> error_page;
 		t_location	loca;

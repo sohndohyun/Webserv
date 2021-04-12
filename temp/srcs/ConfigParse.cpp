@@ -29,6 +29,8 @@ ConfigParse::ConfigParse():
 			str = "";
 		}
 	}
+	if (str != "")
+		section_str += str;
 	if (section_str != "")
 		sectionParse(section_str);
 	close(configFD);
@@ -63,6 +65,8 @@ void ConfigParse::serverParse(std::vector<std::string> section)
 	std::string key;
 	std::string value;
 
+	server->loca.client_max_body_size = 0;
+
 	std::vector<std::string>::iterator iter;
 	for(iter = section.begin() + 1; iter != section.end(); iter++)
 	{
@@ -76,8 +80,6 @@ void ConfigParse::serverParse(std::vector<std::string> section)
 			server->host = value;
 		else if (key == "name")
 			server->name = value;
-		else if (key == "client_max_body_size")
-			server->client_max_body_size = value;
 		else if (key == "error_root")
 			server->error_root = value;
 		else if (key == "error_page")
@@ -111,6 +113,8 @@ void ConfigParse::serverParse(std::vector<std::string> section)
 			if (value == "on")
 				server->loca.autoindex = true;
 		}
+		else if (key == "client_max_body_size")
+			server->loca.client_max_body_size = std::stoi(value);
 		else
 			throw Exception("ConfigParse: Invalid key: " + key);
 	}
@@ -123,6 +127,8 @@ void ConfigParse::locationParse(std::vector<std::string> section)
 	std::string value;
 	t_location loca;
 	loca.autoindex = false;
+
+	loca.client_max_body_size = 0;
 
 	std::vector<std::string>::iterator iter;
 	for(iter = section.begin() + 1; iter != section.end(); iter++)
@@ -148,6 +154,8 @@ void ConfigParse::locationParse(std::vector<std::string> section)
 			if (value == "on")
 				loca.autoindex = true;
 		}
+		else if (key == "client_max_body_size")
+			loca.client_max_body_size = std::stoi(value);
 		else
 			throw Exception("ConfigParse: Invalid key: " + key);
 	}

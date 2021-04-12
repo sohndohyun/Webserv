@@ -1,6 +1,8 @@
 #include <string>
 #include <map>
 #include <algorithm>
+#include <sys/types.h>
+#include <dirent.h>
 #include "Utils.hpp"
 #include "Exception.hpp"
 
@@ -122,6 +124,12 @@ namespace jachoi
 		g_envp[key] = value;
 	}
 
+	void memcpy(char *dst, const char* src, size_t len)
+	{
+		for (size_t i = 0 ; i < len ; i++)
+			dst[i] = src[i];
+	}
+
 	char** get_envp()
 	{
 		char** ret = new char*[g_envp.size() + 1];
@@ -130,11 +138,28 @@ namespace jachoi
 		{
 			size_t sz = it->first.size() + it->second.size() + 1;
 			ret[i] = new char[sz + 1];
-			memcpy(ret[i], it->first.data(), it->first.size());
+			jachoi::memcpy(ret[i], it->first.data(), it->first.size());
 			ret[i][it->first.size()] = '=';
-			memcpy(&ret[i][it->first.size() + 1], it->second.data(), it->second.size());
+			jachoi::memcpy(&ret[i][it->first.size() + 1], it->second.data(), it->second.size());
 			ret[i][sz] = 0;
 		}
+		ret[i] = 0;
 		return ret;
+	}
+
+	std::vector<std::string> getDirNames(std::string path)
+	{
+		DIR *dir_info;
+		struct dirent *dir_entry;
+		std::vector<std::string> names;
+
+		dir_info = opendir(path.c_str());
+		if (NULL != dir_info)
+		{
+			while((dir_entry = readdir(dir_info)))
+				names.push_back(dir_entry->d_name);
+			closedir(dir_info);
+		}
+		return (names);
 	}
 }

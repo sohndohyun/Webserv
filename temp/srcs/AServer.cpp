@@ -10,6 +10,11 @@
 #include <iostream>
 #include "Utils.hpp"
 
+#ifdef BUFSIZ
+#undef BUFSIZ
+#endif
+#define BUFSIZ 65536
+
 AServer::ServerException::ServerException(std::string const &msg) throw() : msg(msg){}
 char const *AServer::ServerException::what() const throw()
 {
@@ -62,14 +67,13 @@ void AServer::run(std::string ip, std::vector<int> ports)
 			close(listenSocket);
 			throw AServer::ServerException("AServer: bind error");
 		}
-		if (listen(listenSocket, 5) == -1)
+		if (listen(listenSocket, 3000) == -1)
 		{
 			for (i = 0;i < listenSocks.size();i++)
 				close(listenSocks[i]);
 			close(listenSocket);
 			throw AServer::ServerException("AServer: listen error");
 		}
-
 		listenSocks.push_back(listenSocket);
 	}
 
@@ -90,7 +94,8 @@ void AServer::run(std::string ip, std::vector<int> ports)
 		}
 		int selRet = select(fdMax + 1, &rset, &wset, NULL, NULL);
 		if (selRet == -1)
-			throw AServer::ServerException("AServer: select error");
+			continue ;
+			//throw AServer::ServerException("AServer: select error");
 		else if (selRet == 0)
 			continue ;
 		for (size_t i = 0;i < listenSocks.size();i++)
@@ -120,23 +125,21 @@ void AServer::run(std::string ip, std::vector<int> ports)
 			if (FD_ISSET(cl->fd, &rset))
 			{
 				char buf[BUFSIZ];
-				int str_len = recv(cl->fd, buf, BUFSIZ, 0);
-				if (str_len <= 0)
-				{
-					OnDisconnect(cl->fd);
-					FD_CLR(cl->fd, &rset);
-					close(cl->fd);
-					delete cl;
-					it = clients.erase(it);
-					continue;
-				}
+				int str_len;
 				std::string temp;
-				temp.append(buf, str_len);
-				this->OnRecv(cl->fd, temp);
+				while ((str_len = recv(cl->fd, buf, BUFSIZ, 0)) > 0)
+				{
+					temp.append(buf, str_len);
+					usleep(13000);
+				}
+				if (temp.size())
+					this->OnRecv(cl->fd, temp);
 			}
 			else if (FD_ISSET(cl->fd, &wset))
 			{
-				int ret = send(cl->fd, cl->str.c_str(), cl->str.size(), 0);
+				int ret;
+				if (cl->str.size())
+				 	ret = send(cl->fd, cl->str.c_str(), cl->str.size(), 0);
 				if (ret <= 0)
 				{
 					OnDisconnect(cl->fd);
@@ -188,6 +191,8 @@ void AServer::disconnect(int fd)
 
 void AServer::sendStr(int fd, std::string const &str)
 {
+	if (str.size() == 0)
+		return ;
 	for (size_t i = 0;i < clients.size();i++)
 	{
 		if (clients[i]->fd == fd)
