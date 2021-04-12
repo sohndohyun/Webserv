@@ -40,7 +40,6 @@ void AServer::run(std::string ip, std::vector<int> ports)
 		throw AServer::ServerException("AServer: wrong ip");
 	std::vector<int> listenSocks;
 	int fdMax = -1;
-	signal(SIGPIPE, SIG_IGN);
 	for (size_t i = 0;i < ports.size();i++)
 	{
 		int listenSocket = socket(AF_INET, SOCK_STREAM, 0);

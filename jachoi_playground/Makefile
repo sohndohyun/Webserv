@@ -17,5 +17,6 @@ clean:
 
 fclean: clean
 	rm -f $(NAME)
-
+test:
+	c++ main.cc ChunkParser.cpp Utils.cpp Exception.cpp -o Webserv -g
 re: fclean all

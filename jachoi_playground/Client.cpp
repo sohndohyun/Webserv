@@ -4,7 +4,7 @@
 
 using namespace std;
 
-Client::Client(int fd) : fd(fd), willDie(false),done(false), writtenCount(0)
+Client::Client(int fd) : fd(fd), willDie(false),done(false), writtenCount(0), sent(false)
 {
 	struct timeval tv;
 	gettimeofday(&tv, 0);

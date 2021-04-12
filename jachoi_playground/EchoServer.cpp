@@ -65,15 +65,15 @@ void EchoServer::OnRecv(Client& cl)
 			}
 			else if (req.pathparser->path == "/post_body")
 			{
-				size_t chunksz = ChunkParser(req.body).getData().size();
-				if (chunksz > 100)
+				ChunkParser chk(req.body);
+				if (req.body.size() > 100)
 				{
 					sendStr(cl, res.makeResFromText(413, "bad request"));
 					// disconnect(cl);
 				}
 				else
 				{
-					vector<char> v(chunksz, '1');
+					vector<char> v(req.body.size(), '1');
 					sendStr(cl, res.makeResFromText(200, std::string(v.begin(), v.end())));
 					// disconnect(cl);
 				}
@@ -92,7 +92,7 @@ void EchoServer::OnRecv(Client& cl)
 		case PUT:
 		{
 			ChunkParser chunk(req.body);
-			sendStr(cl, res.makeResFromText(200, chunk.getData()));
+			sendStr(cl, res.makeResFromText(200, req.body));
 			// disconnect(cl);
 			break;
 		}
