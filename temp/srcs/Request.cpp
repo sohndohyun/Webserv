@@ -16,14 +16,16 @@ void Request::init()
 	errorCode = 200;
 	path = "";
 	bodysize = 0;
+	input_size = 0;
 
-	leftStr = "";
-	body = "";
+	leftStr.clear();
+	body.clear();
 	header.clear();
 }
 
 void Request::add(std::string const &str)
 {
+	input_size += str.size();
 	leftStr.append(str);
 	if (!isHeaderMade)
 		parseHeader();

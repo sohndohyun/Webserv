@@ -1,4 +1,5 @@
 #include <string>
+#include <map>
 #include <algorithm>
 #ifdef htons 
 #undef htons
@@ -18,4 +19,6 @@ namespace jachoi
 	std::string makeGMT(const char *time_zone, time_t tv_sec);
 	int htoi(const std::string& num);
 	bool isHex(const std::string &num, size_t begin, size_t end);
+
+	char** mtostrarr(std::map<std::string, std::string> map_env);
 }

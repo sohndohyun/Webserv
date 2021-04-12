@@ -27,12 +27,14 @@ private:
 	bool isBodyMade;
 	int bodysize;
 
-	std::map<std::string, std::string> header;
 public:
+	std::map<std::string, std::string> header;
 	std::string body;
 	int errorCode;
 	std::string path;
 	std::string method;
+	
+	int input_size;
 	
 public:
 	Request();
