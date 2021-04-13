@@ -173,11 +173,19 @@ void Request::parseBody()
 					leftStr.clear();
 					break;
 				}
+				else if (leftStr.find("\r\n", end + 2) == std::string::npos)
+				{
+					body.append(leftStr.substr(tbegin, blockSize));
+					leftStr = leftStr.substr(end + 2);
+					break;
+				}
 				begin = tbegin;
 				body.append(leftStr.substr(begin, end - begin));
 			}
 			begin = end + 2;
 			end = leftStr.find("\r\n", begin);
+			if (end == std::string::npos)
+				throw "dddd";
 		}
 
 	}
