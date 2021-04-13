@@ -34,8 +34,6 @@ public:
 	std::string path;
 	std::string method;
 	
-	int input_size;
-	
 public:
 	Request();
 	void init();

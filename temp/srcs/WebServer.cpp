@@ -7,11 +7,8 @@ void WebServer::OnRecv(int fd, std::string const &str)
 	requests[fd]->add(str);
 	if (requests[fd]->needRecv())
 		return;
-	std::cout << "recved " << requests[fd]->input_size << "\n";
-	std::cout << "sending...\n";
 	request_process(fd, *requests[fd]);
 	requests[fd]->init();
-	disconnect(fd);
 }
 
 void WebServer::request_process(int fd, Request &req)
@@ -61,6 +58,23 @@ void WebServer::request_process(int fd, Request &req)
 				res.makeRes(body);
 				sendStr(fd, res.res_str); 
 				std::cout << "result =====\n" <<  res.res_str.substr(0, 200) << "\n============\n";
+				break;
+			}
+			else if (req.path == "/post_body")
+			{
+				if (req.body.size() > 100)
+				{
+					res.setStatus(413);
+					res.makeRes("bad request");
+					sendStr(fd, res.res_str);
+				}
+				else
+				{
+					std::vector<char> v(req.body.size(), '1');
+					res.setStatus(200);
+					res.makeRes(std::string(v.begin(), v.end()));
+					sendStr(fd, res.res_str);
+				}
 				break;
 			}
 			res.setStatus(405);
@@ -143,7 +157,7 @@ void WebServer::cgi_stub(std::string const &path, Request &req, std::string &res
 
 void WebServer::OnSend(int fd)
 {
-	(void)&fd;
+	disconnect(fd);
 }
 
 void WebServer::OnAccept(int fd, int port)
