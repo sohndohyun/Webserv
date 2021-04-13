@@ -1,7 +1,10 @@
 #include <string>
 #include <map>
 #include <algorithm>
+#include <sys/types.h>
+#include <dirent.h>
 #include "Utils.hpp"
+#include "Exception.hpp"
 
 namespace jachoi
 {
@@ -135,5 +138,21 @@ namespace jachoi
 		}
 		ret[map_env.size()] = 0;
 		return ret;
+	}
+
+	std::vector<std::string> getDirNames(std::string path)
+	{
+		DIR *dir_info;
+		struct dirent *dir_entry;
+		std::vector<std::string> names;
+
+		dir_info = opendir(path.c_str());
+		if (NULL != dir_info)
+		{
+			while((dir_entry = readdir(dir_info)))
+				names.push_back(dir_entry->d_name);
+			closedir(dir_info);
+		}
+		return (names);
 	}
 }

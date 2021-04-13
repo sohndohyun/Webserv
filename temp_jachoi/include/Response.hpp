@@ -1,14 +1,9 @@
 #ifndef RESPONSE_HPP
 # define RESPONSE_HPP
 
-# include <iostream>
-# include <string>
-# include <sys/time.h>
-# include <time.h>
-# include <map>
-# include "Utils.hpp"
-# include "ConfigParse.hpp"
-# include "Exception.hpp"
+#include <iostream>
+#include <string>
+#include <map>
 
 class Response
 {
@@ -25,7 +20,8 @@ public:
 	virtual ~Response();
 
 	void setStatus(int status_code);
-	void setContentType(std::string content_type);
+	void setContentType(std::string content_path);
+	void setContentLocation(std::string path);
 	void makeRes(std::string body, bool chunked = false);
 };
 

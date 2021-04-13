@@ -10,6 +10,7 @@ SRCS =	srcs/Utils.cpp \
 		srcs/Response.cpp \
 		srcs/ConfigParse.cpp \
 		srcs/Request.cpp \
+		srcs/ConfigCheck.cpp \
 		main.cpp 
 
 OBJS = $(SRCS:.cpp=.o)

@@ -1,6 +1,7 @@
 #include <string>
 #include <map>
 #include <algorithm>
+#include <vector>
 #ifdef htons 
 #undef htons
 #endif
@@ -21,4 +22,5 @@ namespace jachoi
 	bool isHex(const std::string &num, size_t begin, size_t end);
 
 	char** mtostrarr(std::map<std::string, std::string> map_env);
+	std::vector<std::string> getDirNames(std::string path);
 }
