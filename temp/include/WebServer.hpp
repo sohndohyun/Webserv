@@ -16,5 +16,6 @@ public:
 	virtual void OnDisconnect(int fd);
 	virtual ~WebServer();
 
-	void request_process(int fd, Request const &req);
+	void request_process(int fd, Request &req);
+	void cgi_stub(std::string const &path, Request &req, std::string &result);
 };

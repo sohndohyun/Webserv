@@ -99,6 +99,8 @@ void Response::setContentType(std::string content_path)
 		header["Content-Type"] = "text/javascript";
 	else if (type == "jpeg" || type == "jpg")
 		header["Content-Type"] = "image/jpeg";
+	else if (type == "bla")
+		header["Content-Type"] = "text/html; charset=utf-8";
 	else
 		header["Content-Type"] = "text/plain";
 
@@ -122,5 +124,5 @@ void Response::makeRes(std::string body, bool chunked)
 		res_str += "Transfer-Encoding: chunked\r\n";
 	res_str += "\r\n";
 	if (header["status_code"] != "201" && header["status_code"] != "204")
-		res_str += body;
+		res_str.append(body);
 }

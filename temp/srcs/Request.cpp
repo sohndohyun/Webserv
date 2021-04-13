@@ -17,8 +17,8 @@ void Request::init()
 	path = "";
 	bodysize = 0;
 
-	leftStr = "";
-	body = "";
+	leftStr.clear();
+	body.clear();
 	header.clear();
 }
 
@@ -115,10 +115,6 @@ void Request::parseHeader()
 			{
 				isHeaderMade = true;
 
-				std::cout << "-------header----------\n";
-				std::cout << leftStr << std::endl;
-				std::cout << "=======================\n";
-
 				leftStr = leftStr.substr(begin + 2);
 				isChunk = false;
 				std::map<std::string, std::string>::const_iterator hit = header.find("Transfer-Encoding");
@@ -164,9 +160,15 @@ void Request::parseBody()
 			{
 				size_t tbegin = end + 2;
 				end = tbegin + blockSize;
-				if (leftStr.size() - tbegin < blockSize)
+				if (leftStr.size() - tbegin < blockSize + 2)
 				{
 					leftStr = leftStr.substr(begin);
+					break;
+				}
+				else if (leftStr.size() - tbegin == blockSize + 2)
+				{
+					body.append(leftStr.substr(tbegin, blockSize));
+					leftStr.clear();
 					break;
 				}
 				begin = tbegin;

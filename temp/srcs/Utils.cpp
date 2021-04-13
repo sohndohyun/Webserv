@@ -113,4 +113,27 @@ namespace jachoi
 		}
 		return true;
 	}
+
+	void memcpy(char *dst, const char* src, size_t len)
+	{
+		for (size_t i = 0 ; i < len ; i++)
+			dst[i] = src[i];
+	}
+
+	char** mtostrarr(std::map<std::string, std::string> map_env)
+	{
+		char** ret = new char*[map_env.size() + 1];
+		size_t i = 0;
+		for (std::map<std::string, std::string>::iterator it = map_env.begin(); it != map_env.end() ; it++, i++)
+		{
+			size_t sz = it->first.size() + it->second.size() + 1;
+			ret[i] = new char[sz + 1];
+			memcpy(ret[i], it->first.data(), it->first.size());
+			ret[i][it->first.size()] = '=';
+			memcpy(&ret[i][it->first.size() + 1], it->second.data(), it->second.size());
+			ret[i][sz] = 0;
+		}
+		ret[map_env.size()] = 0;
+		return ret;
+	}
 }
