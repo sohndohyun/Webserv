@@ -1,6 +1,17 @@
 #include "WebServer.hpp"
 #include "Response.hpp"
 #include <iostream>
+#include "ConfigParse.hpp"
+#include "FileIO.hpp"
+#include "ConfigCheck.hpp"
+#include "Exception.hpp"
+#include "Utils.hpp"
+#include <iostream>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+WebServer::WebServer(ConfigParse &conf): conf(conf){}
 
 void WebServer::OnRecv(int fd, std::string const &str)
 {
@@ -13,95 +24,33 @@ void WebServer::OnRecv(int fd, std::string const &str)
 
 void WebServer::request_process(int fd, Request &req)
 {
-	Response res("webserv");
-	std::string body = "<html>\r\n<body>\r\n<h1>Hello, World!</h1>\r\n</body>\r\n</html>";
-	std::string req_str = "GET / HTTP/1.1\r\n";
-	res.setContentType("text.html");
+	Response res(conf.server->name);
 	switch (req.methodType())
 	{
-		case GET: // fallthrought
+		case GET:
 		{
-			if (req.path == "/directory/oulalala")
-			{
-				res.setStatus(404);
-				res.makeRes("hello");
-				sendStr(fd, res.res_str) ;
-				return;
-			}
-			if (req.path == "/directory/nop/other.pouac")
-			{
-				res.setStatus(404);
-				res.makeRes("hello");
-				sendStr(fd, res.res_str);
-				return;
-			}
-			if (req.path == "/directory/Yeah")
-			{
-				res.setStatus(404);
-				res.makeRes("hello");
-				sendStr(fd, res.res_str);
-				return;
-			}
-			res.setStatus(200);
-			res.makeRes(body);
-			sendStr(fd, res.res_str);
+			methodGET(res, req.path);
 			break;
 		}
 		case POST:
 		{
-			if (req.path == "/directory/youpi.bla" || req.path == "/directory/youpla.bla")
-			{
-				res.setStatus(req.errorCode);
-				res.setContentType(req.path);
-				body.clear();
-				cgi_stub("./cgi_tester", req, body);
-				res.makeRes(body);
-				sendStr(fd, res.res_str); 
-				std::cout << "result =====\n" <<  res.res_str.substr(0, 200) << "\n============\n";
-				break;
-			}
-			else if (req.path == "/post_body")
-			{
-				if (req.body.size() > 100)
-				{
-					res.setStatus(413);
-					res.makeRes("bad request");
-					sendStr(fd, res.res_str);
-				}
-				else
-				{
-					std::vector<char> v(req.body.size(), '1');
-					res.setStatus(200);
-					res.makeRes(std::string(v.begin(), v.end()));
-					sendStr(fd, res.res_str);
-				}
-				break;
-			}
-			res.setStatus(405);
-			res.makeRes(body);
-			sendStr(fd, res.res_str);
+			methodPOST(res, req);
 			break;
 		}
 		case HEAD:
 		{
-			res.setStatus(405);
-			res.makeRes(body);
-			sendStr(fd, res.res_str);
+			methodHEAD(res, req.path);
 			break;
 		}
 		case PUT:
 		{
-			res.setStatus(200);
-			res.makeRes(req.body);
-			sendStr(fd, res.res_str);
+			methodPUT(res, req);
 			break;
 		}
 		default:
-		{
-			std::cout << "not code yet\n";
 			break;
-		}
 	}
+	sendStr(fd, res.res_str);
 }
 
 void WebServer::cgi_stub(std::string const &path, Request &req, std::string &result)
@@ -179,4 +128,145 @@ WebServer::~WebServer()
 	for(;it != requests.end();it++)
 		delete it->second;
 	requests.clear();
+}
+
+
+
+
+void WebServer::methodGET(Response &res, std::string req_path)
+{
+	ConfigCheck cfg_check(conf, req_path);
+	std::string body = "";
+	std::string path = cfg_check.makeFilePath();
+	struct stat sb;
+
+	res.setContentType(path);
+	if (cfg_check.methodCheck("GET") == false)
+	{
+		path = conf.server->error_root + conf.server->error_page[405];
+		res.setStatus(405);
+		res.setContentType(path);
+		jachoi::FileIO(path).read(body);
+	}
+	else if (path == "")
+	{
+		path = conf.server->error_root + conf.server->error_page[404];
+		res.setStatus(404);
+		res.setContentType(path);
+		jachoi::FileIO(path).read(body);
+	}
+	else
+	{
+		res.setStatus(200);
+		if (stat(cfg_check.findPath().c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
+		{
+			body = cfg_check.autoIdxCheck();
+			if (body == "")
+				jachoi::FileIO(path).read(body);	
+		}
+		else
+			jachoi::FileIO(path).read(body);
+	}
+	res.makeRes(body);
+}
+
+void WebServer::methodHEAD(Response &res, std::string req_path)
+{
+	ConfigCheck cfg_check(conf, req_path);
+	std::string body;
+	std::string path = cfg_check.makeFilePath();
+
+	res.setContentType(path);
+	if (path == "")
+	{
+		path = conf.server->error_root + conf.server->error_page[404];
+		res.setStatus(404);
+		res.setContentType(path);
+		jachoi::FileIO(path).read(body);
+	}
+	else if (cfg_check.methodCheck("HEAD") == false)
+	{
+		path = conf.server->error_root + conf.server->error_page[405];
+		res.setStatus(405);
+		res.setContentType(path);
+		jachoi::FileIO(path).read(body);
+	}
+	else
+	{
+		res.setStatus(200);
+		body = "";
+	}
+	res.makeRes(body);
+}
+
+void WebServer::methodPUT(Response &res, Request &req)
+{
+	ConfigCheck cfg_check(conf, req.path);
+	std::string body;
+	std::string path = cfg_check.findPath();
+	struct stat sb;
+	int stat_rtn = stat(path.c_str(), &sb);
+
+	res.setContentType(path);
+	if (cfg_check.methodCheck("PUT") == false)
+	{
+		path = conf.server->error_root + conf.server->error_page[405];
+		res.setStatus(405);
+		res.setContentType(path);
+		jachoi::FileIO(path).read(body);
+	}
+	else if (stat_rtn == -1)
+	{
+		jachoi::FileIO(path).write(req.body);
+		res.setStatus(200);
+		body = req.body;
+	}
+	else if (stat_rtn == 0 && S_ISREG(sb.st_mode))
+	{
+		jachoi::FileIO(path).append(req.body);
+		res.setStatus(200);
+		jachoi::FileIO(path).read(body);
+	}
+	res.makeRes(body);
+}
+
+void WebServer::methodPOST(Response &res, Request &req)
+{
+	ConfigCheck cfg_check(conf, req.path);
+	std::string body;
+	std::string path = cfg_check.findPath();
+	struct stat sb;
+	int stat_rtn = stat(path.c_str(), &sb);
+
+	res.setContentType(path);
+	if (cfg_check.methodCheck("POST") == false)
+	{
+		path = conf.server->error_root + conf.server->error_page[405];
+		res.setStatus(405);
+		res.setContentType(path);
+	}
+	else if (cfg_check.client_max_body_size_Check(req.body.size()) == false)
+	{
+		path = conf.server->error_root + conf.server->error_page[413];
+		res.setStatus(413);
+		res.setContentType(path);
+	}
+	else if (path.substr(path.rfind('.') + 1) == "bla")
+	{
+		body.clear();
+		cgi_stub("./cgi_tester", req, body);
+		jachoi::FileIO(path).write(body);
+		res.setStatus(200);
+		res.makeRes(body);
+		return;
+	}
+	else
+	{
+		if (stat_rtn == 0 && S_ISDIR(sb.st_mode))
+			path += "post_file";
+		jachoi::FileIO(path).write(req.body);
+		res.setStatus(200);
+		res.setContentLocation(req.path);
+	}
+	res.makeRes(req.body);
 }

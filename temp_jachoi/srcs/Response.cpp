@@ -1,8 +1,12 @@
 #include "Response.hpp"
+#include <sys/time.h>
+#include <time.h>
+#include "Utils.hpp"
+#include "ConfigParse.hpp"
+#include "Exception.hpp"
 
 Response::Response(std::string server_name)
 {
-	header["http"] = "1.1";
 	header.insert(make_pair("Server", server_name));
 }
 
@@ -111,18 +115,26 @@ void Response::setContentType(std::string content_path)
 	//	header["Content-Type"] = "bmp";
 }
 
+void Response::setContentLocation(std::string path)
+{
+	header["Content-Location"] = path;
+}
+
 void Response::makeRes(std::string body, bool chunked)
 {
 	setDate();
-	res_str = "HTTP/" + header["http"] + " " + header["status_code"] + " " + header["status_msg"] + "\r\n"
-				+ "Date: " + header["Date"] + "\r\n"
-				+ "Server: " + header["Server"] + "\r\n"
-				+ "Content-Type: " + header["Content-Type"] + "\r\n";
+	res_str = "HTTP/1.1 " + header["status_code"] + " " + header["status_msg"] + "\r\n";
+	std::map<std::string, std::string>::iterator iter = header.begin();
+	for(; iter != header.end(); iter++)
+	{
+		if (iter->first != "status_code" && iter->first != "status_msg")
+			res_str += iter->first + ": " + iter->second + "\r\n";
+	}
 	if (chunked == false)
 		res_str += "Content-Length: " + std::to_string(body.length()) + "\r\n";
 	else
 		res_str += "Transfer-Encoding: chunked\r\n";
 	res_str += "\r\n";
 	if (header["status_code"] != "201" && header["status_code"] != "204")
-		res_str.append(body);
+		res_str += body;
 }

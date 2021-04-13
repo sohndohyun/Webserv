@@ -1,32 +1,27 @@
 #include "FileIO.hpp"
 #include "Exception.hpp"
+#include <string>
 
 jachoi::FileIO::FileIO(const std::string& path):_path(path){}
 
-std::string jachoi::FileIO::read(size_t n)
+bool jachoi::FileIO::read(std::string& str)
 {
-	char buf[1];
-	bool eof = false;
 	int fd = open(_path.c_str(), O_RDONLY);
-	if (fd == -1)
-		throw Exception("FileIO: File not exist");
-	_buf.clear();
-	for (size_t i = 0 ; i < n  && !eof; i++)
+	char buf[1000000];
+
+	while (true)
 	{
-		switch (::read(fd, buf, 1))
-		{
-		case 1:
-			_buf.push_back(buf[0]);
+		int ret = ::read(fd, buf, 999999);
+		if (ret == -1)
+			return false;
+		else if (ret == 0)
 			break;
-		case -1:
-			throw Exception("FileIO: Read failed");
-		case 0:
-			eof = true;
-			break;
-		}
+		buf[ret] = 0;
+		str.append(buf);
 	}
 	close(fd);
-	return std::string(_buf.begin(), _buf.end());
+	// return std::string(_buf.begin(), _buf.end());
+	return true;
 }
 
 bool jachoi::FileIO::write(const std::string& content)
