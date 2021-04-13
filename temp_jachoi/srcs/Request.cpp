@@ -141,11 +141,13 @@ void Request::parseBody()
 	{
 		size_t begin = 0;
 		size_t end = leftStr.find("\r\n");
+		// size_t blockSize;
+		// while (jachoi::htoi(leftStr.substr(begin, end - begin)))
 		while (jachoi::isHex(leftStr, begin, end))
 		{
-			int blockSize = jachoi::htoi(leftStr.substr(begin, end - begin));
-			
-			if (blockSize == 0)
+			size_t blockSize = jachoi::htoi(leftStr.substr(begin, end - begin));
+
+			if (blockSize == 0) // 찐막
 			{
 				if (leftStr.substr(end) == "\r\n\r\n")
 				{
@@ -177,12 +179,13 @@ void Request::parseBody()
 			begin = end + 2;
 			end = leftStr.find("\r\n", begin);
 		}
+
 	}
 	else
 	{
 		body.append(leftStr);
 		leftStr.clear();
-		if (body.size() == bodysize)
+		if (body.size() == static_cast<size_t>(bodysize))
 			isBodyMade = true;
 	}
 }

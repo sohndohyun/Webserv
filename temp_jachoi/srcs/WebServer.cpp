@@ -25,7 +25,7 @@ void WebServer::request_process(int fd, Request &req)
 			{
 				res.setStatus(404);
 				res.makeRes("hello");
-				sendStr(fd, res.res_str);
+				sendStr(fd, res.res_str) ;
 				return;
 			}
 			if (req.path == "/directory/nop/other.pouac")
@@ -157,6 +157,7 @@ void WebServer::cgi_stub(std::string const &path, Request &req, std::string &res
 
 void WebServer::OnSend(int fd)
 {
+	(void)fd;
 	// disconnect(fd);
 }
 

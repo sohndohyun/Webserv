@@ -15,7 +15,7 @@
 #define BUFSIZ 65535
 #endif
 
-AServer::Client::Client(int fd, std::string const &str) : fd(fd), str(str), sent(false) ,willDie(false)
+AServer::Client::Client(int fd, std::string const &str) : fd(fd),  willDie(false) ,sent(false), str(str)
 {
 	struct timeval tv;
 	gettimeofday(&tv, 0);
