@@ -120,10 +120,10 @@ namespace jachoi
 	int stoi(const std::string& str)
 	{
 		int result = 0;
-		for (std::reverse_iterator<std::string::const_iterator> rit = str.rbegin(); rit != str.rend(); rit++)
+		for (std::string::const_iterator it = str.begin(); it != str.end(); it++)
 		{
-			result += *rit - '0';
 			result *= 10;
+			result += *it - '0';
 		}
 		return result;
 	}

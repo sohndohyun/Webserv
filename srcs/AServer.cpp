@@ -161,8 +161,6 @@ void AServer::run(std::string ip, std::vector<int> ports)
 					cl->str = cl->str.substr(ret);
 				else
 				{
-					std::cout << "===========================================\n";
-					std::cout << cl->str.substr(0, 200) << std::endl;
 					cl->str.clear();
 					this->OnSend(cl->fd);
 				}
