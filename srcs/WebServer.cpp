@@ -48,6 +48,7 @@ void WebServer::request_process(int fd, Request &req)
 			break;
 		}
 		default:
+			methodInvalid(res, req);
 			break;
 	}
 	sendStr(fd, res.res_str);
@@ -61,7 +62,7 @@ void WebServer::cgi_stub(std::string const &path, Request &req, std::string &res
 	write(fdin, req.body.c_str(), req.body.size());
 	std::cout << "req body size : " << req.body.size() << "\n";
 	lseek(fdin, 0, SEEK_SET);
-	
+
 	pid_t pid = fork();
 	if (pid < 0)
 		throw Exception("cgi: fork error");
@@ -83,7 +84,7 @@ void WebServer::cgi_stub(std::string const &path, Request &req, std::string &res
 		std::cerr << "execve error : " << errno << std::endl;
 		exit(1);
 	}
-	
+
 	char buf[1000000];
 
 	waitpid(pid, NULL, 0);
@@ -162,7 +163,7 @@ void WebServer::methodGET(Response &res, std::string req_path)
 		{
 			body = cfg_check.autoIdxCheck();
 			if (body == "")
-				jachoi::FileIO(path).read(body);	
+				jachoi::FileIO(path).read(body);
 		}
 		else
 			jachoi::FileIO(path).read(body);
@@ -269,4 +270,15 @@ void WebServer::methodPOST(Response &res, Request &req)
 		res.setContentLocation(req.path);
 	}
 	res.makeRes(req.body);
+}
+
+void WebServer::methodInvalid(Response &res, Request &req)
+{
+	(void)req;
+	std::string path = conf.server->error_root + conf.server->error_page[405];
+	std::string body;
+	res.setStatus(405);
+	res.setContentType(path);
+	jachoi::FileIO(path).read(body);
+	res.makeRes(body);
 }
