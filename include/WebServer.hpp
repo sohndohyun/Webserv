@@ -31,4 +31,5 @@ public:
 	void methodHEAD(Response &res, std::string req_path);
 	void methodPUT(Response &res, Request &req);
 	void methodPOST(Response &res, Request &req);
+	void methodInvalid(Response &res, Request &req);
 };
