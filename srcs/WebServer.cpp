@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 WebServer::WebServer(ConfigParse &conf): conf(conf){}
 
@@ -81,7 +82,6 @@ void WebServer::cgi_stub(std::string const &path, Request &req, std::string &res
 
 		char *const *nll = NULL;
 		execve(path.c_str(), nll, envp);
-		std::cerr << "execve error : " << errno << std::endl;
 		exit(1);
 	}
 
@@ -114,13 +114,18 @@ void WebServer::OnSend(int fd)
 void WebServer::OnAccept(int fd, int port)
 {
 	std::cout << fd << "(" << port << "): accepted!" << "\n";
-	requests.insert(std::pair<int, Request*>(fd, new Request));
+	requests.insert(std::make_pair(fd, new Request()));
 }
 
 void WebServer::OnDisconnect(int fd)
 {
 	std::cout << fd << ": disconnected!" << "\n";
-	requests.erase(requests.find(fd));
+	std::map<int, Request*>::iterator it = requests.find(fd);
+	if (it != requests.end())
+	{
+		delete it->second;
+		requests.erase(it);
+	}
 }
 
 WebServer::~WebServer()
@@ -248,6 +253,7 @@ void WebServer::methodPOST(Response &res, Request &req)
 	}
 	else if (cfg_check.client_max_body_size_Check(req.body.size()) == false)
 	{
+		std::cout << "error" << std::endl;
 		path = conf.server->error_root + conf.server->error_page[413];
 		res.setStatus(413);
 		res.setContentType(path);
@@ -255,7 +261,7 @@ void WebServer::methodPOST(Response &res, Request &req)
 	else if (path.substr(path.rfind('.') + 1) == "bla")
 	{
 		body.clear();
-		cgi_stub("./cgi_tester", req, body);
+		cgi_stub(CGI_PATH, req, body);
 		jachoi::FileIO(path).write(body);
 		res.setStatus(200);
 		res.makeRes(body);

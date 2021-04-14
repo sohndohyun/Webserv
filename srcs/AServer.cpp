@@ -10,11 +10,6 @@
 #include "Utils.hpp"
 #include "Exception.hpp"
 
-#ifdef BUFSIZ
-#undef BUFSIZ
-#define BUFSIZ 65535
-#endif
-
 AServer::Client::Client(int fd, std::string const &str) : fd(fd),  willDie(false) ,sent(false), str(str)
 {
 	struct timeval tv;

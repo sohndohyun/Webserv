@@ -5,7 +5,7 @@
 #include <dirent.h>
 #include "Utils.hpp"
 #include "Exception.hpp"
-
+#include <stack>
 namespace jachoi
 {
 	std::string ltrim(std::string s)
@@ -83,7 +83,7 @@ namespace jachoi
 		time_diff["PST"] = -7 * 60 * 60;
 
 		time_t gmt_time = tv_sec - time_diff[std::string(tm_zone)];
-		strptime(std::to_string(gmt_time).c_str(), "%s", &time);
+		strptime(to_string(gmt_time).c_str(), "%s", &time);
 		strftime(buf, sizeof(buf), "%a, %d %b %G %T GMT", &time);
 		return (buf);
 	}
@@ -117,6 +117,16 @@ namespace jachoi
 		return true;
 	}
 
+	int stoi(const std::string& str)
+	{
+		int result = 0;
+		for (std::string::const_iterator it = str.begin(); it != str.end(); it++)
+		{
+			result *= 10;
+			result += *it - '0';
+		}
+		return result;
+	}
 	void memcpy(char *dst, const char* src, size_t len)
 	{
 		for (size_t i = 0 ; i < len ; i++)
@@ -154,5 +164,30 @@ namespace jachoi
 			closedir(dir_info);
 		}
 		return (names);
+	}
+
+	std::string to_string(long l)
+	{
+		std::string s;
+		std::stack<char> stk;
+
+		if (l < 0)
+		{
+			s.append("-");
+			l *= -1;
+		}
+		while (l)
+		{
+			stk.push('0' + l % 10);
+			l /= 10;
+		}
+		if (stk.empty())
+			return "0";
+		while (stk.size())
+		{
+			s.append(&stk.top(), 1);
+			stk.pop();
+		}
+		return s;
 	}
 }

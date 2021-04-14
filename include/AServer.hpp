@@ -4,6 +4,12 @@
 #include <string>
 #include <exception>
 #include <vector>
+#ifdef BUFSIZ
+#undef BUFSIZ
+#define BUFSIZ 65535
+#else
+#define BUFSIZ 65535
+#endif 
 
 class AServer
 {

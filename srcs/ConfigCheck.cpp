@@ -29,7 +29,7 @@ std::string ConfigCheck::findLocation()
 
 std::string ConfigCheck::getRootURL()
 {
-	return ("http://localhost:" + std::to_string(conf.server->port));
+	return ("http://localhost:" + jachoi::to_string(conf.server->port));
 }
 
 

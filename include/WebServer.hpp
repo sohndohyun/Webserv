@@ -4,6 +4,12 @@
 #include "Request.hpp"
 #include <map>
 
+#ifdef __linux__
+#define CGI_PATH "./ubuntu_cgi_tester"
+#else
+#define CGI_PATH "./cgi_tester"
+#endif
+
 class ConfigParse;
 class Response;
 
