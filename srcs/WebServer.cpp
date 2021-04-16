@@ -213,27 +213,28 @@ void WebServer::methodPUT(Response &res, Request &req)
 	struct stat sb;
 	int stat_rtn = stat(path.c_str(), &sb);
 
-	res.setContentType(path);
 	if (cfg_check.methodCheck("PUT") == false)
 	{
 		path = conf.server->error_root + conf.server->error_page[405];
 		res.setStatus(405);
 		res.setContentType(path);
 		jachoi::FileIO(path).read(body);
+		res.makeRes(body);
+		return ;
 	}
 	else if (stat_rtn == -1)
 	{
 		jachoi::FileIO(path).write(req.body);
 		res.setStatus(200);
-		body = req.body;
+		res.setContentLocation(req.path);
 	}
 	else if (stat_rtn == 0 && S_ISREG(sb.st_mode))
 	{
 		jachoi::FileIO(path).append(req.body);
 		res.setStatus(200);
-		jachoi::FileIO(path).read(body);
+		res.setContentLocation(req.path);
 	}
-	res.makeRes(body);
+	res.makeRes("", true);
 }
 
 void WebServer::methodPOST(Response &res, Request &req)
@@ -250,22 +251,21 @@ void WebServer::methodPOST(Response &res, Request &req)
 		path = conf.server->error_root + conf.server->error_page[405];
 		res.setStatus(405);
 		res.setContentType(path);
+		jachoi::FileIO(path).read(body);
 	}
 	else if (cfg_check.client_max_body_size_Check(req.body.size()) == false)
 	{
-		std::cout << "error" << std::endl;
 		path = conf.server->error_root + conf.server->error_page[413];
 		res.setStatus(413);
 		res.setContentType(path);
+		jachoi::FileIO(path).read(body);
 	}
 	else if (path.substr(path.rfind('.') + 1) == "bla")
 	{
-		body.clear();
 		cgi_stub(CGI_PATH, req, body);
 		jachoi::FileIO(path).write(body);
 		res.setStatus(200);
-		res.makeRes(body);
-		return;
+		res.setContentLocation(req.path);
 	}
 	else
 	{
@@ -275,7 +275,7 @@ void WebServer::methodPOST(Response &res, Request &req)
 		res.setStatus(200);
 		res.setContentLocation(req.path);
 	}
-	res.makeRes(req.body);
+	res.makeRes(body);
 }
 
 void WebServer::methodInvalid(Response &res, Request &req)

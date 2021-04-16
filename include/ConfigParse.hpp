@@ -22,7 +22,7 @@ public:
 
 	typedef struct s_server
 	{
-		int			port;
+		std::vector<int> port;
 		std::string	host;
 		std::string	name;
 		std::string	error_root;

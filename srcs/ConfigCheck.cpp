@@ -2,7 +2,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-// #include "RequestParser.hpp"
 #include "Utils.hpp"
 #include <vector>
 #include <iostream>
@@ -29,7 +28,9 @@ std::string ConfigCheck::findLocation()
 
 std::string ConfigCheck::getRootURL()
 {
-	return ("http://localhost:" + jachoi::to_string(conf.server->port));
+	//수정필요
+	//conf.server->port[0]
+	return ("http://localhost:" + jachoi::to_string(conf.server->port[0]));
 }
 
 

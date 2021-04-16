@@ -115,7 +115,7 @@ void AServer::run(std::string ip, std::vector<int> ports)
 				this->OnAccept(clntSocket, ports[i]);
 			}
 		}
-		
+
 		for (std::vector<AServer::Client*>::iterator it = clients.begin(); it != clients.end();)
 		{
 			Client *cl = (*it);

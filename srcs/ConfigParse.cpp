@@ -76,7 +76,12 @@ void ConfigParse::serverParse(std::vector<std::string> section)
 		key = str.substr(0, findIdx);
 		value = str.substr(findIdx + 1, str.size() - findIdx);
 		if (key == "port")
-			server->port = jachoi::stoi(value);
+		{
+			std::vector<std::string> ports = splitString(value, ' ');
+			std::vector<std::string>::iterator ports_iter = ports.begin();
+			for(; ports_iter != ports.end(); ports_iter++)
+				server->port.push_back(jachoi::stoi(*ports_iter));
+		}
 		else if (key == "host")
 			server->host = value;
 		else if (key == "name")

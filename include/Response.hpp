@@ -22,7 +22,7 @@ public:
 	void setStatus(int status_code);
 	void setContentType(std::string content_path);
 	void setContentLocation(std::string path);
-	void makeRes(std::string body, bool chunked = false);
+	void makeRes(std::string body, bool isPUT = false, bool chunked = false);
 };
 
 #endif

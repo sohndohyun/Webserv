@@ -8,7 +8,7 @@ int main()
 	{
 		ConfigParse conf;
 		WebServer webServer(conf);
-		webServer.run("0.0.0.0", std::vector<int>(1, conf.server->port));
+		webServer.run("0.0.0.0", std::vector<int>(1, conf.server->port[0]));
 	} catch(const std::exception& e) {
 		std::cerr << e.what() << '\n';
 	}

@@ -107,12 +107,6 @@ void Response::setContentType(std::string content_path)
 		header["Content-Type"] = "text/html; charset=utf-8";
 	else
 		header["Content-Type"] = "text/plain";
-
-	//https://developer.mozilla.org/ko/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
-	//else if (type == "png")
-	//	header["Content-Type"] = "png";
-	//else if (type == "bmp")
-	//	header["Content-Type"] = "bmp";
 }
 
 void Response::setContentLocation(std::string path)
@@ -120,7 +114,7 @@ void Response::setContentLocation(std::string path)
 	header["Content-Location"] = path;
 }
 
-void Response::makeRes(std::string body, bool chunked)
+void Response::makeRes(std::string body, bool isPUT, bool chunked)
 {
 	setDate();
 	res_str = "HTTP/1.1 " + header["status_code"] + " " + header["status_msg"] + "\r\n";
@@ -132,7 +126,7 @@ void Response::makeRes(std::string body, bool chunked)
 	}
 	if (chunked == false)
 		res_str += "Content-Length: " + jachoi::to_string(body.length()) + "\r\n";
-	else
+	else if (isPUT == false)
 		res_str += "Transfer-Encoding: chunked\r\n";
 	res_str += "\r\n";
 	if (header["status_code"] != "201" && header["status_code"] != "204")
