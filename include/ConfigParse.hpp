@@ -9,6 +9,15 @@
 # define CONFIG_PATH "./config/config.ini"
 
 class ConfigParse{
+private:
+	void sectionParse(std::string str);
+	void serverParse(std::vector<std::string> section);
+	void locationParse(std::vector<std::string> section);
+	bool isMethod(std::string method);
+
+private:
+	int _confIdx;
+
 public:
 	typedef struct s_location
 	{
@@ -30,15 +39,13 @@ public:
 		t_location	loca;
 	}t_server;
 
-public:
-	std::map<std::string, t_location> loca_map;
-	t_server *server;
+	typedef struct s_conf
+	{
+		std::map<std::string, t_location> loca_map;
+		t_server server;
+	}t_conf;
 
-private:
-	void sectionParse(std::string str);
-	void serverParse(std::vector<std::string> section);
-	void locationParse(std::vector<std::string> section);
-	bool isMethod(std::string method);
+	std::vector<t_conf> conf;
 
 public:
 	ConfigParse();

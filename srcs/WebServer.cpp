@@ -1,7 +1,6 @@
 #include "WebServer.hpp"
 #include "Response.hpp"
 #include <iostream>
-#include "ConfigParse.hpp"
 #include "FileIO.hpp"
 #include "ConfigCheck.hpp"
 #include "Exception.hpp"
@@ -12,7 +11,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-WebServer::WebServer(ConfigParse &conf): conf(conf){}
+WebServer::WebServer(ConfigParse::t_conf &conf): conf(conf){}
 
 void WebServer::OnRecv(int fd, std::string const &str)
 {
@@ -29,7 +28,7 @@ void WebServer::request_process(int fd, Request &req)
 	for(std::map<std::string, std::string>::iterator iter = req.header.begin(); iter != req.header.end(); iter++)
 		std::cout << iter->first << ": " << iter->second << std::endl;
 	std::cout << "--------Req str---------" << std::endl;
-	Response res(conf.server->name);
+	Response res(conf.server.name);
 	switch (req.methodType())
 	{
 		case GET:
@@ -162,7 +161,7 @@ void WebServer::methodGET(Response &res, Request &req)
 	res.setContentType(path);
 	if (cfg_check.methodCheck("GET", allow_methods) == false)
 	{
-		path = conf.server->error_root + conf.server->error_page[405];
+		path = conf.server.error_root + conf.server.error_page[405];
 		res.setStatus(405);
 		res.setContentType(path);
 		res.setAllow(allow_methods);
@@ -171,7 +170,7 @@ void WebServer::methodGET(Response &res, Request &req)
 	}
 	else if (path == "")
 	{
-		path = conf.server->error_root + conf.server->error_page[404];
+		path = conf.server.error_root + conf.server.error_page[404];
 		res.setStatus(404);
 		res.setContentType(path);
 		res.setContentLocation(path);
@@ -214,7 +213,7 @@ void WebServer::methodHEAD(Response &res, Request &req)
 	res.setContentType(path);
 	if (path == "")
 	{
-		path = conf.server->error_root + conf.server->error_page[404];
+		path = conf.server.error_root + conf.server.error_page[404];
 		res.setStatus(404);
 		res.setContentType(path);
 		res.setContentLocation(path);
@@ -222,7 +221,7 @@ void WebServer::methodHEAD(Response &res, Request &req)
 	}
 	else if (cfg_check.methodCheck("HEAD", allow_methods) == false)
 	{
-		path = conf.server->error_root + conf.server->error_page[405];
+		path = conf.server.error_root + conf.server.error_page[405];
 		res.setStatus(405);
 		res.setContentType(path);
 		res.setAllow(allow_methods);
@@ -249,7 +248,7 @@ void WebServer::methodPUT(Response &res, Request &req)
 
 	if (cfg_check.methodCheck("PUT", allow_methods) == false)
 	{
-		path = conf.server->error_root + conf.server->error_page[405];
+		path = conf.server.error_root + conf.server.error_page[405];
 		res.setStatus(405);
 		res.setContentType(path);
 		res.setAllow(allow_methods);
@@ -287,7 +286,7 @@ void WebServer::methodPOST(Response &res, Request &req)
 	res.setContentType(path);
 	if (cfg_check.methodCheck("POST", allow_methods) == false)
 	{
-		path = conf.server->error_root + conf.server->error_page[405];
+		path = conf.server.error_root + conf.server.error_page[405];
 		res.setStatus(405);
 		res.setContentType(path);
 		res.setAllow(allow_methods);
@@ -296,7 +295,7 @@ void WebServer::methodPOST(Response &res, Request &req)
 	}
 	else if (cfg_check.client_max_body_size_Check(req.body.size()) == false)
 	{
-		path = conf.server->error_root + conf.server->error_page[413];
+		path = conf.server.error_root + conf.server.error_page[413];
 		res.setStatus(413);
 		res.setContentType(path);
 		res.setContentLocation(path);
@@ -333,7 +332,7 @@ void WebServer::methodInvalid(Response &res, Request &req)
 	std::vector<std::string> allow_methods;
 
 	cfg_check.methodCheck(req.method, allow_methods);
-	std::string path = conf.server->error_root + conf.server->error_page[503];
+	std::string path = conf.server.error_root + conf.server.error_page[503];
 	std::string body;
 	res.setStatus(503);
 	res.setContentType(path);

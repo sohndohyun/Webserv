@@ -4,8 +4,7 @@
 #include "Exception.hpp"
 #include "Utils.hpp"
 
-ConfigParse::ConfigParse():
-	server(NULL)
+ConfigParse::ConfigParse(): _confIdx(-1)
 {
 	int configFD = open(CONFIG_PATH, O_RDONLY);
 	char buf;
@@ -43,30 +42,31 @@ void ConfigParse::sectionParse(std::string str)
 
 	if (section[0][0] != '[' || section[0][section[0].size() - 1] != ']')
 		throw Exception("ConfigParse: Invalid section name");
+
 	if (section[0] == "[server]")
 	{
-		if (server)
-			throw Exception("ConfigParse: Already have a server section");
+		t_conf new_server;
+		conf.push_back(new_server);
+		_confIdx++;
 		serverParse(section);
 	}
 	else
 	{
-		if (loca_map.find(section[0]) != loca_map.end())
+		if (_confIdx == -1)
+			throw Exception("ConfigParse: Invalid config form: [server] must come first");
+		if (conf[_confIdx].loca_map.find(section[0]) != conf[_confIdx].loca_map.end())
 			throw Exception("ConfigParse: The same location section cannot exist");
 		locationParse(section);
 	}
-	if (!server)
-		throw Exception("ConfigParse: Doesn't exist server section");
 }
 
 void ConfigParse::serverParse(std::vector<std::string> section)
 {
-	server = new t_server;
 	int findIdx;
 	std::string key;
 	std::string value;
 
-	server->loca.client_max_body_size = 0;
+	conf[_confIdx].server.loca.client_max_body_size = 0;
 
 	std::vector<std::string>::iterator iter;
 	for(iter = section.begin() + 1; iter != section.end(); iter++)
@@ -80,14 +80,14 @@ void ConfigParse::serverParse(std::vector<std::string> section)
 			std::vector<std::string> ports = jachoi::splitString(value, ' ');
 			std::vector<std::string>::iterator ports_iter = ports.begin();
 			for(; ports_iter != ports.end(); ports_iter++)
-				server->port.push_back(jachoi::stoi(*ports_iter));
+				conf[_confIdx].server.port.push_back(jachoi::stoi(*ports_iter));
 		}
 		else if (key == "host")
-			server->host = value;
+			conf[_confIdx].server.host = value;
 		else if (key == "name")
-			server->name = value;
+			conf[_confIdx].server.name = value;
 		else if (key == "error_root")
-			server->error_root = value;
+			conf[_confIdx].server.error_root = value;
 		else if (key == "error_page")
 		{
 			std::vector<std::string> errors = jachoi::splitString(value, ' ');
@@ -98,36 +98,36 @@ void ConfigParse::serverParse(std::vector<std::string> section)
 				findIdx = errors_str.find(":");
 				key = errors_str.substr(0, findIdx);
 				value = errors_str.substr(findIdx + 1, errors_str.size() - findIdx);
-				server->error_page.insert(make_pair(jachoi::stoi(key), value));
+				conf[_confIdx].server.error_page.insert(make_pair(jachoi::stoi(key), value));
 			}
 		}
 		else if (key == "root")
 		{
 			if (value[value.length() - 1] != '/')
 				value += '/';
-			server->loca.root = value;
+			conf[_confIdx].server.loca.root = value;
 		}
 		else if (key == "index")
-			server->loca.index = jachoi::splitString(value, ' ');
+			conf[_confIdx].server.loca.index = jachoi::splitString(value, ' ');
 		else if (key == "method")
 		{
-			server->loca.method = jachoi::splitString(value, ' ');
-			for(std::vector<std::string>::iterator iter_method = server->loca.method.begin(); iter_method != server->loca.method.end(); iter_method++)
+			conf[_confIdx].server.loca.method = jachoi::splitString(value, ' ');
+			for(std::vector<std::string>::iterator iter_method = conf[_confIdx].server.loca.method.begin(); iter_method != conf[_confIdx].server.loca.method.end(); iter_method++)
 			{
 				if (isMethod(*iter_method) == false)
 					throw Exception("ConfigParse: Invalid method: " + value);
 			}
 		}
 		else if (key == "cgi")
-			server->loca.cgi = value;
+			conf[_confIdx].server.loca.cgi = value;
 		else if (key == "autoindex")
 		{
-			server->loca.autoindex = false;
+			conf[_confIdx].server.loca.autoindex = false;
 			if (value == "on")
-				server->loca.autoindex = true;
+				conf[_confIdx].server.loca.autoindex = true;
 		}
 		else if (key == "client_max_body_size")
-			server->loca.client_max_body_size = jachoi::stoi(value);
+			conf[_confIdx].server.loca.client_max_body_size = jachoi::stoi(value);
 		else
 			throw Exception("ConfigParse: Invalid key: " + key);
 	}
@@ -179,7 +179,7 @@ void ConfigParse::locationParse(std::vector<std::string> section)
 		else
 			throw Exception("ConfigParse: Invalid key: " + key);
 	}
-	loca_map.insert(make_pair(section[0].substr(1, section[0].length() - 2), loca));
+	conf[_confIdx].loca_map.insert(make_pair(section[0].substr(1, section[0].length() - 2), loca));
 }
 
 bool ConfigParse::isMethod(std::string method)
@@ -197,6 +197,4 @@ bool ConfigParse::isMethod(std::string method)
 
 ConfigParse::~ConfigParse()
 {
-	if (server)
-		delete server;
 }

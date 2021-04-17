@@ -10,7 +10,7 @@
 #define CGI_PATH "./cgi_tester"
 #endif
 
-class ConfigParse;
+#include "ConfigParse.hpp"
 class Response;
 
 class WebServer : public AServer
@@ -19,10 +19,10 @@ private:
 	std::map<int, Request*> requests;
 
 	std::map<int, std::string> reqStr;
-	ConfigParse &conf;
+	ConfigParse::t_conf &conf;
 
 public:
-	WebServer(ConfigParse &conf);
+	WebServer(ConfigParse::t_conf &conf);
 
 	virtual void OnRecv(int fd, std::string const &str);
 	virtual void OnSend(int fd);

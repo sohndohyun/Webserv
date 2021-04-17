@@ -9,7 +9,7 @@ class RequestParser;
 class ConfigCheck
 {
 private:
-	ConfigParse &conf;
+	ConfigParse::t_conf &conf;
 	std::string &req_path;
 	std::string ori_reqpath;
 
@@ -20,7 +20,7 @@ private:
 	void isAcceptLanguage(std::string &content_path, std::string req_lang, int is_dir);
 
 public:
-	ConfigCheck(ConfigParse &conf, std::string &req_path);
+	ConfigCheck(ConfigParse::t_conf &conf, std::string &req_path);
 	~ConfigCheck();
 
 	std::string makeFilePath(std::string req_lang);

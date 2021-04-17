@@ -6,7 +6,7 @@
 #include <vector>
 #include <iostream>
 
-ConfigCheck::ConfigCheck(ConfigParse &conf, std::string &req_path): conf(conf), req_path(req_path), ori_reqpath(req_path) {}
+ConfigCheck::ConfigCheck(ConfigParse::t_conf &conf, std::string &req_path): conf(conf), req_path(req_path), ori_reqpath(req_path) {}
 
 ConfigCheck::~ConfigCheck() {}
 
@@ -29,8 +29,8 @@ std::string ConfigCheck::findLocation()
 std::string ConfigCheck::getRootURL()
 {
 	//수정필요
-	//conf.server->port[0]
-	return ("http://localhost:" + jachoi::to_string(conf.server->port[0]));
+	//conf.server.port[0]
+	return ("http://localhost:" + jachoi::to_string(conf.server.port[0]));
 }
 
 
@@ -71,9 +71,9 @@ std::string ConfigCheck::autoIdxCheck()
 	std::string path = findPath();
 	struct stat sb;
 
-	if (location == "/" || findPath().rfind('/') == conf.server->loca.root.rfind('/'))
+	if (location == "/" || findPath().rfind('/') == conf.server.loca.root.rfind('/'))
 	{
-		if (conf.server->loca.autoindex)
+		if (conf.server.loca.autoindex)
 			body += makeAutoIdx(path);
 	}
 	else if (location != "")
@@ -125,7 +125,7 @@ std::string ConfigCheck::makeFilePath(std::string req_lang)
 			temp = ori_reqpath.substr(location.length() + 1, ori_reqpath.length() - location.length());
 		else
 			temp = "";
-		path = conf.server->loca.root
+		path = conf.server.loca.root
 				+ conf.loca_map[location].root.substr(1, conf.loca_map[location].root.length() - 1)
 				+ temp;
 		if (stat(path.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
@@ -141,13 +141,13 @@ std::string ConfigCheck::makeFilePath(std::string req_lang)
 	else
 	{
 		temp = ori_reqpath.substr(1, ori_reqpath.length() - 1);
-		path = conf.server->loca.root + temp;
+		path = conf.server.loca.root + temp;
 		if (stat(path.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
 		{
 			is_dir = 1;
 			if (path[path.length() - 1] != '/')
 				path += '/';
-			path += conf.server->loca.index[0];
+			path += conf.server.loca.index[0];
 		}
 		if (stat(path.c_str(), &sb) == -1)
 			return ("");
@@ -168,14 +168,14 @@ std::string ConfigCheck::findPath()
 			temp = ori_reqpath.substr(location.length() + 1, ori_reqpath.length() - location.length());
 		else
 			temp = "";
-		path = conf.server->loca.root
+		path = conf.server.loca.root
 				+ conf.loca_map[location].root.substr(1, conf.loca_map[location].root.length() - 1)
 				+ temp;
 	}
 	else
 	{
 		temp = ori_reqpath.substr(1, ori_reqpath.length() - 1);
-		path = conf.server->loca.root + temp;
+		path = conf.server.loca.root + temp;
 	}
 	return (path);
 }
@@ -184,14 +184,14 @@ bool ConfigCheck::methodCheck(std::string method, std::vector<std::string> &allo
 {
 	std::string location = findLocation();
 
-	if (location == "/" || findPath().rfind('/') == conf.server->loca.root.rfind('/'))
+	if (location == "/" || findPath().rfind('/') == conf.server.loca.root.rfind('/'))
 	{
-		for(int i = 0; i < (int)conf.server->loca.method.size(); i++)
+		for(int i = 0; i < (int)conf.server.loca.method.size(); i++)
 		{
-			if (method == conf.server->loca.method[i])
+			if (method == conf.server.loca.method[i])
 				return (true);
 		}
-		allow_methods = conf.server->loca.method;
+		allow_methods = conf.server.loca.method;
 	}
 	else if (location != "")
 	{
@@ -209,10 +209,10 @@ bool ConfigCheck::client_max_body_size_Check(int body_size)
 {
 	std::string location = findLocation();
 
-	if (location == "/" || findPath().rfind('/') == conf.server->loca.root.rfind('/'))
+	if (location == "/" || findPath().rfind('/') == conf.server.loca.root.rfind('/'))
 	{
-		if (conf.server->loca.client_max_body_size > 0 &&
-			conf.server->loca.client_max_body_size < body_size)
+		if (conf.server.loca.client_max_body_size > 0 &&
+			conf.server.loca.client_max_body_size < body_size)
 			return (false);
 	}
 	else if (location != "")
@@ -228,10 +228,10 @@ bool ConfigCheck::cgiCheck()
 {
 	std::string location = findLocation();
 
-	if (location == "/" || findPath().rfind('/') == conf.server->loca.root.rfind('/'))
+	if (location == "/" || findPath().rfind('/') == conf.server.loca.root.rfind('/'))
 	{
 		if (ori_reqpath.rfind('.') != std::string::npos &&
-			ori_reqpath.substr(ori_reqpath.rfind('.')) == conf.server->loca.cgi)
+			ori_reqpath.substr(ori_reqpath.rfind('.')) == conf.server.loca.cgi)
 			return (true);
 	}
 	else if (location != "")
