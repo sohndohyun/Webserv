@@ -28,18 +28,36 @@ protected:
 		bool isTimeout();
 	};
 
+	class Workfile
+	{
+	private:
+		Workfile();
+	public:
+		Workfile(int, std::string const &);
+		int fd;
+		std::string str;
+	};
+
 private:
-	std::vector<Client*> clients;  
+	std::vector<Client*> clients;
+	std::vector<Workfile*> writeFiles;
+	std::vector<Workfile*> readFiles;
 
 public:
 	void run(std::string ip, std::vector<int> ports);
 	void sendStr(int fd, std::string const &str);
 	void disconnect(int fd);
 
+	void writeFile(int fd, std::string const &str);
+	void readFile(int fd);
+
 	virtual void OnRecv(int fd, std::string const &str) = 0;
 	virtual void OnSend(int fd) = 0;
 	virtual void OnAccept(int fd, int port) = 0;
 	virtual void OnDisconnect(int fd) = 0;
+
+	virtual void OnFileRead(int fd, std::string const &str) = 0;
+	virtual void OnFileWrite(int fd) = 0;
 };
 
 #endif

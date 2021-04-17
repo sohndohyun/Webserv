@@ -10,12 +10,13 @@
 #include "Utils.hpp"
 #include "Exception.hpp"
 
-AServer::Client::Client(int fd, std::string const &str) : fd(fd),  willDie(false) ,sent(false), str(str)
+AServer::Client::Client(int fd, std::string const &str) : fd(fd), willDie(false), sent(false), str(str)
 {
 	struct timeval tv;
 	gettimeofday(&tv, 0);
 	lasttime = tv.tv_sec;
 }
+AServer::Workfile::Workfile(int fd, std::string const &str) : fd(fd), str(str){}
 
 bool AServer::Client::isTimeout()
 {
@@ -78,9 +79,9 @@ void AServer::run(std::string ip, std::vector<int> ports)
 	fd_set rset, wset;
 	while (true)
 	{
+		//FD_SET///////////////////////
 		FD_ZERO(&rset);
 		FD_ZERO(&wset);
-
 		for (size_t i = 0;i < listenSocks.size();i++)
 			FD_SET(listenSocks[i], &rset);
 		for (size_t i = 0;i < clients.size();i++)
@@ -90,11 +91,21 @@ void AServer::run(std::string ip, std::vector<int> ports)
 			else
 				FD_SET(clients[i]->fd, &rset);
 		}
+		for (size_t i = 0;i < writeFiles.size();i++)
+			FD_SET(writeFiles[i]->fd, &wset);
+		for (size_t i = 0;i < readFiles.size();i++)
+			FD_SET(readFiles[i]->fd, &rset);
+		///////////////////////////////
+
+		//SELECT///////////////////////
 		int selRet = select(fdMax + 1, &rset, &wset, NULL, NULL);
 		if (selRet == -1)
 			throw Exception("AServer: select error");
 		else if (selRet == 0)
 			continue ;
+		///////////////////////////////
+
+		//ACCEPT///////////////////////
 		for (size_t i = 0;i < listenSocks.size();i++)
 		{
 			if (FD_ISSET(listenSocks[i], &rset))
@@ -115,7 +126,9 @@ void AServer::run(std::string ip, std::vector<int> ports)
 				this->OnAccept(clntSocket, ports[i]);
 			}
 		}
-		
+		///////////////////////////////
+
+		//SOCK_SR//////////////////////
 		for (std::vector<AServer::Client*>::iterator it = clients.begin(); it != clients.end();)
 		{
 			Client *cl = (*it);
@@ -163,10 +176,14 @@ void AServer::run(std::string ip, std::vector<int> ports)
 				{
 					cl->str.clear();
 					this->OnSend(cl->fd);
+					cl->sent = true;
 				}
 			}
 			++it;
 		}
+		///////////////////////////////
+
+		//CHECK_DISCONNECT/////////////
 		for (std::vector<AServer::Client*>::iterator it = clients.begin(); it != clients.end();)
 		{
 			Client *cl = (*it);
@@ -180,6 +197,61 @@ void AServer::run(std::string ip, std::vector<int> ports)
 			}
 			it++;
 		}
+		/////////////////////////////////
+
+		//FILE_RW////////////////////////
+		for (std::vector<AServer::Workfile*>::iterator it = writeFiles.begin(); it != writeFiles.end();)
+		{
+			Workfile *wf = *it;
+			if (FD_ISSET(wf->fd, &wset))
+			{
+				int ret = write(wf->fd, wf->str.c_str(), wf->str.size());
+				if (ret <= 0)
+				{
+					FD_CLR(wf->fd, &wset);
+					delete wf;
+					it = writeFiles.erase(it);
+					continue;
+				}
+				if (ret < static_cast<int>(wf->str.size()))
+					wf->str = wf->str.substr(ret);
+				else
+				{
+					this->OnFileWrite(wf->fd);
+					FD_CLR(wf->fd, &wset);
+					delete wf;
+					it = writeFiles.erase(it);
+				}
+			}
+			it++;
+		}
+		for (std::vector<AServer::Workfile*>::iterator it = readFiles.begin(); it != readFiles.end();)
+		{
+			Workfile *wf = *it;
+			if (FD_ISSET(wf->fd, &rset))
+			{
+				char buf[BUFSIZ];
+				int str_len = read(wf->fd, buf, BUFSIZ);
+				if (str_len < 0)
+				{
+					FD_CLR(wf->fd, &rset);
+					delete wf;
+					it = readFiles.erase(it);
+					continue;
+				}
+				if (str_len == 0)
+				{
+					OnFileRead(wf->fd, wf->str);
+					FD_CLR(wf->fd, &rset);
+					delete wf;
+					it = readFiles.erase(it);
+					continue;
+				}
+				wf->str.append(buf, str_len);
+			}
+			it++;
+		}
+		/////////////////////////////////
 	}
 	for (size_t i = 0;i < listenSocks.size();i++)
 		close(listenSocks[i]);
@@ -207,4 +279,24 @@ void AServer::sendStr(int fd, std::string const &str)
 			break;
 		}
 	}
+}
+
+void AServer::writeFile(int fd, std::string const &str)
+{
+	for (size_t i = 0;i < writeFiles.size();i++)
+	{
+		if (writeFiles[i]->fd == fd)
+			return;
+	}
+	writeFiles.push_back(new Workfile(fd, str));
+}
+
+void AServer::readFile(int fd)
+{
+	for (size_t i = 0;i < readFiles.size();i++)
+	{
+		if (readFiles[i]->fd == fd)
+			return;
+	}
+	readFiles.push_back(new Workfile(fd, ""));
 }

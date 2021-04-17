@@ -28,6 +28,10 @@ public:
 	virtual void OnSend(int fd);
 	virtual void OnAccept(int fd, int port);
 	virtual void OnDisconnect(int fd);
+
+	virtual void OnFileRead(int fd, std::string const &str);
+	virtual void OnFileWrite(int fd);
+
 	virtual ~WebServer();
 
 	void request_process(int fd, Request &req);

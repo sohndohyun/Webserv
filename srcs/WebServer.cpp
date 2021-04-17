@@ -128,6 +128,16 @@ void WebServer::OnDisconnect(int fd)
 	}
 }
 
+void WebServer::OnFileRead(int fd, std::string const &str)
+{
+	
+}
+
+void WebServer::OnFileWrite(int fd)
+{
+
+}
+
 WebServer::~WebServer()
 {
 	std::map<int, Request*>::iterator it = requests.begin();
@@ -135,9 +145,6 @@ WebServer::~WebServer()
 		delete it->second;
 	requests.clear();
 }
-
-
-
 
 void WebServer::methodGET(Response &res, std::string req_path)
 {
