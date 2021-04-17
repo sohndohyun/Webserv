@@ -39,7 +39,7 @@ ConfigParse::ConfigParse():
 
 void ConfigParse::sectionParse(std::string str)
 {
-	std::vector<std::string> section = splitString(str, '\n');
+	std::vector<std::string> section = jachoi::splitString(str, '\n');
 
 	if (section[0][0] != '[' || section[0][section[0].size() - 1] != ']')
 		throw Exception("ConfigParse: Invalid section name");
@@ -77,7 +77,7 @@ void ConfigParse::serverParse(std::vector<std::string> section)
 		value = str.substr(findIdx + 1, str.size() - findIdx);
 		if (key == "port")
 		{
-			std::vector<std::string> ports = splitString(value, ' ');
+			std::vector<std::string> ports = jachoi::splitString(value, ' ');
 			std::vector<std::string>::iterator ports_iter = ports.begin();
 			for(; ports_iter != ports.end(); ports_iter++)
 				server->port.push_back(jachoi::stoi(*ports_iter));
@@ -90,7 +90,7 @@ void ConfigParse::serverParse(std::vector<std::string> section)
 			server->error_root = value;
 		else if (key == "error_page")
 		{
-			std::vector<std::string> errors = splitString(value, ' ');
+			std::vector<std::string> errors = jachoi::splitString(value, ' ');
 			std::vector<std::string>::iterator errors_iter;
 			for(errors_iter = errors.begin(); errors_iter != errors.end(); errors_iter++)
 			{
@@ -108,9 +108,16 @@ void ConfigParse::serverParse(std::vector<std::string> section)
 			server->loca.root = value;
 		}
 		else if (key == "index")
-			server->loca.index = splitString(value, ' ');
+			server->loca.index = jachoi::splitString(value, ' ');
 		else if (key == "method")
-			server->loca.method = splitString(value, ' ');
+		{
+			server->loca.method = jachoi::splitString(value, ' ');
+			for(std::vector<std::string>::iterator iter_method = server->loca.method.begin(); iter_method != server->loca.method.end(); iter_method++)
+			{
+				if (isMethod(*iter_method) == false)
+					throw Exception("ConfigParse: Invalid method: " + value);
+			}
+		}
 		else if (key == "cgi")
 			server->loca.cgi = value;
 		else if (key == "autoindex")
@@ -150,9 +157,16 @@ void ConfigParse::locationParse(std::vector<std::string> section)
 			loca.root = value;
 		}
 		else if (key == "index")
-			loca.index = splitString(value, ' ');
+			loca.index = jachoi::splitString(value, ' ');
 		else if (key == "method")
-			loca.method = splitString(value, ' ');
+		{
+			loca.method = jachoi::splitString(value, ' ');
+			for(std::vector<std::string>::iterator iter_method = loca.method.begin(); iter_method != loca.method.end(); iter_method++)
+			{
+				if (isMethod(*iter_method) == false)
+					throw Exception("ConfigParse: Invalid method: " + value);
+			}
+		}
 		else if (key == "cgi")
 			loca.cgi = value;
 		else if (key == "autoindex")
@@ -168,44 +182,21 @@ void ConfigParse::locationParse(std::vector<std::string> section)
 	loca_map.insert(make_pair(section[0].substr(1, section[0].length() - 2), loca));
 }
 
+bool ConfigParse::isMethod(std::string method)
+{
+	const std::string methods[] = {
+		"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE"
+	};
+	for(int i = 0; i < 8; i++)
+	{
+		if (methods[i] == method)
+			return (true);
+	}
+	return (false);
+}
+
 ConfigParse::~ConfigParse()
 {
 	if (server)
 		delete server;
-}
-
-std::vector<std::string> ConfigParse::splitString(std::string str, char c)
-{
-	std::vector<std::string> rtn;
-	int start, end;
-	for(start = 0; str[start] == c && start < (int)str.length(); start++) ;
-	for(end = str.length() - 1; str[end] == c && end >= 0; end--) ;
-	str = str.substr(start, end - start + 1);
-
-	std::string tmp;
-	tmp += str[0];
-	for(int i = 1; i < (int)str.length(); i++)
-	{
-		if (str[i] == c && str[i - 1] == c)
-			continue ;
-		tmp += str[i];
-	}
-	str = tmp;
-
-	int count = 0;
-	for(int idx = 0; str[idx]; idx++)
-	{
-		if (str[idx] == c)
-			count++;
-	}
-	if (count != 0 || (count == 0 && str != ""))
-		count++;
-
-	for(int i = 0; i < count; i++)
-	{
-		int len = str.find(c);
-		rtn.push_back(str.substr(0, len));
-		str = str.substr(len + 1, str.size() - len);
-	}
-	return (rtn);
 }

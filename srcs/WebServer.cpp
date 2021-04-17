@@ -25,12 +25,16 @@ void WebServer::OnRecv(int fd, std::string const &str)
 
 void WebServer::request_process(int fd, Request &req)
 {
+	std::cout << "--------Req str---------" << std::endl;
+	for(std::map<std::string, std::string>::iterator iter = req.header.begin(); iter != req.header.end(); iter++)
+		std::cout << iter->first << ": " << iter->second << std::endl;
+	std::cout << "--------Req str---------" << std::endl;
 	Response res(conf.server->name);
 	switch (req.methodType())
 	{
 		case GET:
 		{
-			methodGET(res, req.path);
+			methodGET(res, req);
 			break;
 		}
 		case POST:
@@ -40,7 +44,7 @@ void WebServer::request_process(int fd, Request &req)
 		}
 		case HEAD:
 		{
-			methodHEAD(res, req.path);
+			methodHEAD(res, req);
 			break;
 		}
 		case PUT:
@@ -52,6 +56,9 @@ void WebServer::request_process(int fd, Request &req)
 			methodInvalid(res, req);
 			break;
 	}
+	std::cout << "--------response str---------" << std::endl;
+	std::cout << res.res_str.substr(0, 500) << std::endl;
+	std::cout << "--------response str---------" << std::endl;
 	sendStr(fd, res.res_str);
 }
 
@@ -139,19 +146,27 @@ WebServer::~WebServer()
 
 
 
-void WebServer::methodGET(Response &res, std::string req_path)
+void WebServer::methodGET(Response &res, Request &req)
 {
-	ConfigCheck cfg_check(conf, req_path);
+	ConfigCheck cfg_check(conf, req.path);
 	std::string body = "";
-	std::string path = cfg_check.makeFilePath();
+	std::string path;
 	struct stat sb;
+	std::vector<std::string> allow_methods;
+
+	if (req.header.find("Accept-Language") != req.header.end())
+		path = cfg_check.makeFilePath(req.header["Accept-Language"]);
+	else
+		path = cfg_check.makeFilePath("");
 
 	res.setContentType(path);
-	if (cfg_check.methodCheck("GET") == false)
+	if (cfg_check.methodCheck("GET", allow_methods) == false)
 	{
 		path = conf.server->error_root + conf.server->error_page[405];
 		res.setStatus(405);
 		res.setContentType(path);
+		res.setAllow(allow_methods);
+		res.setContentLocation(path);
 		jachoi::FileIO(path).read(body);
 	}
 	else if (path == "")
@@ -159,28 +174,42 @@ void WebServer::methodGET(Response &res, std::string req_path)
 		path = conf.server->error_root + conf.server->error_page[404];
 		res.setStatus(404);
 		res.setContentType(path);
+		res.setContentLocation(path);
 		jachoi::FileIO(path).read(body);
 	}
 	else
 	{
 		res.setStatus(200);
+		res.setContentLocation(req.path);
 		if (stat(cfg_check.findPath().c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
 		{
 			body = cfg_check.autoIdxCheck();
 			if (body == "")
+			{
 				jachoi::FileIO(path).read(body);
+				res.setLastModified(path);
+			}
 		}
 		else
+		{
 			jachoi::FileIO(path).read(body);
+			res.setLastModified(path);
+		}
 	}
 	res.makeRes(body);
 }
 
-void WebServer::methodHEAD(Response &res, std::string req_path)
+void WebServer::methodHEAD(Response &res, Request &req)
 {
-	ConfigCheck cfg_check(conf, req_path);
+	ConfigCheck cfg_check(conf, req.path);
 	std::string body;
-	std::string path = cfg_check.makeFilePath();
+	std::string path;
+	std::vector<std::string> allow_methods;
+
+	if (req.header.find("Accept-Language") != req.header.end())
+		path = cfg_check.makeFilePath(req.header["Accept-Language"]);
+	else
+		path = cfg_check.makeFilePath("");
 
 	res.setContentType(path);
 	if (path == "")
@@ -188,17 +217,21 @@ void WebServer::methodHEAD(Response &res, std::string req_path)
 		path = conf.server->error_root + conf.server->error_page[404];
 		res.setStatus(404);
 		res.setContentType(path);
+		res.setContentLocation(path);
 		jachoi::FileIO(path).read(body);
 	}
-	else if (cfg_check.methodCheck("HEAD") == false)
+	else if (cfg_check.methodCheck("HEAD", allow_methods) == false)
 	{
 		path = conf.server->error_root + conf.server->error_page[405];
 		res.setStatus(405);
 		res.setContentType(path);
+		res.setAllow(allow_methods);
+		res.setContentLocation(path);
 		jachoi::FileIO(path).read(body);
 	}
 	else
 	{
+		res.setContentLocation(req.path);
 		res.setStatus(200);
 		body = "";
 	}
@@ -212,12 +245,15 @@ void WebServer::methodPUT(Response &res, Request &req)
 	std::string path = cfg_check.findPath();
 	struct stat sb;
 	int stat_rtn = stat(path.c_str(), &sb);
+	std::vector<std::string> allow_methods;
 
-	if (cfg_check.methodCheck("PUT") == false)
+	if (cfg_check.methodCheck("PUT", allow_methods) == false)
 	{
 		path = conf.server->error_root + conf.server->error_page[405];
 		res.setStatus(405);
 		res.setContentType(path);
+		res.setAllow(allow_methods);
+		res.setContentLocation(path);
 		jachoi::FileIO(path).read(body);
 		res.makeRes(body);
 		return ;
@@ -225,14 +261,16 @@ void WebServer::methodPUT(Response &res, Request &req)
 	else if (stat_rtn == -1)
 	{
 		jachoi::FileIO(path).write(req.body);
-		res.setStatus(200);
-		res.setContentLocation(req.path);
+		res.setStatus(201);
+		res.setLocation(req.path);
+		res.setLastModified(path);
 	}
 	else if (stat_rtn == 0 && S_ISREG(sb.st_mode))
 	{
 		jachoi::FileIO(path).append(req.body);
 		res.setStatus(200);
 		res.setContentLocation(req.path);
+		res.setLastModified(path);
 	}
 	res.makeRes("", true);
 }
@@ -244,13 +282,16 @@ void WebServer::methodPOST(Response &res, Request &req)
 	std::string path = cfg_check.findPath();
 	struct stat sb;
 	int stat_rtn = stat(path.c_str(), &sb);
+	std::vector<std::string> allow_methods;
 
 	res.setContentType(path);
-	if (cfg_check.methodCheck("POST") == false)
+	if (cfg_check.methodCheck("POST", allow_methods) == false)
 	{
 		path = conf.server->error_root + conf.server->error_page[405];
 		res.setStatus(405);
 		res.setContentType(path);
+		res.setAllow(allow_methods);
+		res.setContentLocation(path);
 		jachoi::FileIO(path).read(body);
 	}
 	else if (cfg_check.client_max_body_size_Check(req.body.size()) == false)
@@ -258,33 +299,46 @@ void WebServer::methodPOST(Response &res, Request &req)
 		path = conf.server->error_root + conf.server->error_page[413];
 		res.setStatus(413);
 		res.setContentType(path);
+		res.setContentLocation(path);
 		jachoi::FileIO(path).read(body);
 	}
-	else if (path.substr(path.rfind('.') + 1) == "bla")
+	else if (cfg_check.cgiCheck())
 	{
 		cgi_stub(CGI_PATH, req, body);
 		jachoi::FileIO(path).write(body);
 		res.setStatus(200);
 		res.setContentLocation(req.path);
+		res.setLastModified(path);
 	}
 	else
 	{
 		if (stat_rtn == 0 && S_ISDIR(sb.st_mode))
+		{
 			path += "post_file";
+			if (req.path[req.path.length() - 1] != '/')
+				req.path += '/';
+			req.path += "post_file";
+		}
 		jachoi::FileIO(path).write(req.body);
 		res.setStatus(200);
 		res.setContentLocation(req.path);
+		res.setLastModified(path);
 	}
 	res.makeRes(body);
 }
 
 void WebServer::methodInvalid(Response &res, Request &req)
 {
-	(void)req;
-	std::string path = conf.server->error_root + conf.server->error_page[405];
+	ConfigCheck cfg_check(conf, req.path);
+	std::vector<std::string> allow_methods;
+
+	cfg_check.methodCheck(req.method, allow_methods);
+	std::string path = conf.server->error_root + conf.server->error_page[503];
 	std::string body;
-	res.setStatus(405);
+	res.setStatus(503);
 	res.setContentType(path);
+	res.setAllow(allow_methods);
+	res.setRetryAfter();
 	jachoi::FileIO(path).read(body);
 	res.makeRes(body);
 }

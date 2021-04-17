@@ -33,8 +33,8 @@ public:
 	void request_process(int fd, Request &req);
 	void cgi_stub(std::string const &path, Request &req, std::string &result);
 
-	void methodGET(Response &res, std::string req_path);
-	void methodHEAD(Response &res, std::string req_path);
+	void methodGET(Response &res, Request &req);
+	void methodHEAD(Response &res, Request &req);
 	void methodPUT(Response &res, Request &req);
 	void methodPOST(Response &res, Request &req);
 	void methodInvalid(Response &res, Request &req);

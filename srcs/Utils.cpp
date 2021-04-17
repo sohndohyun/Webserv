@@ -24,7 +24,7 @@ namespace jachoi
 	{
 		return ltrim(rtrim(s));
 	}
-	
+
 	void	*memset(void *s, int c, unsigned long n)
 	{
 		unsigned char	*ptr;
@@ -34,7 +34,7 @@ namespace jachoi
 			*ptr++ = c;
 		return (s);
 	}
-	
+
 	bool islittelendian()
 	{
 		int n = 1;
@@ -83,11 +83,11 @@ namespace jachoi
 		time_diff["PST"] = -7 * 60 * 60;
 
 		time_t gmt_time = tv_sec - time_diff[std::string(tm_zone)];
-		strptime(to_string(gmt_time).c_str(), "%s", &time);
+		strptime(jachoi::to_string(gmt_time).c_str(), "%s", &time);
 		strftime(buf, sizeof(buf), "%a, %d %b %G %T GMT", &time);
 		return (buf);
 	}
-	
+
 	int htoi(const std::string& num)
 	{
 		int ret = 0;
@@ -190,4 +190,41 @@ namespace jachoi
 		}
 		return s;
 	}
+
+	std::vector<std::string> splitString(std::string str, char c)
+	{
+		std::vector<std::string> rtn;
+		int start, end;
+		for(start = 0; str[start] == c && start < (int)str.length(); start++) ;
+		for(end = str.length() - 1; str[end] == c && end >= 0; end--) ;
+		str = str.substr(start, end - start + 1);
+
+		std::string tmp;
+		tmp += str[0];
+		for(int i = 1; i < (int)str.length(); i++)
+		{
+			if (str[i] == c && str[i - 1] == c)
+				continue ;
+			tmp += str[i];
+		}
+		str = tmp;
+
+		int count = 0;
+		for(int idx = 0; str[idx]; idx++)
+		{
+			if (str[idx] == c)
+				count++;
+		}
+		if (count != 0 || (count == 0 && str != ""))
+			count++;
+
+		for(int i = 0; i < count; i++)
+		{
+			int len = str.find(c);
+			rtn.push_back(str.substr(0, len));
+			str = str.substr(len + 1, str.size() - len);
+		}
+		return (rtn);
+	}
+
 }

@@ -38,7 +38,7 @@ private:
 	void sectionParse(std::string str);
 	void serverParse(std::vector<std::string> section);
 	void locationParse(std::vector<std::string> section);
-	std::vector<std::string> splitString(std::string str, char c);
+	bool isMethod(std::string method);
 
 public:
 	ConfigParse();

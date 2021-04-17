@@ -2,7 +2,7 @@
 #include <map>
 #include <algorithm>
 #include <vector>
-#ifdef htons 
+#ifdef htons
 #undef htons
 #endif
 #ifdef htonl
@@ -24,4 +24,7 @@ namespace jachoi
 	char** mtostrarr(std::map<std::string, std::string> map_env);
 	std::vector<std::string> getDirNames(std::string path);
 	int stoi(const std::string& str);
+
+	std::vector<std::string> splitString(std::string str, char c);
+
 }
