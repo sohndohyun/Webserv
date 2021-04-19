@@ -67,6 +67,7 @@ void ConfigParse::serverParse(std::vector<std::string> section)
 	std::string value;
 
 	conf[_confIdx].server.loca.client_max_body_size = 0;
+	conf[_confIdx].server.loca.auth_basic_user_file = "";
 
 	std::vector<std::string>::iterator iter;
 	for(iter = section.begin() + 1; iter != section.end(); iter++)
@@ -128,6 +129,10 @@ void ConfigParse::serverParse(std::vector<std::string> section)
 		}
 		else if (key == "client_max_body_size")
 			conf[_confIdx].server.loca.client_max_body_size = jachoi::stoi(value);
+		else if (key == "auth_basic")
+			conf[_confIdx].server.loca.auth_basic = value;
+		else if (key == "auth_basic_user_file")
+			conf[_confIdx].server.loca.auth_basic_user_file = value;
 		else
 			throw Exception("ConfigParse: Invalid key: " + key);
 	}
@@ -142,6 +147,7 @@ void ConfigParse::locationParse(std::vector<std::string> section)
 	loca.autoindex = false;
 
 	loca.client_max_body_size = 0;
+	loca.auth_basic_user_file = "";
 
 	std::vector<std::string>::iterator iter;
 	for(iter = section.begin() + 1; iter != section.end(); iter++)
@@ -176,6 +182,10 @@ void ConfigParse::locationParse(std::vector<std::string> section)
 		}
 		else if (key == "client_max_body_size")
 			loca.client_max_body_size = jachoi::stoi(value);
+		else if (key == "auth_basic")
+			loca.auth_basic = value;
+		else if (key == "auth_basic_user_file")
+			loca.auth_basic_user_file = value;
 		else
 			throw Exception("ConfigParse: Invalid key: " + key);
 	}

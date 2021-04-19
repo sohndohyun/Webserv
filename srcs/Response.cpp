@@ -156,6 +156,10 @@ void Response::setRetryAfter(void)
 	header["Retry-After"] = jachoi::makeGMT(time.tm_zone, curr.tv_sec);
 }
 
+void Response::setWWWAuthenticate(void)
+{
+	header["WWW-Authenticate"] = "Basic realm=\"Access to the staging site or folder.\"";
+}
 
 
 void Response::makeRes(std::string body, bool isPUT, bool chunked)

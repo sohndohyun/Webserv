@@ -26,6 +26,7 @@ public:
 	void setLocation(std::string req_path);
 	void setLastModified(std::string content_path);
 	void setRetryAfter(void);
+	void setWWWAuthenticate(void);
 
 
 	void makeRes(std::string body, bool isPUT = false, bool chunked = false);

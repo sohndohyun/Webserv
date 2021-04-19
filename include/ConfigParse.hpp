@@ -27,6 +27,8 @@ public:
 		std::string	cgi;
 		bool		autoindex;
 		int	client_max_body_size;
+		std::string auth_basic;
+		std::string auth_basic_user_file;
 	}t_location;
 
 	typedef struct s_server

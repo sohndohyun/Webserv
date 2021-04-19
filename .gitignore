@@ -17,3 +17,4 @@
 !ubuntu_tester
 !post_file
 test.cpp
+!.htpasswd

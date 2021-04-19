@@ -37,5 +37,7 @@ public:
 	void methodHEAD(Response &res, Request &req);
 	void methodPUT(Response &res, Request &req);
 	void methodPOST(Response &res, Request &req);
-	void methodInvalid(Response &res, Request &req);
+
+private:
+	void errorRes(Response &res, int errorCode, std::vector<std::string> allow_methods = std::vector<std::string>());
 };

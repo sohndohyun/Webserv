@@ -26,5 +26,5 @@ namespace jachoi
 	int stoi(const std::string& str);
 
 	std::vector<std::string> splitString(std::string str, char c);
-
+	int base64Decode(std::string str, int numBytes, std::string &dst);
 }

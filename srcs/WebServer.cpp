@@ -24,11 +24,14 @@ void WebServer::OnRecv(int fd, std::string const &str)
 
 void WebServer::request_process(int fd, Request &req)
 {
-	std::cout << "--------Req str---------" << std::endl;
-	for(std::map<std::string, std::string>::iterator iter = req.header.begin(); iter != req.header.end(); iter++)
-		std::cout << iter->first << ": " << iter->second << std::endl;
-	std::cout << "--------Req str---------" << std::endl;
 	Response res(conf.server.name);
+	if (req.errorCode != 200)
+	{
+		errorRes(res, req.errorCode);
+		sendStr(fd, res.res_str);
+		return ;
+	}
+
 	switch (req.methodType())
 	{
 		case GET:
@@ -52,12 +55,12 @@ void WebServer::request_process(int fd, Request &req)
 			break;
 		}
 		default:
-			methodInvalid(res, req);
+			errorRes(res, 503);
 			break;
 	}
-	std::cout << "--------response str---------" << std::endl;
-	std::cout << res.res_str.substr(0, 500) << std::endl;
-	std::cout << "--------response str---------" << std::endl;
+	//std::cout << "--------response str---------" << std::endl;
+	//std::cout << res.res_str << std::endl;
+	//std::cout << "--------response str---------" << std::endl;
 	sendStr(fd, res.res_str);
 }
 
@@ -148,36 +151,23 @@ WebServer::~WebServer()
 void WebServer::methodGET(Response &res, Request &req)
 {
 	ConfigCheck cfg_check(conf, req.path);
-	std::string body = "";
-	std::string path;
-	struct stat sb;
 	std::vector<std::string> allow_methods;
+	std::string body = "";
+	struct stat sb;
 
-	if (req.header.find("Accept-Language") != req.header.end())
-		path = cfg_check.makeFilePath(req.header["Accept-Language"]);
-	else
-		path = cfg_check.makeFilePath("");
+	int is_dir = 0;
+	std::string path = cfg_check.makeFilePath(is_dir);
+	req.isAcceptLanguage(path, is_dir);
 
-	res.setContentType(path);
-	if (cfg_check.methodCheck("GET", allow_methods) == false)
-	{
-		path = conf.server.error_root + conf.server.error_page[405];
-		res.setStatus(405);
-		res.setContentType(path);
-		res.setAllow(allow_methods);
-		res.setContentLocation(path);
-		jachoi::FileIO(path).read(body);
-	}
+	if (cfg_check.AuthorizationCheck(req.header["Authorization"]) == false)
+		errorRes(res, 401);
 	else if (path == "")
-	{
-		path = conf.server.error_root + conf.server.error_page[404];
-		res.setStatus(404);
-		res.setContentType(path);
-		res.setContentLocation(path);
-		jachoi::FileIO(path).read(body);
-	}
+		errorRes(res, 404);
+	else if (cfg_check.methodCheck("GET", allow_methods) == false)
+		errorRes(res, 405, allow_methods);
 	else
 	{
+		res.setContentType(path);
 		res.setStatus(200);
 		res.setContentLocation(req.path);
 		if (stat(cfg_check.findPath().c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
@@ -194,47 +184,32 @@ void WebServer::methodGET(Response &res, Request &req)
 			jachoi::FileIO(path).read(body);
 			res.setLastModified(path);
 		}
+		res.makeRes(body);
 	}
-	res.makeRes(body);
 }
 
 void WebServer::methodHEAD(Response &res, Request &req)
 {
 	ConfigCheck cfg_check(conf, req.path);
-	std::string body;
-	std::string path;
 	std::vector<std::string> allow_methods;
 
-	if (req.header.find("Accept-Language") != req.header.end())
-		path = cfg_check.makeFilePath(req.header["Accept-Language"]);
-	else
-		path = cfg_check.makeFilePath("");
+	int is_dir = 0;
+	std::string path = cfg_check.makeFilePath(is_dir);
+	req.isAcceptLanguage(path, is_dir);
 
-	res.setContentType(path);
-	if (path == "")
-	{
-		path = conf.server.error_root + conf.server.error_page[404];
-		res.setStatus(404);
-		res.setContentType(path);
-		res.setContentLocation(path);
-		jachoi::FileIO(path).read(body);
-	}
+	if (cfg_check.AuthorizationCheck(req.header["Authorization"]) == false)
+		errorRes(res, 401);
+	else if (path == "")
+		errorRes(res, 404);
 	else if (cfg_check.methodCheck("HEAD", allow_methods) == false)
-	{
-		path = conf.server.error_root + conf.server.error_page[405];
-		res.setStatus(405);
-		res.setContentType(path);
-		res.setAllow(allow_methods);
-		res.setContentLocation(path);
-		jachoi::FileIO(path).read(body);
-	}
+		errorRes(res, 405, allow_methods);
 	else
 	{
+		res.setContentType(path);
 		res.setContentLocation(req.path);
 		res.setStatus(200);
-		body = "";
+		res.makeRes("");
 	}
-	res.makeRes(body);
 }
 
 void WebServer::methodPUT(Response &res, Request &req)
@@ -246,32 +221,27 @@ void WebServer::methodPUT(Response &res, Request &req)
 	int stat_rtn = stat(path.c_str(), &sb);
 	std::vector<std::string> allow_methods;
 
-	if (cfg_check.methodCheck("PUT", allow_methods) == false)
+	if (cfg_check.AuthorizationCheck(req.header["Authorization"]) == false)
+		errorRes(res, 401);
+	else if (cfg_check.methodCheck("PUT", allow_methods) == false)
+		errorRes(res, 405, allow_methods);
+	else
 	{
-		path = conf.server.error_root + conf.server.error_page[405];
-		res.setStatus(405);
-		res.setContentType(path);
-		res.setAllow(allow_methods);
-		res.setContentLocation(path);
-		jachoi::FileIO(path).read(body);
-		res.makeRes(body);
-		return ;
-	}
-	else if (stat_rtn == -1)
-	{
-		jachoi::FileIO(path).write(req.body);
-		res.setStatus(201);
-		res.setLocation(req.path);
+		if (stat_rtn == -1)
+		{
+			jachoi::FileIO(path).write(req.body);
+			res.setStatus(201);
+			res.setLocation(req.path);
+		}
+		else if (stat_rtn == 0 && S_ISREG(sb.st_mode))
+		{
+			jachoi::FileIO(path).append(req.body);
+			res.setStatus(200);
+			res.setContentLocation(req.path);
+		}
 		res.setLastModified(path);
+		res.makeRes("", true);
 	}
-	else if (stat_rtn == 0 && S_ISREG(sb.st_mode))
-	{
-		jachoi::FileIO(path).append(req.body);
-		res.setStatus(200);
-		res.setContentLocation(req.path);
-		res.setLastModified(path);
-	}
-	res.makeRes("", true);
 }
 
 void WebServer::methodPOST(Response &res, Request &req)
@@ -283,35 +253,17 @@ void WebServer::methodPOST(Response &res, Request &req)
 	int stat_rtn = stat(path.c_str(), &sb);
 	std::vector<std::string> allow_methods;
 
-	res.setContentType(path);
-	if (cfg_check.methodCheck("POST", allow_methods) == false)
-	{
-		path = conf.server.error_root + conf.server.error_page[405];
-		res.setStatus(405);
-		res.setContentType(path);
-		res.setAllow(allow_methods);
-		res.setContentLocation(path);
-		jachoi::FileIO(path).read(body);
-	}
+	if (cfg_check.AuthorizationCheck(req.header["Authorization"]) == false)
+		errorRes(res, 401);
+	else if (cfg_check.methodCheck("POST", allow_methods) == false)
+		errorRes(res, 405, allow_methods);
 	else if (cfg_check.client_max_body_size_Check(req.body.size()) == false)
-	{
-		path = conf.server.error_root + conf.server.error_page[413];
-		res.setStatus(413);
-		res.setContentType(path);
-		res.setContentLocation(path);
-		jachoi::FileIO(path).read(body);
-	}
-	else if (cfg_check.cgiCheck())
-	{
-		cgi_stub(CGI_PATH, req, body);
-		jachoi::FileIO(path).write(body);
-		res.setStatus(200);
-		res.setContentLocation(req.path);
-		res.setLastModified(path);
-	}
+		errorRes(res, 413);
 	else
 	{
-		if (stat_rtn == 0 && S_ISDIR(sb.st_mode))
+		if (cfg_check.cgiCheck())
+			cgi_stub(CGI_PATH, req, body);
+		else if (stat_rtn == 0 && S_ISDIR(sb.st_mode))
 		{
 			path += "post_file";
 			if (req.path[req.path.length() - 1] != '/')
@@ -319,25 +271,39 @@ void WebServer::methodPOST(Response &res, Request &req)
 			req.path += "post_file";
 		}
 		jachoi::FileIO(path).write(req.body);
+		res.setContentType(path);
 		res.setStatus(200);
 		res.setContentLocation(req.path);
 		res.setLastModified(path);
+		res.makeRes(body);
 	}
-	res.makeRes(body);
 }
 
-void WebServer::methodInvalid(Response &res, Request &req)
+void WebServer::errorRes(Response &res, int errorCode, std::vector<std::string> allow_methods)
 {
-	ConfigCheck cfg_check(conf, req.path);
-	std::vector<std::string> allow_methods;
-
-	cfg_check.methodCheck(req.method, allow_methods);
-	std::string path = conf.server.error_root + conf.server.error_page[503];
 	std::string body;
-	res.setStatus(503);
-	res.setContentType(path);
-	res.setAllow(allow_methods);
-	res.setRetryAfter();
+	std::string path = conf.server.error_root + conf.server.error_page[errorCode];
+
 	jachoi::FileIO(path).read(body);
+	res.setStatus(errorCode);
+	res.setContentType(path);
+	switch (errorCode)
+	{
+		case 401:
+		{
+			res.setWWWAuthenticate();
+			break;
+		}
+		case 405:
+		{
+			res.setAllow(allow_methods);
+			break;
+		}
+		case 503:
+		{
+			res.setRetryAfter();
+			break;
+		}
+	}
 	res.makeRes(body);
 }
