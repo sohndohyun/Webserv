@@ -59,7 +59,7 @@ void WebServer::request_process(int fd, Request &req)
 			break;
 	}
 	//std::cout << "--------response str---------" << std::endl;
-	//std::cout << res.res_str << std::endl;
+	//std::cout << res.res_str.substr(0, 500) << std::endl;
 	//std::cout << "--------response str---------" << std::endl;
 	sendStr(fd, res.res_str);
 }
@@ -249,8 +249,8 @@ void WebServer::methodPOST(Response &res, Request &req)
 	ConfigCheck cfg_check(conf, req.path);
 	std::string body;
 	std::string path = cfg_check.findPath();
-	struct stat sb;
-	int stat_rtn = stat(path.c_str(), &sb);
+	//struct stat sb;
+	//int stat_rtn = stat(path.c_str(), &sb);
 	std::vector<std::string> allow_methods;
 
 	if (cfg_check.AuthorizationCheck(req.header["Authorization"]) == false)
@@ -263,13 +263,13 @@ void WebServer::methodPOST(Response &res, Request &req)
 	{
 		if (cfg_check.cgiCheck())
 			cgi_stub(CGI_PATH, req, body);
-		else if (stat_rtn == 0 && S_ISDIR(sb.st_mode))
-		{
-			path += "post_file";
-			if (req.path[req.path.length() - 1] != '/')
-				req.path += '/';
-			req.path += "post_file";
-		}
+		//else if (stat_rtn == 0 && S_ISDIR(sb.st_mode))
+		//{
+		//	path += "post_body";
+		//	if (req.path[req.path.length() - 1] != '/')
+		//		req.path += '/';
+		//	req.path += "post_body";
+		//}
 		jachoi::FileIO(path).write(req.body);
 		res.setContentType(path);
 		res.setStatus(200);

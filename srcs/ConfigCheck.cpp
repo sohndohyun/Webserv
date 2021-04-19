@@ -140,11 +140,12 @@ std::string ConfigCheck::findPath()
 	{
 		if (location.length() < req_path.length())
 			temp = req_path.substr(location.length() + 1, req_path.length() - location.length());
+		else if (conf.loca_map[location].root == "./")
+			temp = location.substr(1, location.length() - 1);
 		else
 			temp = "";
-		path = conf.server.loca.root
-				+ conf.loca_map[location].root.substr(1, conf.loca_map[location].root.length() - 1)
-				+ temp;
+		int temp_len = conf.loca_map[location].root.find('/');
+		path = conf.server.loca.root + conf.loca_map[location].root.substr(temp_len + 1, conf.loca_map[location].root.length() - (temp_len + 1)) + temp;
 	}
 	else
 	{
@@ -167,13 +168,14 @@ bool ConfigCheck::methodCheck(std::string method, std::vector<std::string> &allo
 		}
 		allow_methods = conf.server.loca.method;
 	}
-	else if (location != "")
+	if (location != "" && location != "/")
 	{
 		for(int i = 0; i < (int)conf.loca_map[location].method.size(); i++)
 		{
 			if (method == conf.loca_map[location].method[i])
 				return (true);
 		}
+		allow_methods.clear();
 		allow_methods = conf.loca_map[location].method;
 	}
 	return (false);
@@ -189,7 +191,7 @@ bool ConfigCheck::client_max_body_size_Check(int body_size)
 			conf.server.loca.client_max_body_size < body_size)
 			return (false);
 	}
-	else if (location != "")
+	if (location != "" && location != "/")
 	{
 		if (conf.loca_map[location].client_max_body_size > 0 &&
 			conf.loca_map[location].client_max_body_size < body_size)
@@ -208,7 +210,7 @@ bool ConfigCheck::cgiCheck()
 			req_path.substr(req_path.rfind('.')) == conf.server.loca.cgi)
 			return (true);
 	}
-	else if (location != "")
+	if (location != "" && location != "/")
 	{
 		if (req_path.rfind('.') != std::string::npos &&
 			req_path.substr(req_path.rfind('.')) == conf.loca_map[location].cgi)
