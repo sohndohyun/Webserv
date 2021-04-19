@@ -141,8 +141,7 @@ void Request::parseBody()
 	{
 		size_t begin = 0;
 		size_t end = leftStr.find("\r\n");
-		// size_t blockSize;
-		// while (jachoi::htoi(leftStr.substr(begin, end - begin)))
+
 		while (jachoi::isHex(leftStr, begin, end))
 		{
 			size_t blockSize = jachoi::htoi(leftStr.substr(begin, end - begin));
@@ -184,8 +183,6 @@ void Request::parseBody()
 			}
 			begin = end + 2;
 			end = leftStr.find("\r\n", begin);
-			if (end == std::string::npos)
-				throw "dddd";
 		}
 
 	}

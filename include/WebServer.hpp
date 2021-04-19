@@ -16,6 +16,16 @@ class Response;
 class WebServer : public AServer
 {
 private:
+	class FileData
+	{
+	public:
+		FileData(int fd, Response *res, bool isCGI = false);
+		~FileData();
+		int fd;
+		Response *res;
+		bool isCGI;
+	};
+
 	std::map<int, Request*> requests;
 
 	std::map<int, std::string> reqStr;
@@ -29,17 +39,17 @@ public:
 	virtual void OnAccept(int fd, int port);
 	virtual void OnDisconnect(int fd);
 
-	virtual void OnFileRead(int fd, std::string const &str);
-	virtual void OnFileWrite(int fd);
+	virtual void OnFileRead(int fd, std::string const &str, void *temp);
+	virtual void OnFileWrite(int fd, void *temp);
 
 	virtual ~WebServer();
 
 	void request_process(int fd, Request &req);
 	void cgi_stub(std::string const &path, Request &req, std::string &result);
 
-	void methodGET(Response &res, std::string req_path);
-	void methodHEAD(Response &res, std::string req_path);
-	void methodPUT(Response &res, Request &req);
-	void methodPOST(Response &res, Request &req);
-	void methodInvalid(Response &res, Request &req);
+	void methodGET(int fd, Response *res, std::string req_path);
+	void methodHEAD(int fd, Response *res, std::string req_path);
+	void methodPUT(int fd, Response *res, Request &req);
+	void methodPOST(int fd, Response *res, Request &req);
+	void methodInvalid(int fd, Response *res, Request &req);
 };

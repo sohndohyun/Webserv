@@ -9,25 +9,13 @@
 #include <fcntl.h>
 #include "Utils.hpp"
 #include "Exception.hpp"
+#include "errno.h"
 
-AServer::Client::Client(int fd, std::string const &str) : fd(fd), willDie(false), sent(false), str(str)
+AServer::Client::Client(int fd, std::string const &str) : fd(fd), willDie(false), str(str)
 {
-	struct timeval tv;
-	gettimeofday(&tv, 0);
-	lasttime = tv.tv_sec;
 }
-AServer::Workfile::Workfile(int fd, std::string const &str) : fd(fd), str(str){}
+AServer::Workfile::Workfile(int fd, std::string const &str, void *temp) : fd(fd), str(str), temp(temp){}
 
-bool AServer::Client::isTimeout()
-{
-	struct timeval cur_tv;
-	gettimeofday(&cur_tv, 0);
-
-	if (cur_tv.tv_sec - lasttime > 300 && sent){
-		willDie = true;
-	}
-	return willDie;
-}
 
 void AServer::run(std::string ip, std::vector<int> ports)
 {
@@ -92,9 +80,17 @@ void AServer::run(std::string ip, std::vector<int> ports)
 				FD_SET(clients[i]->fd, &rset);
 		}
 		for (size_t i = 0;i < writeFiles.size();i++)
+		{
+			if (fdMax < writeFiles[i]->fd)
+					fdMax = writeFiles[i]->fd;
 			FD_SET(writeFiles[i]->fd, &wset);
+		}
 		for (size_t i = 0;i < readFiles.size();i++)
+		{
+			if (fdMax < readFiles[i]->fd)
+					fdMax = readFiles[i]->fd;
 			FD_SET(readFiles[i]->fd, &rset);
+		}
 		///////////////////////////////
 
 		//SELECT///////////////////////
@@ -134,15 +130,6 @@ void AServer::run(std::string ip, std::vector<int> ports)
 			Client *cl = (*it);
 			if (FD_ISSET(cl->fd, &rset))
 			{
-				if (cl->isTimeout())
-				{
-					OnDisconnect(cl->fd);
-					FD_CLR(cl->fd, &rset);
-					close(cl->fd);
-					delete cl;
-					it = clients.erase(it);
-					continue;
-				}
 				char buf[BUFSIZ];
 				int str_len = recv(cl->fd, buf, BUFSIZ, 0);
 				if (str_len <= 0)
@@ -176,7 +163,6 @@ void AServer::run(std::string ip, std::vector<int> ports)
 				{
 					cl->str.clear();
 					this->OnSend(cl->fd);
-					cl->sent = true;
 				}
 			}
 			++it;
@@ -217,10 +203,11 @@ void AServer::run(std::string ip, std::vector<int> ports)
 					wf->str = wf->str.substr(ret);
 				else
 				{
-					this->OnFileWrite(wf->fd);
 					FD_CLR(wf->fd, &wset);
+					this->OnFileWrite(wf->fd, wf->temp);
 					delete wf;
 					it = writeFiles.erase(it);
+					continue;
 				}
 			}
 			it++;
@@ -241,8 +228,8 @@ void AServer::run(std::string ip, std::vector<int> ports)
 				}
 				if (str_len == 0)
 				{
-					OnFileRead(wf->fd, wf->str);
 					FD_CLR(wf->fd, &rset);
+					OnFileRead(wf->fd, wf->str, wf->temp);
 					delete wf;
 					it = readFiles.erase(it);
 					continue;
@@ -281,22 +268,29 @@ void AServer::sendStr(int fd, std::string const &str)
 	}
 }
 
-void AServer::writeFile(int fd, std::string const &str)
+void AServer::writeFile(int fd, std::string const &str, void *temp)
 {
+	if (fd < 0 && str.size() > 0)
+	{
+		std::cerr << strerror(errno) << std::endl;
+	}
 	for (size_t i = 0;i < writeFiles.size();i++)
 	{
 		if (writeFiles[i]->fd == fd)
 			return;
 	}
-	writeFiles.push_back(new Workfile(fd, str));
+	if (str.size())
+		writeFiles.push_back(new Workfile(fd, str, temp));
+	else
+		OnFileWrite(fd, temp);
 }
 
-void AServer::readFile(int fd)
+void AServer::readFile(int fd, void *temp)
 {
 	for (size_t i = 0;i < readFiles.size();i++)
 	{
 		if (readFiles[i]->fd == fd)
 			return;
 	}
-	readFiles.push_back(new Workfile(fd, ""));
+	readFiles.push_back(new Workfile(fd, "", temp));
 }

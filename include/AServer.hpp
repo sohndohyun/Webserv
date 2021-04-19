@@ -22,10 +22,7 @@ protected:
 		Client(int, std::string const &);
 		int fd;
 		bool willDie;
-		bool sent;
-		int lasttime;
 		std::string str;
-		bool isTimeout();
 	};
 
 	class Workfile
@@ -33,9 +30,10 @@ protected:
 	private:
 		Workfile();
 	public:
-		Workfile(int, std::string const &);
+		Workfile(int, std::string const &, void *);
 		int fd;
 		std::string str;
+		void *temp;
 	};
 
 private:
@@ -48,16 +46,16 @@ public:
 	void sendStr(int fd, std::string const &str);
 	void disconnect(int fd);
 
-	void writeFile(int fd, std::string const &str);
-	void readFile(int fd);
+	void writeFile(int fd, std::string const &str, void *temp);
+	void readFile(int fd, void *temp);
 
 	virtual void OnRecv(int fd, std::string const &str) = 0;
 	virtual void OnSend(int fd) = 0;
 	virtual void OnAccept(int fd, int port) = 0;
 	virtual void OnDisconnect(int fd) = 0;
 
-	virtual void OnFileRead(int fd, std::string const &str) = 0;
-	virtual void OnFileWrite(int fd) = 0;
+	virtual void OnFileRead(int fd, std::string const &str, void *temp) = 0;
+	virtual void OnFileWrite(int fd, void *temp) = 0;
 };
 
 #endif

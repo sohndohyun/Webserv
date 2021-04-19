@@ -12,6 +12,9 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
+WebServer::FileData::FileData(int fd, Response *res, bool isCGI) : fd(fd), res(res), isCGI(isCGI) {}
+WebServer::FileData::~FileData() { if(res) delete res;}
+
 WebServer::WebServer(ConfigParse &conf): conf(conf){}
 
 void WebServer::OnRecv(int fd, std::string const &str)
@@ -25,34 +28,33 @@ void WebServer::OnRecv(int fd, std::string const &str)
 
 void WebServer::request_process(int fd, Request &req)
 {
-	Response res(conf.server->name);
+	Response *res = new Response(conf.server->name);
 	switch (req.methodType())
 	{
 		case GET:
 		{
-			methodGET(res, req.path);
+			methodGET(fd, res, req.path);
 			break;
 		}
 		case POST:
 		{
-			methodPOST(res, req);
+			methodPOST(fd, res, req);
 			break;
 		}
 		case HEAD:
 		{
-			methodHEAD(res, req.path);
+			methodHEAD(fd, res, req.path);
 			break;
 		}
 		case PUT:
 		{
-			methodPUT(res, req);
+			methodPUT(fd, res, req);
 			break;
 		}
 		default:
-			methodInvalid(res, req);
+			methodInvalid(fd, res, req);
 			break;
 	}
-	sendStr(fd, res.res_str);
 }
 
 void WebServer::cgi_stub(std::string const &path, Request &req, std::string &result)
@@ -128,14 +130,25 @@ void WebServer::OnDisconnect(int fd)
 	}
 }
 
-void WebServer::OnFileRead(int fd, std::string const &str)
+void WebServer::OnFileRead(int fd, std::string const &str, void *temp)
 {
-	
+	FileData *fData = static_cast<FileData*>(temp);
+
+	if (!fData->isCGI)
+		fData->res->makeRes(str);
+	else
+		fData->res->makeRes(str.substr(str.find("\r\n\r\n") + 4));
+	sendStr(fData->fd, fData->res->res_str);
+	close(fd);
+	delete fData;
 }
 
-void WebServer::OnFileWrite(int fd)
+void WebServer::OnFileWrite(int fd, void *temp)
 {
-
+	FileData *fData = static_cast<FileData*>(temp);
+	sendStr(fData->fd, fData->res->res_str);
+	close(fd);
+	delete fData;
 }
 
 WebServer::~WebServer()
@@ -146,73 +159,79 @@ WebServer::~WebServer()
 	requests.clear();
 }
 
-void WebServer::methodGET(Response &res, std::string req_path)
+void WebServer::methodGET(int fd, Response *res, std::string req_path)
 {
 	ConfigCheck cfg_check(conf, req_path);
 	std::string body = "";
 	std::string path = cfg_check.makeFilePath();
 	struct stat sb;
 
-	res.setContentType(path);
+	res->setContentType(path);
 	if (cfg_check.methodCheck("GET") == false)
 	{
 		path = conf.server->error_root + conf.server->error_page[405];
-		res.setStatus(405);
-		res.setContentType(path);
-		jachoi::FileIO(path).read(body);
+		res->setStatus(405);
+		res->setContentType(path);
+		readFile(open(path.c_str(), O_RDONLY), new FileData(fd, res ));
 	}
 	else if (path == "")
 	{
 		path = conf.server->error_root + conf.server->error_page[404];
-		res.setStatus(404);
-		res.setContentType(path);
-		jachoi::FileIO(path).read(body);
+		res->setStatus(404);
+		res->setContentType(path);
+		readFile(open(path.c_str(), O_RDONLY), new FileData(fd, res ));
 	}
 	else
 	{
-		res.setStatus(200);
+		res->setStatus(200);
 		if (stat(cfg_check.findPath().c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
 		{
 			body = cfg_check.autoIdxCheck();
 			if (body == "")
-				jachoi::FileIO(path).read(body);
+				readFile(open(path.c_str(), O_RDONLY), new FileData(fd, res));
+			else
+			{
+				res->makeRes(body);
+				sendStr(fd, res->res_str);
+				delete res;
+			}
 		}
 		else
-			jachoi::FileIO(path).read(body);
+			readFile(open(path.c_str(), O_RDONLY), new FileData(fd, res ));
 	}
-	res.makeRes(body);
 }
 
-void WebServer::methodHEAD(Response &res, std::string req_path)
+void WebServer::methodHEAD(int fd, Response *res, std::string req_path)
 {
 	ConfigCheck cfg_check(conf, req_path);
-	std::string body;
+	std::string body = "";
 	std::string path = cfg_check.makeFilePath();
 
-	res.setContentType(path);
+	res->setContentType(path);
 	if (path == "")
 	{
 		path = conf.server->error_root + conf.server->error_page[404];
-		res.setStatus(404);
-		res.setContentType(path);
-		jachoi::FileIO(path).read(body);
+		res->setStatus(404);
+		res->setContentType(path);
+		readFile(open(path.c_str(), O_RDONLY), new FileData(fd, res));
 	}
 	else if (cfg_check.methodCheck("HEAD") == false)
 	{
 		path = conf.server->error_root + conf.server->error_page[405];
-		res.setStatus(405);
-		res.setContentType(path);
-		jachoi::FileIO(path).read(body);
+		res->setStatus(405);
+		res->setContentType(path);
+		readFile(open(path.c_str(), O_RDONLY), new FileData(fd, res));
 	}
 	else
 	{
-		res.setStatus(200);
-		body = "";
+		res->setStatus(200);
+		res->makeRes(body);
+		sendStr(fd, res->res_str);
+		delete res;
 	}
-	res.makeRes(body);
 }
 
-void WebServer::methodPUT(Response &res, Request &req)
+void WebServer::methodPUT(int fd, Response *res, Request &req)
 {
 	ConfigCheck cfg_check(conf, req.path);
 	std::string body;
@@ -220,30 +239,39 @@ void WebServer::methodPUT(Response &res, Request &req)
 	struct stat sb;
 	int stat_rtn = stat(path.c_str(), &sb);
 
-	res.setContentType(path);
+	res->setContentType(path);
 	if (cfg_check.methodCheck("PUT") == false)
 	{
 		path = conf.server->error_root + conf.server->error_page[405];
-		res.setStatus(405);
-		res.setContentType(path);
-		jachoi::FileIO(path).read(body);
+		res->setStatus(405);
+		res->setContentType(path);
+		readFile(open(path.c_str(), O_RDONLY), new FileData(fd, res));
 	}
 	else if (stat_rtn == -1)
 	{
-		jachoi::FileIO(path).write(req.body);
-		res.setStatus(200);
-		body = req.body;
+		res->setStatus(200);
+		res->makeRes(req.body);
+		writeFile(open(path.c_str(), O_CREAT | O_WRONLY, 0644), req.body, new FileData(fd, res));
 	}
 	else if (stat_rtn == 0 && S_ISREG(sb.st_mode))
 	{
+		//이부분은 그냥 유지함
+		res->setStatus(200);
 		jachoi::FileIO(path).append(req.body);
-		res.setStatus(200);
 		jachoi::FileIO(path).read(body);
+		res->makeRes(body);
+		sendStr(fd, res->res_str);
+		delete res;
 	}
-	res.makeRes(body);
+	else
+	{
+		res->makeRes(body);
+		sendStr(fd, res->res_str);
+		delete res;
+	}
 }
 
-void WebServer::methodPOST(Response &res, Request &req)
+void WebServer::methodPOST(int fd, Response *res, Request &req)
 {
 	ConfigCheck cfg_check(conf, req.path);
 	std::string body;
@@ -251,47 +279,52 @@ void WebServer::methodPOST(Response &res, Request &req)
 	struct stat sb;
 	int stat_rtn = stat(path.c_str(), &sb);
 
-	res.setContentType(path);
+	res->setContentType(path);
 	if (cfg_check.methodCheck("POST") == false)
 	{
 		path = conf.server->error_root + conf.server->error_page[405];
-		res.setStatus(405);
-		res.setContentType(path);
+		res->setStatus(405);
+		res->setContentType(path);
+		res->makeRes(req.body);
+		sendStr(fd, res->res_str);
+		delete res;
 	}
 	else if (cfg_check.client_max_body_size_Check(req.body.size()) == false)
 	{
-		std::cout << "error" << std::endl;
+		std::cerr << "error" << std::endl;
 		path = conf.server->error_root + conf.server->error_page[413];
-		res.setStatus(413);
-		res.setContentType(path);
+		res->setStatus(413);
+		res->setContentType(path);
+		res->makeRes(req.body);
+		sendStr(fd, res->res_str);
+		delete res;
 	}
 	else if (path.substr(path.rfind('.') + 1) == "bla")
 	{
 		body.clear();
 		cgi_stub(CGI_PATH, req, body);
-		jachoi::FileIO(path).write(body);
-		res.setStatus(200);
-		res.makeRes(body);
-		return;
+		res->setStatus(200);
+		res->makeRes(body);
+		writeFile(open(path.c_str(), O_CREAT | O_WRONLY, 0644), body, new FileData(fd, res));
 	}
 	else
 	{
 		if (stat_rtn == 0 && S_ISDIR(sb.st_mode))
 			path += "post_file";
-		jachoi::FileIO(path).write(req.body);
-		res.setStatus(200);
-		res.setContentLocation(req.path);
+
+		res->setStatus(200);
+		res->setContentLocation(req.path);
+		res->makeRes(req.body);
+		writeFile(open(path.c_str(), O_CREAT | O_WRONLY, 0644), req.body, new FileData(fd, res));
 	}
-	res.makeRes(req.body);
 }
 
-void WebServer::methodInvalid(Response &res, Request &req)
+void WebServer::methodInvalid(int fd, Response *res, Request &req)
 {
 	(void)req;
 	std::string path = conf.server->error_root + conf.server->error_page[405];
 	std::string body;
-	res.setStatus(405);
-	res.setContentType(path);
-	jachoi::FileIO(path).read(body);
-	res.makeRes(body);
+	res->setStatus(405);
+	res->setContentType(path);
+	readFile(open(path.c_str(), O_RDONLY), new FileData(fd, res));
 }
