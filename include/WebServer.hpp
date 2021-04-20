@@ -60,5 +60,5 @@ public:
 
 private:
 	int get_conf_idx(int port);
-	void errorRes(int fd, int port, Response *res, int errorCode, std::vector<std::string> allow_methods = std::vector<std::string>());
+	void errorRes(int fd, int port, Response *res, int errorCode, const std::vector<std::string>& allow_methods = std::vector<std::string>());
 };

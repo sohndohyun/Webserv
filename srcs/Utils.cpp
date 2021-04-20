@@ -86,7 +86,7 @@ namespace jachoi
 		time_diff["ECT"] = 1 * 60 * 60;
 		time_diff["PST"] = -7 * 60 * 60;
 
-		time_t gmt_time = tv_sec - time_diff[std::string(tm_zone)];
+		time_t gmt_time = tv_sec - time_diff[tm_zone];
 		strptime(jachoi::to_string(gmt_time).c_str(), "%s", &time);
 		strftime(buf, sizeof(buf), "%a, %d %b %G %T GMT", &time);
 		return (buf);

@@ -5,6 +5,7 @@
 #include "Utils.hpp"
 #include "ConfigParse.hpp"
 #include "Exception.hpp"
+#include <vector>
 
 Response::Response(std::string server_name)
 {
@@ -115,11 +116,11 @@ void Response::setContentLocation(std::string req_path)
 	header["Content-Location"] = req_path;
 }
 
-void Response::setAllow(std::vector<std::string> allowMethods)
+void Response::setAllow(const std::vector<std::string>& allowMethods)
 {
 	std::string str;
 
-	std::vector<std::string>::iterator iter = allowMethods.begin();
+	std::vector<std::string>::const_iterator iter = allowMethods.begin();
 	for(; iter != allowMethods.end(); iter++)
 	{
 		str += *iter;

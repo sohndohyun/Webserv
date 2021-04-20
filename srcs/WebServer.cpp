@@ -211,6 +211,7 @@ void WebServer::methodGET(int fd, int port,  Response *res, Request &req)
 			body = cfg_check.autoIdxCheck(port);
 			if (body == "")
 			{
+				std::cout << path << std::endl;
 				res->setLastModified(path);
 				readFile(jachoi::open(path.c_str(), O_RDONLY), new FileData(fd, res));
 				return ;
@@ -333,7 +334,7 @@ void WebServer::methodPOST(int fd, int port, Response *res, Request &req)
 	}
 }
 
-void WebServer::errorRes(int fd, int port, Response *res, int errorCode, std::vector<std::string> allow_methods)
+void WebServer::errorRes(int fd, int port, Response *res, int errorCode, const std::vector<std::string>& allow_methods)
 {
 	ConfigParse::t_conf& conf = confs.conf[get_conf_idx(port)];
 	std::string path = conf.server.error_root + conf.server.error_page[errorCode];

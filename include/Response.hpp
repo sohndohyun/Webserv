@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <map>
+#include <vector>
 
 class Response
 {
@@ -22,7 +23,7 @@ public:
 	void setStatus(int status_code);
 	void setContentType(std::string content_path);
 	void setContentLocation(std::string req_path);
-	void setAllow(std::vector<std::string> allowMethods);
+	void setAllow(const std::vector<std::string>& allowMethods);
 	void setLocation(std::string req_path);
 	void setLastModified(std::string content_path);
 	void setRetryAfter(void);
