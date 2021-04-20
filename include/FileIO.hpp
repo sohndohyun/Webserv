@@ -1,8 +1,8 @@
+#ifndef FILEIO_HPP
+#define FILEIO_HPP
 #include <string>
 #include <vector>
-#include <algorithm>
-#include <unistd.h>
-#include <fcntl.h>
+
 namespace jachoi
 {
 	class FileIO
@@ -17,3 +17,4 @@ namespace jachoi
 		bool append(const std::string& content);
 	};
 }
+#endif

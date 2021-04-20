@@ -1,3 +1,5 @@
+#ifndef UTILS_HPP
+#define UTILS_HPP
 #include <string>
 #include <map>
 #include <algorithm>
@@ -29,3 +31,4 @@ namespace jachoi
 	int base64Decode(const std::string& str, int numBytes, std::string &dst);
 	int open(const char* path, int flag, int chmod = 0644);
 }
+#endif

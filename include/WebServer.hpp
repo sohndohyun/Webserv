@@ -1,5 +1,5 @@
-#pragma once
-
+#ifndef WEBSERVER_HPP
+#define WEBSERVER_HPP
 #include "AServer.hpp"
 #include "Request.hpp"
 #include <map>
@@ -62,3 +62,4 @@ private:
 	int get_conf_idx(int port);
 	void errorRes(int fd, int port, Response *res, int errorCode, const std::vector<std::string>& allow_methods = std::vector<std::string>());
 };
+#endif

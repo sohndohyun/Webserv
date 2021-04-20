@@ -1,5 +1,5 @@
-#ifndef AServer_hpp
-#define AServer_hpp
+#ifndef ASEREVER_HPP
+#define ASEREVER_HPP
 
 #include <string>
 #include <exception>

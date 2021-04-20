@@ -1,9 +1,9 @@
-#pragma once
-
+#ifndef REQUEST_HPP
+#define REQUEST_HPP
+#include "AServer.hpp"
 #include <string>
 #include <map>
 #include <vector>
-#include "AServer.hpp"
 
 enum MethodType
 {
@@ -53,3 +53,4 @@ private:
 	void parseHeader();
 	void parseBody();
 };
+#endif
