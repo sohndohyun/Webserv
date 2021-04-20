@@ -211,7 +211,6 @@ void WebServer::methodGET(int fd, int port,  Response *res, Request &req)
 			body = cfg_check.autoIdxCheck(port);
 			if (body == "")
 			{
-				std::cout << path << std::endl;
 				res->setLastModified(path);
 				readFile(jachoi::open(path.c_str(), O_RDONLY), new FileData(fd, res));
 				return ;
