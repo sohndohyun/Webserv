@@ -75,21 +75,23 @@ namespace jachoi
 		return n;
 	}
 
-	std::string makeGMT(const char *tm_zone, time_t tv_sec)
+	std::string makeGMT(const std::string &tm_zone, time_t tv_sec)
 	{
 		struct tm time;
-		char buf[64];
+		char buf[64] = {0};
 		std::map<std::string, int> time_diff;
+
 		time_diff["KST"] = 9 * 60 * 60;
 		time_diff["JST"] = 9 * 60 * 60;
 		time_diff["CTT"] = 8 * 60 * 60;
 		time_diff["ECT"] = 1 * 60 * 60;
 		time_diff["PST"] = -7 * 60 * 60;
-
-		time_t gmt_time = tv_sec - time_diff[tm_zone];
+		time_t gmt_time = 0;
+		if (tm_zone == "KST" || tm_zone ==  "JST" || tm_zone == "CTT" || tm_zone == "ECT" || tm_zone == "PST")
+			gmt_time = tv_sec - time_diff[tm_zone];
 		strptime(jachoi::to_string(gmt_time).c_str(), "%s", &time);
 		strftime(buf, sizeof(buf), "%a, %d %b %G %T GMT", &time);
-		return (buf);
+		return std::string(buf);
 	}
 
 	int htoi(const std::string& num)
@@ -231,9 +233,9 @@ namespace jachoi
 		return (rtn);
 	}
 
-	int base64Decode(std::string str, int numBytes, std::string &dst)
+	int base64Decode(const std::string& str, int numBytes, std::string &dst)
 	{
-		int DecodeMimeBase64[256] = {
+		const static int DecodeMimeBase64[256] = {
 			-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
 			-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
 			-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,62,-1,-1,-1,63,
