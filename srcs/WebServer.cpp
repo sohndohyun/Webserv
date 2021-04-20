@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/wait.h>
 
 WebServer::FileData::FileData(int fd, Response *res, bool isCGI, char **envp, std::string const &path) :
@@ -86,7 +87,7 @@ int WebServer::cgi_stub(int tempfd, FileData *fData)
 {
 	lseek(tempfd, 0, SEEK_SET);
 
-	int fdout = jachoi::open(".TEMPOUT", O_CREAT | O_TRUNC | O_RDWR, 0644);
+	int fdout = utils::open(".TEMPOUT", O_CREAT | O_TRUNC | O_RDWR, 0644);
 	pid_t pid = fork();
 	if (pid < 0)
 		throw Exception("cgi: fork error");
@@ -144,7 +145,7 @@ void WebServer::OnFileRead(int fd, std::string const &str, void *temp)
 		std::string s = str.substr(str.find("\r\n\r\n") + 4);
 		fData->res->makeRes(s);
 		fData->isCGI = false;
-		writeFile(jachoi::open(fData->path.c_str(), O_CREAT | O_WRONLY, 0644), s, fData);
+		writeFile(utils::open(fData->path.c_str(), O_CREAT | O_WRONLY, 0644), s, fData);
 	}
 	close(fd);
 }
@@ -212,7 +213,7 @@ void WebServer::methodGET(int fd, int port,  Response *res, Request &req)
 			if (body == "")
 			{
 				res->setLastModified(path);
-				readFile(jachoi::open(path.c_str(), O_RDONLY), new FileData(fd, res));
+				readFile(utils::open(path.c_str(), O_RDONLY), new FileData(fd, res));
 				return ;
 			}
 			res->makeRes(body);
@@ -222,7 +223,7 @@ void WebServer::methodGET(int fd, int port,  Response *res, Request &req)
 		else
 		{
 			res->setLastModified(path);
-			readFile(jachoi::open(path.c_str(), O_RDONLY), new FileData(fd, res));
+			readFile(utils::open(path.c_str(), O_RDONLY), new FileData(fd, res));
 		}
 	}
 }
@@ -274,7 +275,7 @@ void WebServer::methodPUT(int fd, int port, Response *res, Request &req)
 			res->setLocation(req.path);
 			res->setLastModified(path);
 			res->makeRes("", true);
-			writeFile(jachoi::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644), req.body, new FileData(fd, res));
+			writeFile(utils::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644), req.body, new FileData(fd, res));
 		}
 		else if (stat_rtn == 0 && S_ISREG(sb.st_mode))
 		{
@@ -282,7 +283,7 @@ void WebServer::methodPUT(int fd, int port, Response *res, Request &req)
 			res->setContentLocation(req.path);
 			res->setLastModified(path);
 			res->makeRes("", true);
-			writeFile(jachoi::open(path.c_str(), O_CREAT | O_APPEND | O_WRONLY, 0644), req.body, new FileData(fd, res));
+			writeFile(utils::open(path.c_str(), O_CREAT | O_APPEND | O_WRONLY, 0644), req.body, new FileData(fd, res));
 		}
 	}
 }
@@ -318,8 +319,8 @@ void WebServer::methodPOST(int fd, int port, Response *res, Request &req)
 			if (req.header.find("X-Secret-Header-For-Test") != req.header.end())
 				map_env["HTTP_X_SECRET_HEADER_FOR_TEST"] = req.header["X-Secret-Header-For-Test"];
 		
-			writeFile(jachoi::open(tempfile.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0644), req.body, 
-				new FileData(fd, res, true, jachoi::mtostrarr(map_env), path));
+			writeFile(utils::open(tempfile.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0644), req.body, 
+				new FileData(fd, res, true, utils::mtostrarr(map_env), path));
 			}
 		else
 		{
@@ -328,7 +329,7 @@ void WebServer::methodPOST(int fd, int port, Response *res, Request &req)
 			res->setContentLocation(req.path);
 			res->setLastModified(path);
 			res->makeRes(req.body);
-			writeFile(jachoi::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644), req.body, new FileData(fd, res));
+			writeFile(utils::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644), req.body, new FileData(fd, res));
 		}
 	}
 }
@@ -358,7 +359,7 @@ void WebServer::errorRes(int fd, int port, Response *res, int errorCode, const s
 			break;
 		}
 	}
-	readFile(jachoi::open(path.c_str(), O_RDONLY), new FileData(fd, res));
+	readFile(utils::open(path.c_str(), O_RDONLY), new FileData(fd, res));
 }
 
 int WebServer::get_conf_idx(int port)

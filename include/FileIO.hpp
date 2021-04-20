@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-namespace jachoi
+namespace utils
 {
 	class FileIO
 	{

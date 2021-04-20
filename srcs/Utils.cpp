@@ -10,7 +10,7 @@
 #include <string>
 #include <iostream>
 
-namespace jachoi
+namespace utils
 {
 	std::string ltrim(std::string s)
 	{
@@ -89,7 +89,7 @@ namespace jachoi
 		time_t gmt_time = 0;
 		if (tm_zone == "KST" || tm_zone ==  "JST" || tm_zone == "CTT" || tm_zone == "ECT" || tm_zone == "PST")
 			gmt_time = tv_sec - time_diff[tm_zone];
-		strptime(jachoi::to_string(gmt_time).c_str(), "%s", &time);
+		strptime(utils::to_string(gmt_time).c_str(), "%s", &time);
 		strftime(buf, sizeof(buf), "%a, %d %b %G %T GMT", &time);
 		return std::string(buf);
 	}

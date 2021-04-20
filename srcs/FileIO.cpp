@@ -1,10 +1,12 @@
 #include "FileIO.hpp"
 #include "Exception.hpp"
 #include <string>
+#include <unistd.h>
+#include <fcntl.h>
 
-jachoi::FileIO::FileIO(const std::string& path):_path(path){}
+utils::FileIO::FileIO(const std::string& path):_path(path){}
 
-bool jachoi::FileIO::read(std::string& str)
+bool utils::FileIO::read(std::string& str)
 {
 	int fd = open(_path.c_str(), O_RDONLY);
 	char buf[1000000];
@@ -24,7 +26,7 @@ bool jachoi::FileIO::read(std::string& str)
 	return true;
 }
 
-bool jachoi::FileIO::write(const std::string& content)
+bool utils::FileIO::write(const std::string& content)
 {
 	int fd = open(_path.c_str(), O_CREAT | O_WRONLY, 0644);
 	if (fd == -1)
@@ -34,7 +36,7 @@ bool jachoi::FileIO::write(const std::string& content)
 	return true;
 }
 
-bool jachoi::FileIO::append(const std::string& content)
+bool utils::FileIO::append(const std::string& content)
 {
 	int fd = open(_path.c_str(), O_CREAT | O_APPEND | O_WRONLY, 0644);
 	if (fd == -1)

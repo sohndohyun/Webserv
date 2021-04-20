@@ -10,6 +10,7 @@
 #include "Utils.hpp"
 #include "Exception.hpp"
 #include "errno.h"
+#include <iostream>
 
 AServer::Client::Client(int fd, std::string const &str) : fd(fd), willDie(false), str(str)
 {
@@ -40,9 +41,9 @@ void AServer::run(std::string ip, std::vector<int> ports)
 			fdMax = listenSocket;
 
 		sockaddr_in servAddr;
-		jachoi::memset(&servAddr, 0, sizeof(sockaddr_in));
+		utils::memset(&servAddr, 0, sizeof(sockaddr_in));
 		servAddr.sin_family = AF_INET;
-		servAddr.sin_port = jachoi::htons(ports[i]);
+		servAddr.sin_port = utils::htons(ports[i]);
 		servAddr.sin_addr.s_addr = inet_addr(ip.c_str());
 		int option = 1;
 		setsockopt(listenSocket, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
