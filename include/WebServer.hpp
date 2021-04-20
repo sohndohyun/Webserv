@@ -22,6 +22,9 @@ private:
 	ConfigParse::t_conf &conf;
 
 public:
+	AServer::t_analysis analysis;
+
+public:
 	WebServer(ConfigParse::t_conf &conf);
 
 	virtual void OnRecv(int fd, std::string const &str);

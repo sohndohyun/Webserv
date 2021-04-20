@@ -262,3 +262,45 @@ bool ConfigCheck::AuthorizationCheck(std::string auth_str)
 	}
 	return false;
 }
+
+std::string ConfigCheck::makeAnalysisHTML(AServer::t_analysis analysis)
+{
+	std::string str = "<html>\n\t<head>\n\t\t<title>Analysis</title>\n\t</head>\n\t<body>\n\t\t<h1>Analysis</h1>";
+
+	if (analysis.referer.size() != 0)
+		str += "\n\t\t<hr>\n\t\t<h2>where do these people come from?</h2>\n\t\t<pre><b>";
+	int total = 0;
+	double result = 0;
+	std::map<std::string, int>::iterator ref_iter = analysis.referer.begin();
+	for(; ref_iter != analysis.referer.end(); ref_iter++)
+		total += ref_iter->second;
+	for(ref_iter = analysis.referer.begin(); ref_iter != analysis.referer.end(); ref_iter++)
+	{
+		result = (double)ref_iter->second / (double)total * 100.0;
+		str += ref_iter->first + "\t: " + jachoi::to_string((int)result) + "%\n";
+	}
+	if (analysis.referer.size() != 0)
+		str += "</b></pre>";
+
+	str += "\n\t\t<hr>\n\t\t<h2>Which browser do people use the most?</h2>\n\t\t<pre><b>";
+
+	std::map<std::string, int>::iterator user_iter = analysis.user_agent.begin();
+	for(total = 0; user_iter != analysis.user_agent.end(); user_iter++)
+		total += user_iter->second;
+	for(user_iter = analysis.user_agent.begin(); user_iter != analysis.user_agent.end(); user_iter++)
+	{
+		result = (double)user_iter->second / (double)total * 100.0;
+		str += user_iter->first + "\t: " + jachoi::to_string((int)result) + "%\n";
+	}
+	str += "</b></pre>\n\t</body>\n</html>";
+
+	return str;
+}
+
+bool ConfigCheck::analysisCheck()
+{
+	std::string location = findLocation();
+	if (location == "/analysis")
+		return true;
+	return false;
+}

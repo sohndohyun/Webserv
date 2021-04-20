@@ -246,3 +246,38 @@ bool Request::isAcceptCharset()
 	}
 	return (false);
 }
+
+void Request::isReferer(AServer::t_analysis &analysis)
+{
+	if (header.find("Referer") == header.end())
+		return ;
+
+	if (analysis.referer.find(header["Referer"]) != analysis.referer.end())
+		analysis.referer[header["Referer"]]++;
+	else
+		analysis.referer[header["Referer"]] = 1;
+}
+
+void Request::isUserAgent(AServer::t_analysis &analysis)
+{
+	if (header.find("User-Agent") == header.end())
+		return ;
+
+	std::string webBrowser;
+	if (header["User-Agent"].find("Chrome") != std::string::npos)
+		webBrowser = "Chrome";
+	else if (header["User-Agent"].find("PostmanRuntime") != std::string::npos)
+		webBrowser = "Postman";
+	else if (header["User-Agent"].find("Safari") != std::string::npos)
+		webBrowser = "Safari";
+	else if (header["User-Agent"].find("curl") != std::string::npos)
+		webBrowser = "curl";
+	else
+		webBrowser = "else";
+
+	if (analysis.user_agent.find(webBrowser) != analysis.user_agent.end())
+		analysis.user_agent[webBrowser]++;
+	else
+		analysis.user_agent[webBrowser] = 1;
+}
+

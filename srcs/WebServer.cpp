@@ -25,6 +25,8 @@ void WebServer::OnRecv(int fd, std::string const &str)
 void WebServer::request_process(int fd, Request &req)
 {
 	Response res(conf.server.name);
+	req.isReferer(analysis);
+	req.isUserAgent(analysis);
 	if (req.errorCode != 200)
 	{
 		errorRes(res, req.errorCode);
@@ -154,6 +156,14 @@ void WebServer::methodGET(Response &res, Request &req)
 	std::vector<std::string> allow_methods;
 	std::string body = "";
 	struct stat sb;
+
+	if (cfg_check.analysisCheck())
+	{
+		res.setContentType(".html");
+		res.setStatus(200);
+		res.makeRes(cfg_check.makeAnalysisHTML(analysis));
+		return ;
+	}
 
 	int is_dir = 0;
 	std::string path = cfg_check.makeFilePath(is_dir);

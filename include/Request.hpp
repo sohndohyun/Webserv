@@ -3,6 +3,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include "AServer.hpp"
 
 enum MethodType
 {
@@ -44,6 +45,8 @@ public:
 
 	void isAcceptLanguage(std::string &content_path, int is_dir);
 	bool isAcceptCharset();
+	void isReferer(AServer::t_analysis &analysis);
+	void isUserAgent(AServer::t_analysis &analysis);
 
 private:
 	void parseFirstLine(std::string const &str);

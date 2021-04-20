@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include "ConfigParse.hpp"
+#include "AServer.hpp"
 
 class ConfigCheck
 {
@@ -26,10 +27,11 @@ public:
 
 	bool methodCheck(std::string method, std::vector<std::string> &allow_methods);
 	bool client_max_body_size_Check(int body_size);
-	std::string autoIdxCheck();
 	bool cgiCheck();
 	bool AuthorizationCheck(std::string auth_str);
-
+	bool analysisCheck();
+	std::string makeAnalysisHTML(AServer::t_analysis analysis);
+	std::string autoIdxCheck();
 };
 
 #endif
