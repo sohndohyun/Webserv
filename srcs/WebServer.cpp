@@ -12,8 +12,23 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-WebServer::FileData::FileData(int fd, Response *res, bool isCGI) : fd(fd), res(res), isCGI(isCGI) {}
-WebServer::FileData::~FileData() { if(res) delete res;}
+WebServer::FileData::FileData(int fd, Response *res, bool isCGI, char **envp, std::string const &path) :
+	fd(fd), res(res), isCGI(isCGI), envp(envp), path(path) {}
+WebServer::FileData::~FileData() 
+{ 
+	if (res) 
+		delete res;
+	if (envp)
+	{
+		char **temp = envp;
+		while (*temp)
+		{
+			delete[] *temp;
+			temp++;
+		}
+		delete[] envp;
+	}
+}
 
 WebServer::WebServer(ConfigParse &conf): conf(conf){}
 
@@ -57,60 +72,33 @@ void WebServer::request_process(int fd, Request &req)
 	}
 }
 
-void WebServer::cgi_stub(std::string const &path, Request &req, std::string &result)
+int WebServer::cgi_stub(int tempfd, FileData *fData)
 {
-	int fdin = open(".tempIN", O_CREAT | O_TRUNC | O_RDWR, 0644);
-	int fdout = open(".tempOUT", O_CREAT | O_TRUNC | O_RDWR, 0644);
+	lseek(tempfd, 0, SEEK_SET);
 
-	write(fdin, req.body.c_str(), req.body.size());
-	std::cout << "req body size : " << req.body.size() << "\n";
-	lseek(fdin, 0, SEEK_SET);
-
+	int fdout = open(".TEMPOUT", O_CREAT | O_TRUNC | O_RDWR, 0644);
 	pid_t pid = fork();
 	if (pid < 0)
 		throw Exception("cgi: fork error");
 	else if (pid == 0)
 	{
-		std::map<std::string, std::string> map_env;
-		map_env["REQUEST_METHOD"] = req.method;
-		map_env["SERVER_PROTOCOL"] = "HTTP/1.1";
-		map_env["PATH_INFO"] = req.path;
-		if (req.header.find("X-Secret-Header-For-Test") != req.header.end())
-			map_env["HTTP_X_SECRET_HEADER_FOR_TEST"] = req.header["X-Secret-Header-For-Test"];
-		char **envp = jachoi::mtostrarr(map_env);
-
-		dup2(fdin, 0);
+		dup2(tempfd, 0);
 		dup2(fdout, 1);
 
 		char *const *nll = NULL;
-		execve(path.c_str(), nll, envp);
+		execve(CGI_PATH, nll, fData->envp);
 		exit(1);
 	}
 
-	char buf[1000000];
-
 	waitpid(pid, NULL, 0);
+	std::cout << fData->fd << ": cgi ended\n";
 	lseek(fdout, 0, SEEK_SET);
-
-	while (true)
-	{
-		int ret = read(fdout, buf, 999999);
-		if (ret == -1)
-			throw Exception("cgi read error");
-		else if (ret == 0)
-			break;
-		buf[ret] = 0;
-		result.append(buf);
-	}
-	close(fdin);
-	close(fdout);
-	result = result.substr(result.find("\r\n\r\n") + 4);
+	return fdout;
 }
 
 void WebServer::OnSend(int fd)
 {
-	(void)fd;
-	// disconnect(fd);
+	std::cout << fd << ": sended!\n";
 }
 
 void WebServer::OnAccept(int fd, int port)
@@ -135,20 +123,35 @@ void WebServer::OnFileRead(int fd, std::string const &str, void *temp)
 	FileData *fData = static_cast<FileData*>(temp);
 
 	if (!fData->isCGI)
+	{
 		fData->res->makeRes(str);
+		sendStr(fData->fd, fData->res->res_str);
+		delete fData;
+	}
 	else
-		fData->res->makeRes(str.substr(str.find("\r\n\r\n") + 4));
-	sendStr(fData->fd, fData->res->res_str);
+	{
+		std::string s = str.substr(str.find("\r\n\r\n") + 4);
+		fData->res->makeRes(s);
+		fData->isCGI = false;
+		writeFile(open(fData->path.c_str(), O_CREAT | O_WRONLY, 0644), s, fData);
+	}
 	close(fd);
-	delete fData;
 }
 
 void WebServer::OnFileWrite(int fd, void *temp)
 {
 	FileData *fData = static_cast<FileData*>(temp);
-	sendStr(fData->fd, fData->res->res_str);
+
+	if (fData->isCGI)
+	{
+		readFile(cgi_stub(fd, fData), fData);
+	}
+	else
+	{
+		sendStr(fData->fd, fData->res->res_str);
+		delete fData;
+	}
 	close(fd);
-	delete fData;
 }
 
 WebServer::~WebServer()
@@ -255,11 +258,10 @@ void WebServer::methodPUT(int fd, Response *res, Request &req)
 	}
 	else if (stat_rtn == 0 && S_ISREG(sb.st_mode))
 	{
-		//이부분은 그냥 유지함
 		res->setStatus(200);
 		jachoi::FileIO(path).append(req.body);
 		jachoi::FileIO(path).read(body);
-		res->makeRes(body);
+		res->makeRes(req.body);
 		sendStr(fd, res->res_str);
 		delete res;
 	}
@@ -274,7 +276,6 @@ void WebServer::methodPUT(int fd, Response *res, Request &req)
 void WebServer::methodPOST(int fd, Response *res, Request &req)
 {
 	ConfigCheck cfg_check(conf, req.path);
-	std::string body;
 	std::string path = cfg_check.findPath();
 	struct stat sb;
 	int stat_rtn = stat(path.c_str(), &sb);
@@ -301,11 +302,18 @@ void WebServer::methodPOST(int fd, Response *res, Request &req)
 	}
 	else if (path.substr(path.rfind('.') + 1) == "bla")
 	{
-		body.clear();
-		cgi_stub(CGI_PATH, req, body);
+		std::string tempfile = ".TEMP";
 		res->setStatus(200);
-		res->makeRes(body);
-		writeFile(open(path.c_str(), O_CREAT | O_WRONLY, 0644), body, new FileData(fd, res));
+		
+		std::map<std::string, std::string> map_env;
+		map_env["REQUEST_METHOD"] = req.method;
+		map_env["SERVER_PROTOCOL"] = "HTTP/1.1";
+		map_env["PATH_INFO"] = req.path;
+		if (req.header.find("X-Secret-Header-For-Test") != req.header.end())
+			map_env["HTTP_X_SECRET_HEADER_FOR_TEST"] = req.header["X-Secret-Header-For-Test"];
+		
+		writeFile(open(tempfile.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0644), req.body, 
+			new FileData(fd, res, true, jachoi::mtostrarr(map_env), path));
 	}
 	else
 	{
@@ -323,7 +331,6 @@ void WebServer::methodInvalid(int fd, Response *res, Request &req)
 {
 	(void)req;
 	std::string path = conf.server->error_root + conf.server->error_page[405];
-	std::string body;
 	res->setStatus(405);
 	res->setContentType(path);
 	readFile(open(path.c_str(), O_RDONLY), new FileData(fd, res));

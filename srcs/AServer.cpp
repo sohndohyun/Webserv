@@ -65,6 +65,7 @@ void AServer::run(std::string ip, std::vector<int> ports)
 	}
 
 	fd_set rset, wset;
+	BEGIN:
 	while (true)
 	{
 		//FD_SET///////////////////////
@@ -72,25 +73,32 @@ void AServer::run(std::string ip, std::vector<int> ports)
 		FD_ZERO(&wset);
 		for (size_t i = 0;i < listenSocks.size();i++)
 			FD_SET(listenSocks[i], &rset);
-		for (size_t i = 0;i < clients.size();i++)
+		if (writeFiles.size() + readFiles.size() > 0)
 		{
-			if (clients[i]->str.size() > 0)
-				FD_SET(clients[i]->fd, &wset);
-			else
-				FD_SET(clients[i]->fd, &rset);
+			for (size_t i = 0;i < writeFiles.size();i++)
+			{
+				if (fdMax < writeFiles[i]->fd)
+						fdMax = writeFiles[i]->fd;
+				FD_SET(writeFiles[i]->fd, &wset);
+			}
+			for (size_t i = 0;i < readFiles.size();i++)
+			{
+				if (fdMax < readFiles[i]->fd)
+						fdMax = readFiles[i]->fd;
+				FD_SET(readFiles[i]->fd, &rset);
+			}
 		}
-		for (size_t i = 0;i < writeFiles.size();i++)
+		else
 		{
-			if (fdMax < writeFiles[i]->fd)
-					fdMax = writeFiles[i]->fd;
-			FD_SET(writeFiles[i]->fd, &wset);
+			for (size_t i = 0;i < clients.size();i++)
+			{
+				if (clients[i]->str.size() > 0)
+					FD_SET(clients[i]->fd, &wset);
+				else
+					FD_SET(clients[i]->fd, &rset);
+			}
 		}
-		for (size_t i = 0;i < readFiles.size();i++)
-		{
-			if (fdMax < readFiles[i]->fd)
-					fdMax = readFiles[i]->fd;
-			FD_SET(readFiles[i]->fd, &rset);
-		}
+		
 		///////////////////////////////
 
 		//SELECT///////////////////////
@@ -200,7 +208,10 @@ void AServer::run(std::string ip, std::vector<int> ports)
 					continue;
 				}
 				if (ret < static_cast<int>(wf->str.size()))
+				{
 					wf->str = wf->str.substr(ret);
+					goto BEGIN;
+				}
 				else
 				{
 					FD_CLR(wf->fd, &wset);
@@ -235,6 +246,7 @@ void AServer::run(std::string ip, std::vector<int> ports)
 					continue;
 				}
 				wf->str.append(buf, str_len);
+				goto BEGIN;
 			}
 			it++;
 		}

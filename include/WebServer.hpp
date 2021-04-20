@@ -19,11 +19,13 @@ private:
 	class FileData
 	{
 	public:
-		FileData(int fd, Response *res, bool isCGI = false);
+		FileData(int fd, Response *res, bool isCGI = false, char **envp = NULL, std::string const &path = "");
 		~FileData();
 		int fd;
 		Response *res;
 		bool isCGI;
+		char **envp;
+		std::string path;
 	};
 
 	std::map<int, Request*> requests;
@@ -45,7 +47,7 @@ public:
 	virtual ~WebServer();
 
 	void request_process(int fd, Request &req);
-	void cgi_stub(std::string const &path, Request &req, std::string &result);
+	int cgi_stub(int tempfd, FileData *fData);
 
 	void methodGET(int fd, Response *res, std::string req_path);
 	void methodHEAD(int fd, Response *res, std::string req_path);
