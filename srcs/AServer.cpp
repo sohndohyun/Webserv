@@ -64,6 +64,9 @@ void AServer::run(std::string ip, std::vector<int> ports)
 		listenSocks.push_back(listenSocket);
 	}
 
+	// timeval tv;
+	// tv.tv_sec = 2;
+
 	fd_set rset, wset;
 	BEGIN:
 	while (true)
@@ -140,7 +143,7 @@ void AServer::run(std::string ip, std::vector<int> ports)
 			{
 				char buf[BUFSIZ];
 				int str_len = recv(cl->fd, buf, BUFSIZ, 0);
-				if (str_len <= 0)
+				if (str_len == 0)
 				{
 					OnDisconnect(cl->fd);
 					FD_CLR(cl->fd, &rset);
@@ -149,6 +152,10 @@ void AServer::run(std::string ip, std::vector<int> ports)
 					it = clients.erase(it);
 					continue;
 				}
+				else if (str_len < 0)
+				{
+					throw Exception("RECV ERROR!");
+				}
 				std::string temp;
 				temp.append(buf, str_len);
 				this->OnRecv(cl->fd, temp);
@@ -156,7 +163,7 @@ void AServer::run(std::string ip, std::vector<int> ports)
 			else if (FD_ISSET(cl->fd, &wset))
 			{
 				int ret = send(cl->fd, cl->str.c_str(), cl->str.size(), 0);
-				if (ret <= 0)
+				if (ret == 0)
 				{
 					OnDisconnect(cl->fd);
 					FD_CLR(cl->fd, &wset);
@@ -164,6 +171,10 @@ void AServer::run(std::string ip, std::vector<int> ports)
 					delete cl;
 					it = clients.erase(it);
 					continue;
+				}
+				else if (ret < 0)
+				{
+					throw Exception("SEND ERROR!");
 				}
 				if (ret < static_cast<int>(cl->str.size()))
 					cl->str = cl->str.substr(ret);

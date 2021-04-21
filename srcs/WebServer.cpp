@@ -38,6 +38,8 @@ void WebServer::OnRecv(int fd, std::string const &str)
 	if (requests[fd]->needRecv())
 		return;
 	request_process(fd, *requests[fd]);
+	if ((requests[fd]->header["Connection"] == "close"))
+		disconnect(fd);
 	requests[fd]->init();
 }
 
@@ -98,18 +100,20 @@ int WebServer::cgi_stub(int tempfd, FileData *fData)
 
 void WebServer::OnSend(int fd)
 {
-	std::cout << fd << ": sended!\n";
+	(void)&fd;
+//	std::cout << fd << ": sended!\n";
 }
 
 void WebServer::OnAccept(int fd, int port)
 {
-	std::cout << fd << "(" << port << "): accepted!" << "\n";
+	(void)&port;
+//	std::cout << fd << "(" << port << "): accepted!" << "\n";
 	requests.insert(std::make_pair(fd, new Request()));
 }
 
 void WebServer::OnDisconnect(int fd)
 {
-	std::cout << fd << ": disconnected!" << "\n";
+//	std::cout << fd << ": disconnected!" << "\n";
 	std::map<int, Request*>::iterator it = requests.find(fd);
 	if (it != requests.end())
 	{

@@ -188,6 +188,8 @@ void Request::parseBody()
 	}
 	else
 	{
+		if (static_cast<size_t>(bodysize) < leftStr.size())
+			std::cout << "ERROR!!" << std::endl;
 		body.append(leftStr);
 		leftStr.clear();
 		if (body.size() == static_cast<size_t>(bodysize))
