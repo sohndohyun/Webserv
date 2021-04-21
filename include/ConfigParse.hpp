@@ -9,6 +9,15 @@
 # define CONFIG_PATH "./config/config.ini"
 
 class ConfigParse{
+private:
+	void sectionParse(std::string str);
+	void serverParse(std::vector<std::string> section);
+	void locationParse(std::vector<std::string> section);
+	bool isMethod(std::string method);
+
+private:
+	int _confIdx;
+
 public:
 	typedef struct s_location
 	{
@@ -18,11 +27,13 @@ public:
 		std::string	cgi;
 		bool		autoindex;
 		int	client_max_body_size;
+		std::string auth_basic;
+		std::string auth_basic_user_file;
 	}t_location;
 
 	typedef struct s_server
 	{
-		int			port;
+		std::vector<int> port;
 		std::string	host;
 		std::string	name;
 		std::string	error_root;
@@ -30,15 +41,13 @@ public:
 		t_location	loca;
 	}t_server;
 
-public:
-	std::map<std::string, t_location> loca_map;
-	t_server *server;
+	typedef struct s_conf
+	{
+		std::map<std::string, t_location> loca_map;
+		t_server server;
+	}t_conf;
 
-private:
-	void sectionParse(std::string str);
-	void serverParse(std::vector<std::string> section);
-	void locationParse(std::vector<std::string> section);
-	std::vector<std::string> splitString(std::string str, char c);
+	std::vector<t_conf> conf;
 
 public:
 	ConfigParse();

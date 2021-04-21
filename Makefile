@@ -11,7 +11,7 @@ SRCS =	srcs/Utils.cpp \
 		srcs/ConfigParse.cpp \
 		srcs/Request.cpp \
 		srcs/ConfigCheck.cpp \
-		srcs/main.cpp 
+		srcs/main.cpp
 
 OBJS = $(SRCS:.cpp=.o)
 
@@ -29,5 +29,5 @@ clean:
 
 fclean: clean
 	rm -f $(NAME)
-	
+
 re: fclean all
