@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include "Exception.hpp"
 #include "Utils.hpp"
+#include "FileIO.hpp"
 
 ConfigParse::ConfigParse(): _confIdx(-1)
 {
@@ -34,6 +35,22 @@ ConfigParse::ConfigParse(): _confIdx(-1)
 	if (section_str != "")
 		sectionParse(section_str);
 	close(configFD);
+
+	
+	
+	for(size_t i = 0; i < conf.size(); i++)
+	{
+		if (conf[i].server.loca.auth_basic_user_file != "")
+		{
+			jachoi::FileIO(conf[i].server.loca.auth_basic_user_file).read(conf[i].htpasswd["server"]);
+		}
+		std::map<std::string, t_location>::iterator auth_iter = conf[i].loca_map.begin();
+		for(; auth_iter != conf[i].loca_map.end(); auth_iter++)
+		{
+			if (auth_iter->second.auth_basic_user_file != "")
+				jachoi::FileIO(auth_iter->second.auth_basic_user_file).read(conf[i].htpasswd[auth_iter->first]);
+		}
+	}
 }
 
 void ConfigParse::sectionParse(std::string str)
@@ -81,7 +98,11 @@ void ConfigParse::serverParse(std::vector<std::string> section)
 			std::vector<std::string> ports = jachoi::splitString(value, ' ');
 			std::vector<std::string>::iterator ports_iter = ports.begin();
 			for(; ports_iter != ports.end(); ports_iter++)
-				conf[_confIdx].server.port.push_back(jachoi::stoi(*ports_iter));
+			{
+				int _port = jachoi::stoi(*ports_iter);
+				conf[_confIdx].server.port.push_back(_port);
+				port.push_back(_port);
+			}
 		}
 		else if (key == "host")
 			conf[_confIdx].server.host = value;

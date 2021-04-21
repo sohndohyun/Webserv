@@ -1,0 +1,1 @@
+siege -b -R <(echo connection = keep-alive) http://localhost:8080

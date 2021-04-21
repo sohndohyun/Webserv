@@ -45,9 +45,11 @@ public:
 	{
 		std::map<std::string, t_location> loca_map;
 		t_server server;
+		std::map<std::string, std::string> htpasswd;
 	}t_conf;
 
 	std::vector<t_conf> conf;
+	std::vector<int> port;
 
 public:
 	ConfigParse();

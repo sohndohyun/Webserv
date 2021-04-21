@@ -22,6 +22,7 @@ protected:
 	public:
 		Client(int, std::string const &);
 		int fd;
+		int port;
 		bool willDie;
 		std::string str;
 	};
@@ -57,10 +58,10 @@ public:
 	void writeFile(int fd, std::string const &str, void *temp);
 	void readFile(int fd, void *temp);
 
-	virtual void OnRecv(int fd, std::string const &str) = 0;
-	virtual void OnSend(int fd) = 0;
+	virtual void OnRecv(int fd, int port, std::string const &str) = 0;
+	virtual void OnSend(int fd, int port) = 0;
 	virtual void OnAccept(int fd, int port) = 0;
-	virtual void OnDisconnect(int fd) = 0;
+	virtual void OnDisconnect(int fd, int port) = 0;
 
 	virtual void OnFileRead(int fd, std::string const &str, void *temp) = 0;
 	virtual void OnFileWrite(int fd, void *temp) = 0;

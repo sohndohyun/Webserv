@@ -31,33 +31,34 @@ private:
 	std::map<int, Request*> requests;
 
 	std::map<int, std::string> reqStr;
-	ConfigParse::t_conf &conf;
+	ConfigParse &confs;
 
 public:
 	AServer::t_analysis analysis;
 
 public:
-	WebServer(ConfigParse::t_conf &conf);
+	WebServer(ConfigParse &conf);
 
-	virtual void OnRecv(int fd, std::string const &str);
-	virtual void OnSend(int fd);
+	virtual void OnRecv(int fd, int port, std::string const &str);
+	virtual void OnSend(int fd, int port);
 	virtual void OnAccept(int fd, int port);
-	virtual void OnDisconnect(int fd);
+	virtual void OnDisconnect(int fd, int port);
 
 	virtual void OnFileRead(int fd, std::string const &str, void *temp);
 	virtual void OnFileWrite(int fd, void *temp);
 
 	virtual ~WebServer();
 
-	void request_process(int fd, Request &req);
+	void request_process(int fd, int port, Request &req);
 	int cgi_stub(int tempfd, FileData *fData);
 
 
-	void methodGET(int fd, Response *res, Request &req);
-	void methodHEAD(int fd, Response *res, Request &req);
-	void methodPUT(int fd, Response *res, Request &req);
-	void methodPOST(int fd, Response *res, Request &req);
+	void methodGET(int fd, int port, Response *res, Request &req);
+	void methodHEAD(int fd, int port, Response *res, Request &req);
+	void methodPUT(int fd, int port, Response *res, Request &req);
+	void methodPOST(int fd, int port, Response *res, Request &req);
 
 private:
-	void errorRes(int fd, Response *res, int errorCode, std::vector<std::string> allow_methods = std::vector<std::string>());
+	int get_conf_idx(int port);
+	void errorRes(int fd, int port, Response *res, int errorCode, std::vector<std::string> allow_methods = std::vector<std::string>());
 };

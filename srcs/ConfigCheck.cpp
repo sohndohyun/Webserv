@@ -27,15 +27,13 @@ std::string ConfigCheck::findLocation()
 	return ("");
 }
 
-std::string ConfigCheck::getRootURL()
+std::string ConfigCheck::getRootURL(int port)
 {
-	//수정필요
-	//conf.server.port[0]
-	return ("http://localhost:" + jachoi::to_string(conf.server.port[0]));
+	return ("http://localhost:" + jachoi::to_string(port));
 }
 
 
-std::string ConfigCheck::makeAutoIdx(std::string path)
+std::string ConfigCheck::makeAutoIdx(std::string path, int port)
 {
 	std::string body = "<html>\n\t<head>\n\t\t<title>Index of " + req_path + "</title>\n\t</head>\n\t<body>\n\t\t<h1>Index of " + req_path + "</h1>\n\t\t<hr>\n\t\t<pre>";
 	std::vector<std::string> dirNames = jachoi::getDirNames(path);
@@ -44,7 +42,7 @@ std::string ConfigCheck::makeAutoIdx(std::string path)
 	{
 		if (req_path == "/" && *iter == "..")
 			continue ;
-		body += "\n<a href=\"" + getRootURL() + req_path;
+		body += "\n<a href=\"" + getRootURL(port) + req_path;
 		if (req_path[req_path.length() - 1] != '/')
 			body += "/";
 		std::map<std::string, ConfigParse::t_location>::iterator iter_loca = conf.loca_map.begin();
@@ -65,7 +63,7 @@ std::string ConfigCheck::makeAutoIdx(std::string path)
 	return (body);
 }
 
-std::string ConfigCheck::autoIdxCheck()
+std::string ConfigCheck::autoIdxCheck(int port)
 {
 	std::string location = findLocation();
 	std::string body = "";
@@ -75,12 +73,12 @@ std::string ConfigCheck::autoIdxCheck()
 	if (location == "/" || findPath().rfind('/') == conf.server.loca.root.rfind('/'))
 	{
 		if (conf.server.loca.autoindex)
-			body += makeAutoIdx(path);
+			body += makeAutoIdx(path, port);
 	}
 	else if (location != "")
 	{
 		if (conf.loca_map[location].autoindex && stat(path.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
-			body += makeAutoIdx(path);
+			body += makeAutoIdx(path, port);
 	}
 	return (body);
 }
@@ -219,17 +217,16 @@ bool ConfigCheck::cgiCheck()
 	return (false);
 }
 
-bool ConfigCheck::auth_ID_PWD_check(std::string auth_path, std::string auth_str)
+bool ConfigCheck::auth_ID_PWD_check(std::string htpasswd, std::string auth_str)
 {
 	if (auth_str.find("Basic") == std::string::npos)
 		return false;
 
 	std::string decodeStr = "";
-	std::string htpasswd = "";
 	auth_str = auth_str.substr(auth_str.find(' ') + 1, auth_str.length() - (auth_str.find(' ') + 1));
 
 	jachoi::base64Decode(auth_str, (int)auth_str.length(), decodeStr);
-	jachoi::FileIO(auth_path).read(htpasswd);
+
 	std::vector<std::string> lists = jachoi::splitString(htpasswd, '\n');
 	for(int i = 0; i < (int)lists.size(); i++)
 	{
@@ -249,14 +246,14 @@ bool ConfigCheck::AuthorizationCheck(std::string auth_str)
 	if (location == "/" || findPath().rfind('/') == conf.server.loca.root.rfind('/'))
 	{
 		if (conf.server.loca.auth_basic_user_file != "")
-			return (auth_ID_PWD_check(conf.server.loca.auth_basic_user_file, auth_str));
+			return (auth_ID_PWD_check(conf.htpasswd["server"], auth_str));
 		else
 			return true;
 	}
 	else if (location != "")
 	{
 		if (conf.loca_map[location].auth_basic_user_file != "")
-			return (auth_ID_PWD_check(conf.loca_map[location].auth_basic_user_file, auth_str));
+			return (auth_ID_PWD_check(conf.htpasswd[location], auth_str));
 		else
 			return true;
 	}

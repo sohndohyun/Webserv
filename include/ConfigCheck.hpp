@@ -14,9 +14,9 @@ private:
 
 private:
 	std::string findLocation();
-	std::string getRootURL();
-	std::string makeAutoIdx(std::string path);
-	bool auth_ID_PWD_check(std::string auth_path, std::string auth_str);
+	std::string getRootURL(int port);
+	std::string makeAutoIdx(std::string path, int port);
+	bool auth_ID_PWD_check(std::string htpasswd, std::string auth_str);
 
 public:
 	ConfigCheck(ConfigParse::t_conf &conf, std::string req_path);
@@ -31,7 +31,7 @@ public:
 	bool AuthorizationCheck(std::string auth_str);
 	bool analysisCheck();
 	std::string makeAnalysisHTML(AServer::t_analysis analysis);
-	std::string autoIdxCheck();
+	std::string autoIdxCheck(int port);
 };
 
 #endif

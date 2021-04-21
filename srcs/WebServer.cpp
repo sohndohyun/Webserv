@@ -29,27 +29,27 @@ WebServer::FileData::~FileData()
 	}
 }
 
-WebServer::WebServer(ConfigParse::t_conf &conf): conf(conf){}
+WebServer::WebServer(ConfigParse &conf): confs(conf){}
 
-void WebServer::OnRecv(int fd, std::string const &str)
+void WebServer::OnRecv(int fd, int port, std::string const &str)
 {
 	requests[fd]->add(str);
 	if (requests[fd]->needRecv())
 		return;
-	request_process(fd, *requests[fd]);
+	request_process(fd, port, *requests[fd]);
 	if ((requests[fd]->header["Connection"] == "close"))
 		disconnect(fd);
 	requests[fd]->init();
 }
 
-void WebServer::request_process(int fd, Request &req)
+void WebServer::request_process(int fd, int port, Request &req)
 {
-	Response *res = new Response(conf.server.name);
+	Response *res = new Response(confs.conf[get_conf_idx(port)].server.name);
 	req.isReferer(analysis);
 	req.isUserAgent(analysis);
 	if (req.errorCode != 200)
 	{
-		errorRes(fd, res, req.errorCode);
+		errorRes(fd, port, res, req.errorCode);
 		sendStr(fd, res->res_str);
 		return ;
 	}
@@ -58,26 +58,26 @@ void WebServer::request_process(int fd, Request &req)
 	{
 		case GET:
 		{
-			methodGET(fd, res, req);
+			methodGET(fd, port, res, req);
 			break;
 		}
 		case POST:
 		{
-			methodPOST(fd, res, req);
+			methodPOST(fd, port, res, req);
 			break;
 		}
 		case HEAD:
 		{
-			methodHEAD(fd, res, req);
+			methodHEAD(fd, port,res, req);
 			break;
 		}
 		case PUT:
 		{
-			methodPUT(fd, res, req);
+			methodPUT(fd, port,res, req);
 			break;
 		}
 		default:
-			errorRes(fd, res, 503);
+			errorRes(fd, port, res, 503);
 			break;
 	}
 }
@@ -86,7 +86,7 @@ int WebServer::cgi_stub(int tempfd, FileData *fData)
 {
 	lseek(tempfd, 0, SEEK_SET);
 
-	int fdout = open(".TEMPOUT", O_CREAT | O_TRUNC | O_RDWR, 0644);
+	int fdout = jachoi::open(".TEMPOUT", O_CREAT | O_TRUNC | O_RDWR, 0644);
 	pid_t pid = fork();
 	if (pid < 0)
 		throw Exception("cgi: fork error");
@@ -106,9 +106,10 @@ int WebServer::cgi_stub(int tempfd, FileData *fData)
 	return fdout;
 }
 
-void WebServer::OnSend(int fd)
+void WebServer::OnSend(int fd, int port)
 {
-	(void)&fd;
+	(void)fd;
+	(void)port;
 }
 
 void WebServer::OnAccept(int fd, int port)
@@ -117,8 +118,9 @@ void WebServer::OnAccept(int fd, int port)
 	requests.insert(std::make_pair(fd, new Request()));
 }
 
-void WebServer::OnDisconnect(int fd)
+void WebServer::OnDisconnect(int fd, int port)
 {
+	(void)port;
 	std::map<int, Request*>::iterator it = requests.find(fd);
 	if (it != requests.end())
 	{
@@ -142,7 +144,7 @@ void WebServer::OnFileRead(int fd, std::string const &str, void *temp)
 		std::string s = str.substr(str.find("\r\n\r\n") + 4);
 		fData->res->makeRes(s);
 		fData->isCGI = false;
-		writeFile(open(fData->path.c_str(), O_CREAT | O_WRONLY, 0644), s, fData);
+		writeFile(jachoi::open(fData->path.c_str(), O_CREAT | O_WRONLY, 0644), s, fData);
 	}
 	close(fd);
 }
@@ -171,30 +173,21 @@ WebServer::~WebServer()
 	requests.clear();
 }
 
-void WebServer::methodGET(int fd, Response *res, Request &req)
+void WebServer::methodGET(int fd, int port,  Response *res, Request &req)
 {
-	ConfigCheck cfg_check(conf, req.path);
+
+	ConfigCheck cfg_check(confs.conf[get_conf_idx(port)], req.path);
 	std::vector<std::string> allow_methods;
 	std::string body = "";
 	struct stat sb;
 
-/*<<<<<<< HEAD
-	res->setContentType(path);
-	if (cfg_check.methodCheck("GET") == false)
-	{
-		path = conf.server->error_root + conf.server->error_page[405];
-		res->setStatus(405);
-		res->setContentType(path);
-		readFile(open(path.c_str(), O_RDONLY), new FileData(fd, res ));
-*/
 	if (cfg_check.analysisCheck())
 	{
 		res->setContentType(".html");
 		res->setStatus(200);
 		res->makeRes(cfg_check.makeAnalysisHTML(analysis));
 		sendStr(fd, res->res_str);
-		delete res;
-		return ;
+		delete res; return;
 	}
 
 	int is_dir = 0;
@@ -202,11 +195,11 @@ void WebServer::methodGET(int fd, Response *res, Request &req)
 	req.isAcceptLanguage(path, is_dir);
 
 	if (cfg_check.AuthorizationCheck(req.header["Authorization"]) == false)
-		errorRes(fd, res, 401);
+		errorRes(fd, port, res, 401);
 	else if (path == "")
-		errorRes(fd, res, 404);
+		errorRes(fd, port, res, 404);
 	else if (cfg_check.methodCheck("GET", allow_methods) == false)
-		errorRes(fd, res, 405, allow_methods);
+		errorRes(fd, port, res, 405, allow_methods);
 	else
 	{
 		res->setContentType(path);
@@ -215,24 +208,28 @@ void WebServer::methodGET(int fd, Response *res, Request &req)
 
 		if (stat(cfg_check.findPath().c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
 		{
-			body = cfg_check.autoIdxCheck();
+			body = cfg_check.autoIdxCheck(port);
 			if (body == "")
 			{
 				res->setLastModified(path);
-				readFile(open(path.c_str(), O_RDONLY), new FileData(fd, res));
+				readFile(jachoi::open(path.c_str(), O_RDONLY), new FileData(fd, res));
+				return ;
 			}
+			res->makeRes(body);
+			sendStr(fd, res->res_str);
+			delete res;
 		}
 		else
 		{
 			res->setLastModified(path);
-			readFile(open(path.c_str(), O_RDONLY), new FileData(fd, res));
+			readFile(jachoi::open(path.c_str(), O_RDONLY), new FileData(fd, res));
 		}
 	}
 }
 
-void WebServer::methodHEAD(int fd, Response *res, Request &req)
+void WebServer::methodHEAD(int fd, int port, Response *res, Request &req)
 {
-	ConfigCheck cfg_check(conf, req.path);
+	ConfigCheck cfg_check(confs.conf[get_conf_idx(port)], req.path);
 	std::vector<std::string> allow_methods;
 
 	int is_dir = 0;
@@ -240,11 +237,11 @@ void WebServer::methodHEAD(int fd, Response *res, Request &req)
 	req.isAcceptLanguage(path, is_dir);
 
 	if (cfg_check.AuthorizationCheck(req.header["Authorization"]) == false)
-		errorRes(fd, res, 401);
+		errorRes(fd, port, res, 401);
 	else if (path == "")
-		errorRes(fd, res, 404);
+		errorRes(fd, port, res, 404);
 	else if (cfg_check.methodCheck("HEAD", allow_methods) == false)
-		errorRes(fd, res, 405, allow_methods);
+		errorRes(fd, port, res, 405, allow_methods);
 	else
 	{
 		res->setContentType(path);
@@ -256,9 +253,9 @@ void WebServer::methodHEAD(int fd, Response *res, Request &req)
 	}
 }
 
-void WebServer::methodPUT(int fd, Response *res, Request &req)
+void WebServer::methodPUT(int fd, int port, Response *res, Request &req)
 {
-	ConfigCheck cfg_check(conf, req.path);
+	ConfigCheck cfg_check(confs.conf[get_conf_idx(port)], req.path);
 	std::string body;
 	std::string path = cfg_check.findPath();
 	struct stat sb;
@@ -266,9 +263,9 @@ void WebServer::methodPUT(int fd, Response *res, Request &req)
 	std::vector<std::string> allow_methods;
 
 	if (cfg_check.AuthorizationCheck(req.header["Authorization"]) == false)
-		errorRes(fd, res, 401);
+		errorRes(fd, port, res, 401);
 	else if (cfg_check.methodCheck("PUT", allow_methods) == false)
-		errorRes(fd, res, 405, allow_methods);
+		errorRes(fd, port, res, 405, allow_methods);
 	else
 	{
 		if (stat_rtn == -1)
@@ -277,7 +274,7 @@ void WebServer::methodPUT(int fd, Response *res, Request &req)
 			res->setLocation(req.path);
 			res->setLastModified(path);
 			res->makeRes("", true);
-			writeFile(open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644), req.body, new FileData(fd, res));
+			writeFile(jachoi::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644), req.body, new FileData(fd, res));
 		}
 		else if (stat_rtn == 0 && S_ISREG(sb.st_mode))
 		{
@@ -285,25 +282,25 @@ void WebServer::methodPUT(int fd, Response *res, Request &req)
 			res->setContentLocation(req.path);
 			res->setLastModified(path);
 			res->makeRes("", true);
-			writeFile(open(path.c_str(), O_CREAT | O_APPEND | O_WRONLY, 0644), req.body, new FileData(fd, res));
+			writeFile(jachoi::open(path.c_str(), O_CREAT | O_APPEND | O_WRONLY, 0644), req.body, new FileData(fd, res));
 		}
 	}
 }
 
-void WebServer::methodPOST(int fd, Response *res, Request &req)
+void WebServer::methodPOST(int fd, int port, Response *res, Request &req)
 {
-	ConfigCheck cfg_check(conf, req.path);
+	ConfigCheck cfg_check(confs.conf[get_conf_idx(port)], req.path);
 	std::string path = cfg_check.findPath();
 	//struct stat sb;
 	//int stat_rtn = stat(path.c_str(), &sb);
 	std::vector<std::string> allow_methods;
 
 	if (cfg_check.AuthorizationCheck(req.header["Authorization"]) == false)
-		errorRes(fd, res, 401);
+		errorRes(fd, port, res, 401);
 	else if (cfg_check.methodCheck("POST", allow_methods) == false)
-		errorRes(fd, res, 405, allow_methods);
+		errorRes(fd, port, res, 405, allow_methods);
 	else if (cfg_check.client_max_body_size_Check(req.body.size()) == false)
-		errorRes(fd, res, 413);
+		errorRes(fd, port, res, 413);
 	else
 	{
 		if (cfg_check.cgiCheck())
@@ -321,7 +318,7 @@ void WebServer::methodPOST(int fd, Response *res, Request &req)
 			if (req.header.find("X-Secret-Header-For-Test") != req.header.end())
 				map_env["HTTP_X_SECRET_HEADER_FOR_TEST"] = req.header["X-Secret-Header-For-Test"];
 		
-			writeFile(open(tempfile.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0644), req.body, 
+			writeFile(jachoi::open(tempfile.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0644), req.body, 
 				new FileData(fd, res, true, jachoi::mtostrarr(map_env), path));
 			}
 		else
@@ -331,13 +328,14 @@ void WebServer::methodPOST(int fd, Response *res, Request &req)
 			res->setContentLocation(req.path);
 			res->setLastModified(path);
 			res->makeRes(req.body);
-			writeFile(open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644), req.body, new FileData(fd, res));
+			writeFile(jachoi::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644), req.body, new FileData(fd, res));
 		}
 	}
 }
 
-void WebServer::errorRes(int fd, Response *res, int errorCode, std::vector<std::string> allow_methods)
+void WebServer::errorRes(int fd, int port, Response *res, int errorCode, std::vector<std::string> allow_methods)
 {
+	ConfigParse::t_conf& conf = confs.conf[get_conf_idx(port)];
 	std::string path = conf.server.error_root + conf.server.error_page[errorCode];
 
 	res->setStatus(errorCode);
@@ -360,5 +358,16 @@ void WebServer::errorRes(int fd, Response *res, int errorCode, std::vector<std::
 			break;
 		}
 	}
-	readFile(open(path.c_str(), O_RDONLY), new FileData(fd, res));
+	readFile(jachoi::open(path.c_str(), O_RDONLY), new FileData(fd, res));
+}
+
+int WebServer::get_conf_idx(int port)
+{
+	for (size_t i = 0 ; i < confs.conf.size(); i++)
+	{
+		std::vector<int>::iterator it = std::find(confs.conf[i].server.port.begin(), confs.conf[i].server.port.end(), port);
+		if (it != confs.conf[i].server.port.end())
+			return i;
+	}
+	return -1;
 }
