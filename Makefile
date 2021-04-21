@@ -20,7 +20,6 @@ all: $(NAME)
 $(NAME): $(OBJS)
 	$(CC) $(FLAG) $(HEADER) $^ -o $(NAME)
 
-
 %.o: %.cpp
 	$(CC) $(FLAG) $(HEADER) -o $@ -c $<
 

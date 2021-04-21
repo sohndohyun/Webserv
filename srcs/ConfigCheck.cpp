@@ -29,14 +29,14 @@ std::string ConfigCheck::findLocation()
 
 std::string ConfigCheck::getRootURL(int port)
 {
-	return ("http://localhost:" + jachoi::to_string(port));
+	return ("http://localhost:" + utils::to_string(port));
 }
 
 
 std::string ConfigCheck::makeAutoIdx(std::string path, int port)
 {
 	std::string body = "<html>\n\t<head>\n\t\t<title>Index of " + req_path + "</title>\n\t</head>\n\t<body>\n\t\t<h1>Index of " + req_path + "</h1>\n\t\t<hr>\n\t\t<pre>";
-	std::vector<std::string> dirNames = jachoi::getDirNames(path);
+	std::vector<std::string> dirNames = utils::getDirNames(path);
 	std::vector<std::string>::iterator iter = dirNames.begin();
 	for(; iter != dirNames.end(); iter++)
 	{
@@ -225,14 +225,14 @@ bool ConfigCheck::auth_ID_PWD_check(std::string htpasswd, std::string auth_str)
 	std::string decodeStr = "";
 	auth_str = auth_str.substr(auth_str.find(' ') + 1, auth_str.length() - (auth_str.find(' ') + 1));
 
-	jachoi::base64Decode(auth_str, (int)auth_str.length(), decodeStr);
+	utils::base64Decode(auth_str, (int)auth_str.length(), decodeStr);
 
-	std::vector<std::string> lists = jachoi::splitString(htpasswd, '\n');
+	std::vector<std::string> lists = utils::splitString(htpasswd, '\n');
 	for(int i = 0; i < (int)lists.size(); i++)
 	{
-		std::vector<std::string> id_pwd = jachoi::splitString(lists[i], ':');
+		std::vector<std::string> id_pwd = utils::splitString(lists[i], ':');
 		std::string idpwStr;
-		jachoi::base64Decode(id_pwd[1], (int)id_pwd[1].length(), idpwStr);
+		utils::base64Decode(id_pwd[1], (int)id_pwd[1].length(), idpwStr);
 		idpwStr = id_pwd[0] + ":" + idpwStr;
 		if (decodeStr == idpwStr)
 			return true;
@@ -274,7 +274,7 @@ std::string ConfigCheck::makeAnalysisHTML(AServer::t_analysis analysis)
 	for(ref_iter = analysis.referer.begin(); ref_iter != analysis.referer.end(); ref_iter++)
 	{
 		result = (double)ref_iter->second / (double)total * 100.0;
-		str += ref_iter->first + "\t: " + jachoi::to_string((int)result) + "%\n";
+		str += ref_iter->first + "\t: " + utils::to_string((int)result) + "%\n";
 	}
 	if (analysis.referer.size() != 0)
 		str += "</b></pre>";
@@ -287,7 +287,7 @@ std::string ConfigCheck::makeAnalysisHTML(AServer::t_analysis analysis)
 	for(user_iter = analysis.user_agent.begin(); user_iter != analysis.user_agent.end(); user_iter++)
 	{
 		result = (double)user_iter->second / (double)total * 100.0;
-		str += user_iter->first + "\t: " + jachoi::to_string((int)result) + "%\n";
+		str += user_iter->first + "\t: " + utils::to_string((int)result) + "%\n";
 	}
 	str += "</b></pre>\n\t</body>\n</html>";
 

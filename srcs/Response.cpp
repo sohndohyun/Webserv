@@ -9,7 +9,7 @@
 
 Response::Response(const std::string& server_name)
 {
-	header.insert(make_pair("Server", server_name));
+	header.insert(std::make_pair("Server", server_name));
 }
 
 Response::~Response() {}
@@ -83,14 +83,14 @@ void Response::setDate()
 	struct tm time;
 
 	gettimeofday(&curr, NULL);
-	strptime(jachoi::to_string(curr.tv_sec).c_str(), "%s", &time);
-	header.insert(make_pair("Date", jachoi::makeGMT(time.tm_zone, curr.tv_sec)));
+	strptime(utils::to_string(curr.tv_sec).c_str(), "%s", &time);
+	header.insert(make_pair("Date", utils::makeGMT(time.tm_zone, curr.tv_sec)));
 }
 
 void Response::setStatus(int status_code)
 {
 	header["status_msg"] = initStatus(status_code);
-	header["status_code"] = jachoi::to_string(status_code);
+	header["status_code"] = utils::to_string(status_code);
 }
 
 void Response::setContentType(const std::string& content_path)
@@ -141,7 +141,7 @@ void Response::setLastModified(const std::string& content_path)
 
 	stat(content_path.c_str(), &sb);
 
-	header["Last-Modified"] = jachoi::makeGMT("KST", sb.st_mtime);
+	header["Last-Modified"] = utils::makeGMT("KST", sb.st_mtime);
 }
 
 void Response::setRetryAfter(void)
@@ -151,8 +151,8 @@ void Response::setRetryAfter(void)
 
 	gettimeofday(&curr, NULL);
 	curr.tv_sec += 365 * 24 * 60 * 60;
-	strptime(jachoi::to_string(curr.tv_sec).c_str(), "%s", &time);
-	header["Retry-After"] = jachoi::makeGMT(time.tm_zone, curr.tv_sec);
+	strptime(utils::to_string(curr.tv_sec).c_str(), "%s", &time);
+	header["Retry-After"] = utils::makeGMT(time.tm_zone, curr.tv_sec);
 }
 
 void Response::setWWWAuthenticate(void)
@@ -174,7 +174,7 @@ void Response::makeRes(std::string body, bool isPUT, bool chunked)
 			res_str += iter->first + ": " + iter->second + "\r\n";
 	}
 	if (chunked == false)
-		res_str += "Content-Length: " + jachoi::to_string(body.length()) + "\r\n";
+		res_str += "Content-Length: " + utils::to_string(body.length()) + "\r\n";
 	else if (isPUT == false)
 		res_str += "Transfer-Encoding: chunked\r\n";
 

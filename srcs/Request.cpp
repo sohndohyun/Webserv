@@ -109,7 +109,7 @@ void Request::parseHeader()
 			if (colon_pos == std::string::npos)
 				errorCode = 400;
 			else
-				header[line.substr(0, colon_pos)] = jachoi::ltrim(line.substr(colon_pos + 1));
+				header[line.substr(0, colon_pos)] = utils::ltrim(line.substr(colon_pos + 1));
 			begin = end + 2;
 		}
 		else
@@ -145,9 +145,9 @@ void Request::parseBody()
 		size_t begin = 0;
 		size_t end = leftStr.find("\r\n");
 
-		while (jachoi::isHex(leftStr, begin, end))
+		while (utils::isHex(leftStr, begin, end))
 		{
-			size_t blockSize = jachoi::htoi(leftStr.substr(begin, end - begin));
+			size_t blockSize = utils::htoi(leftStr.substr(begin, end - begin));
 
 			if (blockSize == 0) // 찐막
 			{
@@ -214,7 +214,7 @@ void Request::isAcceptLanguage(std::string &content_path, int is_dir)
 	if (content_path.find("index.html") != std::string::npos)
 		path += "index.html";
 
-	std::vector<std::string> langs = jachoi::splitString(header["Accept-Language"], ',');
+	std::vector<std::string> langs = utils::splitString(header["Accept-Language"], ',');
 	std::vector<std::string>::iterator iter = langs.begin();
 	for(; iter != langs.end(); iter++)
 	{
@@ -235,7 +235,7 @@ bool Request::isAcceptCharset()
 	if (header.find("Accept-Charset") == header.end())
 		return (true);
 
-	std::vector<std::string> charsets = jachoi::splitString(header["Accept-Charset"], ',');
+	std::vector<std::string> charsets = utils::splitString(header["Accept-Charset"], ',');
 	std::vector<std::string>::iterator iter = charsets.begin();
 	for(; iter != charsets.end(); iter++)
 	{
