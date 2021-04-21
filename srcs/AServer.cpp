@@ -291,7 +291,7 @@ void AServer::writeFile(int fd, std::string const &str, void *temp)
 {
 	if (fd < 0 && str.size() > 0)
 	{
-		std::cerr << strerror(errno) << std::endl;
+		std::cerr << "write file error\n";
 	}
 	for (size_t i = 0;i < writeFiles.size();i++)
 	{

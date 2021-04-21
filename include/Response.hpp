@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <map>
+#include <vector>
 
 class Response
 {
@@ -16,15 +17,15 @@ public:
 	std::string res_str;
 
 public:
-	Response(std::string server_name);
+	Response(const std::string& server_name);
 	virtual ~Response();
 
 	void setStatus(int status_code);
-	void setContentType(std::string content_path);
-	void setContentLocation(std::string req_path);
-	void setAllow(std::vector<std::string> allowMethods);
-	void setLocation(std::string req_path);
-	void setLastModified(std::string content_path);
+	void setContentType(const std::string& content_path);
+	void setContentLocation(const std::string& req_path);
+	void setAllow(const std::vector<std::string>& allowMethods);
+	void setLocation(const std::string& req_path);
+	void setLastModified(const std::string& content_path);
 	void setRetryAfter(void);
 	void setWWWAuthenticate(void);
 

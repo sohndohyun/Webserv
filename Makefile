@@ -1,5 +1,5 @@
 NAME = Webserv
-FLAG =	-Wall -Wextra -Werror -std=c++98 -g
+FLAG =	-Wall -Wextra -Werror -std=c++98 -g -fsanitize=address
 HEADER = -I./include
 CC = clang++
 SRCS =	srcs/Utils.cpp \

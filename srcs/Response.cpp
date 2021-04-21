@@ -5,8 +5,9 @@
 #include "Utils.hpp"
 #include "ConfigParse.hpp"
 #include "Exception.hpp"
+#include <vector>
 
-Response::Response(std::string server_name)
+Response::Response(const std::string& server_name)
 {
 	header.insert(make_pair("Server", server_name));
 }
@@ -92,7 +93,7 @@ void Response::setStatus(int status_code)
 	header["status_code"] = jachoi::to_string(status_code);
 }
 
-void Response::setContentType(std::string content_path)
+void Response::setContentType(const std::string& content_path)
 {
 	std::string type = content_path.substr(content_path.rfind('.') + 1);
 
@@ -110,16 +111,16 @@ void Response::setContentType(std::string content_path)
 		header["Content-Type"] = "text/plain";
 }
 
-void Response::setContentLocation(std::string req_path)
+void Response::setContentLocation(const std::string& req_path)
 {
 	header["Content-Location"] = req_path;
 }
 
-void Response::setAllow(std::vector<std::string> allowMethods)
+void Response::setAllow(const std::vector<std::string>& allowMethods)
 {
 	std::string str;
 
-	std::vector<std::string>::iterator iter = allowMethods.begin();
+	std::vector<std::string>::const_iterator iter = allowMethods.begin();
 	for(; iter != allowMethods.end(); iter++)
 	{
 		str += *iter;
@@ -129,26 +130,24 @@ void Response::setAllow(std::vector<std::string> allowMethods)
 	header["Allow"] = str;
 }
 
-void Response::setLocation(std::string req_path)
+void Response::setLocation(const std::string& req_path)
 {
 	header["Location"] = req_path;
 }
 
-void Response::setLastModified(std::string content_path)
+void Response::setLastModified(const std::string& content_path)
 {
 	struct stat sb;
-	struct tm time;
 
 	stat(content_path.c_str(), &sb);
 
-	strptime(ctime(&sb.st_mtime), "%s", &time);
-	header["Last-Modified"] = jachoi::makeGMT(time.tm_zone, sb.st_mtime);
+	header["Last-Modified"] = jachoi::makeGMT("KST", sb.st_mtime);
 }
 
 void Response::setRetryAfter(void)
 {
-	struct timeval curr;
-	struct tm time;
+	timeval curr;
+	tm time;
 
 	gettimeofday(&curr, NULL);
 	curr.tv_sec += 365 * 24 * 60 * 60;
