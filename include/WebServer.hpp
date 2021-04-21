@@ -16,6 +16,18 @@ class Response;
 class WebServer : public AServer
 {
 private:
+	class FileData
+	{
+	public:
+		FileData(int fd, Response *res, bool isCGI = false, char **envp = NULL, std::string const &path = "");
+		~FileData();
+		int fd;
+		Response *res;
+		bool isCGI;
+		char **envp;
+		std::string path;
+	};
+
 	std::map<int, Request*> requests;
 
 	std::map<int, std::string> reqStr;
@@ -31,16 +43,21 @@ public:
 	virtual void OnSend(int fd);
 	virtual void OnAccept(int fd, int port);
 	virtual void OnDisconnect(int fd);
+
+	virtual void OnFileRead(int fd, std::string const &str, void *temp);
+	virtual void OnFileWrite(int fd, void *temp);
+
 	virtual ~WebServer();
 
 	void request_process(int fd, Request &req);
-	void cgi_stub(std::string const &path, Request &req, std::string &result);
+	int cgi_stub(int tempfd, FileData *fData);
 
-	void methodGET(Response &res, Request &req);
-	void methodHEAD(Response &res, Request &req);
-	void methodPUT(Response &res, Request &req);
-	void methodPOST(Response &res, Request &req);
+
+	void methodGET(int fd, Response *res, Request &req);
+	void methodHEAD(int fd, Response *res, Request &req);
+	void methodPUT(int fd, Response *res, Request &req);
+	void methodPOST(int fd, Response *res, Request &req);
 
 private:
-	void errorRes(Response &res, int errorCode, std::vector<std::string> allow_methods = std::vector<std::string>());
+	void errorRes(int fd, Response *res, int errorCode, std::vector<std::string> allow_methods = std::vector<std::string>());
 };
