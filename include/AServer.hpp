@@ -4,12 +4,13 @@
 #include <string>
 #include <exception>
 #include <vector>
+#include <map>
 #ifdef BUFSIZ
 #undef BUFSIZ
 #define BUFSIZ 65535
 #else
 #define BUFSIZ 65535
-#endif 
+#endif
 
 class AServer
 {
@@ -28,8 +29,15 @@ protected:
 		bool isTimeout();
 	};
 
+public:
+	typedef struct s_analysis
+	{
+		std::map<std::string, int> referer;
+		std::map<std::string, int> user_agent;
+	}t_analysis;
+
 private:
-	std::vector<Client*> clients;  
+	std::vector<Client*> clients;
 
 public:
 	void run(std::string ip, std::vector<int> ports);

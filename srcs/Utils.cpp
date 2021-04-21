@@ -6,6 +6,8 @@
 #include "Utils.hpp"
 #include "Exception.hpp"
 #include <stack>
+#include <string>
+#include <iostream>
 namespace jachoi
 {
 	std::string ltrim(std::string s)
@@ -24,7 +26,7 @@ namespace jachoi
 	{
 		return ltrim(rtrim(s));
 	}
-	
+
 	void	*memset(void *s, int c, unsigned long n)
 	{
 		unsigned char	*ptr;
@@ -34,7 +36,7 @@ namespace jachoi
 			*ptr++ = c;
 		return (s);
 	}
-	
+
 	bool islittelendian()
 	{
 		int n = 1;
@@ -83,11 +85,11 @@ namespace jachoi
 		time_diff["PST"] = -7 * 60 * 60;
 
 		time_t gmt_time = tv_sec - time_diff[std::string(tm_zone)];
-		strptime(to_string(gmt_time).c_str(), "%s", &time);
+		strptime(jachoi::to_string(gmt_time).c_str(), "%s", &time);
 		strftime(buf, sizeof(buf), "%a, %d %b %G %T GMT", &time);
 		return (buf);
 	}
-	
+
 	int htoi(const std::string& num)
 	{
 		int ret = 0;
@@ -189,5 +191,99 @@ namespace jachoi
 			stk.pop();
 		}
 		return s;
+	}
+
+	std::vector<std::string> splitString(std::string str, char c)
+	{
+		std::vector<std::string> rtn;
+		int start, end;
+		for(start = 0; str[start] == c && start < (int)str.length(); start++) ;
+		for(end = str.length() - 1; str[end] == c && end >= 0; end--) ;
+		str = str.substr(start, end - start + 1);
+
+		std::string tmp;
+		tmp += str[0];
+		for(int i = 1; i < (int)str.length(); i++)
+		{
+			if (str[i] == c && str[i - 1] == c)
+				continue ;
+			tmp += str[i];
+		}
+		str = tmp;
+
+		int count = 0;
+		for(int idx = 0; str[idx]; idx++)
+		{
+			if (str[idx] == c)
+				count++;
+		}
+		if (count != 0 || (count == 0 && str != ""))
+			count++;
+
+		for(int i = 0; i < count; i++)
+		{
+			int len = str.find(c);
+			rtn.push_back(str.substr(0, len));
+			str = str.substr(len + 1, str.size() - len);
+		}
+		return (rtn);
+	}
+
+	int base64Decode(std::string str, int numBytes, std::string &dst)
+	{
+		int DecodeMimeBase64[256] = {
+			-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+			-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+			-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,62,-1,-1,-1,63,
+			52,53,54,55,56,57,58,59,60,61,-1,-1,-1,-1,-1,-1,
+			-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,
+			15,16,17,18,19,20,21,22,23,24,25,-1,-1,-1,-1,-1,
+			-1,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,
+			41,42,43,44,45,46,47,48,49,50,51,-1,-1,-1,-1,-1,
+			-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+			-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+			-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+			-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+			-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+			-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+			-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+			-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+		};
+
+		std::string cp = str;
+		int d, prev_d = 0;
+		unsigned char c;
+		int phase = 0;
+		for (int idx = 0; idx < (int)str.length(); ++idx) {
+			d = DecodeMimeBase64[(int)cp[idx]];
+			if (d != -1) {
+				switch (phase) {
+				case 0:
+					++phase;
+					break;
+				case 1:
+					c = ((prev_d << 2) | ((d & 0x30) >> 4));
+					if ((int)dst.length() < numBytes)
+						dst += c;
+					++phase;
+					break;
+				case 2:
+					c = (((prev_d & 0xf) << 4) | ((d & 0x3c) >> 2));
+					if ((int)dst.length() < numBytes)
+						dst += c;
+					++phase;
+					break;
+				case 3:
+					c = (((prev_d & 0x03) << 6) | d);
+					if ((int)dst.length() < numBytes)
+						dst += c;
+					phase = 0;
+					break;
+				}
+				prev_d = d;
+			}
+		}
+		return (int)dst.length();
+
 	}
 }

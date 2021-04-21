@@ -1,6 +1,7 @@
 #include "Response.hpp"
 #include <sys/time.h>
 #include <time.h>
+#include <sys/stat.h>
 #include "Utils.hpp"
 #include "ConfigParse.hpp"
 #include "Exception.hpp"
@@ -107,23 +108,66 @@ void Response::setContentType(std::string content_path)
 		header["Content-Type"] = "text/html; charset=utf-8";
 	else
 		header["Content-Type"] = "text/plain";
-
-	//https://developer.mozilla.org/ko/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
-	//else if (type == "png")
-	//	header["Content-Type"] = "png";
-	//else if (type == "bmp")
-	//	header["Content-Type"] = "bmp";
 }
 
-void Response::setContentLocation(std::string path)
+void Response::setContentLocation(std::string req_path)
 {
-	header["Content-Location"] = path;
+	header["Content-Location"] = req_path;
 }
 
-void Response::makeRes(std::string body, bool chunked)
+void Response::setAllow(std::vector<std::string> allowMethods)
+{
+	std::string str;
+
+	std::vector<std::string>::iterator iter = allowMethods.begin();
+	for(; iter != allowMethods.end(); iter++)
+	{
+		str += *iter;
+		if (iter + 1 != allowMethods.end())
+			str += ", ";
+	}
+	header["Allow"] = str;
+}
+
+void Response::setLocation(std::string req_path)
+{
+	header["Location"] = req_path;
+}
+
+void Response::setLastModified(std::string content_path)
+{
+	struct stat sb;
+	struct tm time;
+
+	stat(content_path.c_str(), &sb);
+
+	strptime(ctime(&sb.st_mtime), "%s", &time);
+	header["Last-Modified"] = jachoi::makeGMT(time.tm_zone, sb.st_mtime);
+}
+
+void Response::setRetryAfter(void)
+{
+	struct timeval curr;
+	struct tm time;
+
+	gettimeofday(&curr, NULL);
+	curr.tv_sec += 365 * 24 * 60 * 60;
+	strptime(jachoi::to_string(curr.tv_sec).c_str(), "%s", &time);
+	header["Retry-After"] = jachoi::makeGMT(time.tm_zone, curr.tv_sec);
+}
+
+void Response::setWWWAuthenticate(void)
+{
+	header["WWW-Authenticate"] = "Basic realm=\"Access to the staging site or folder.\"";
+}
+
+
+void Response::makeRes(std::string body, bool isPUT, bool chunked)
 {
 	setDate();
 	res_str = "HTTP/1.1 " + header["status_code"] + " " + header["status_msg"] + "\r\n";
+	res_str += "Content-Language: ko-KR\r\n";
+
 	std::map<std::string, std::string>::iterator iter = header.begin();
 	for(; iter != header.end(); iter++)
 	{
@@ -132,8 +176,9 @@ void Response::makeRes(std::string body, bool chunked)
 	}
 	if (chunked == false)
 		res_str += "Content-Length: " + jachoi::to_string(body.length()) + "\r\n";
-	else
+	else if (isPUT == false)
 		res_str += "Transfer-Encoding: chunked\r\n";
+
 	res_str += "\r\n";
 	if (header["status_code"] != "201" && header["status_code"] != "204")
 		res_str += body;

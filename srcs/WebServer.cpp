@@ -1,7 +1,6 @@
 #include "WebServer.hpp"
 #include "Response.hpp"
 #include <iostream>
-#include "ConfigParse.hpp"
 #include "FileIO.hpp"
 #include "ConfigCheck.hpp"
 #include "Exception.hpp"
@@ -12,7 +11,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-WebServer::WebServer(ConfigParse &conf): conf(conf){}
+WebServer::WebServer(ConfigParse::t_conf &conf): conf(conf){}
 
 void WebServer::OnRecv(int fd, std::string const &str)
 {
@@ -25,12 +24,21 @@ void WebServer::OnRecv(int fd, std::string const &str)
 
 void WebServer::request_process(int fd, Request &req)
 {
-	Response res(conf.server->name);
+	Response res(conf.server.name);
+	req.isReferer(analysis);
+	req.isUserAgent(analysis);
+	if (req.errorCode != 200)
+	{
+		errorRes(res, req.errorCode);
+		sendStr(fd, res.res_str);
+		return ;
+	}
+
 	switch (req.methodType())
 	{
 		case GET:
 		{
-			methodGET(res, req.path);
+			methodGET(res, req);
 			break;
 		}
 		case POST:
@@ -40,7 +48,7 @@ void WebServer::request_process(int fd, Request &req)
 		}
 		case HEAD:
 		{
-			methodHEAD(res, req.path);
+			methodHEAD(res, req);
 			break;
 		}
 		case PUT:
@@ -49,9 +57,12 @@ void WebServer::request_process(int fd, Request &req)
 			break;
 		}
 		default:
-			methodInvalid(res, req);
+			errorRes(res, 503);
 			break;
 	}
+	//std::cout << "--------response str---------" << std::endl;
+	//std::cout << res.res_str.substr(0, 500) << std::endl;
+	//std::cout << "--------response str---------" << std::endl;
 	sendStr(fd, res.res_str);
 }
 
@@ -139,70 +150,76 @@ WebServer::~WebServer()
 
 
 
-void WebServer::methodGET(Response &res, std::string req_path)
+void WebServer::methodGET(Response &res, Request &req)
 {
-	ConfigCheck cfg_check(conf, req_path);
+	ConfigCheck cfg_check(conf, req.path);
+	std::vector<std::string> allow_methods;
 	std::string body = "";
-	std::string path = cfg_check.makeFilePath();
 	struct stat sb;
 
-	res.setContentType(path);
-	if (cfg_check.methodCheck("GET") == false)
+	if (cfg_check.analysisCheck())
 	{
-		path = conf.server->error_root + conf.server->error_page[405];
-		res.setStatus(405);
-		res.setContentType(path);
-		jachoi::FileIO(path).read(body);
+		res.setContentType(".html");
+		res.setStatus(200);
+		res.makeRes(cfg_check.makeAnalysisHTML(analysis));
+		return ;
 	}
+
+	int is_dir = 0;
+	std::string path = cfg_check.makeFilePath(is_dir);
+	req.isAcceptLanguage(path, is_dir);
+
+	if (cfg_check.AuthorizationCheck(req.header["Authorization"]) == false)
+		errorRes(res, 401);
 	else if (path == "")
-	{
-		path = conf.server->error_root + conf.server->error_page[404];
-		res.setStatus(404);
-		res.setContentType(path);
-		jachoi::FileIO(path).read(body);
-	}
+		errorRes(res, 404);
+	else if (cfg_check.methodCheck("GET", allow_methods) == false)
+		errorRes(res, 405, allow_methods);
 	else
 	{
+		res.setContentType(path);
 		res.setStatus(200);
+		res.setContentLocation(req.path);
 		if (stat(cfg_check.findPath().c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
 		{
 			body = cfg_check.autoIdxCheck();
 			if (body == "")
+			{
 				jachoi::FileIO(path).read(body);
+				res.setLastModified(path);
+			}
 		}
 		else
+		{
 			jachoi::FileIO(path).read(body);
+			res.setLastModified(path);
+		}
+		res.makeRes(body);
 	}
-	res.makeRes(body);
 }
 
-void WebServer::methodHEAD(Response &res, std::string req_path)
+void WebServer::methodHEAD(Response &res, Request &req)
 {
-	ConfigCheck cfg_check(conf, req_path);
-	std::string body;
-	std::string path = cfg_check.makeFilePath();
+	ConfigCheck cfg_check(conf, req.path);
+	std::vector<std::string> allow_methods;
 
-	res.setContentType(path);
-	if (path == "")
-	{
-		path = conf.server->error_root + conf.server->error_page[404];
-		res.setStatus(404);
-		res.setContentType(path);
-		jachoi::FileIO(path).read(body);
-	}
-	else if (cfg_check.methodCheck("HEAD") == false)
-	{
-		path = conf.server->error_root + conf.server->error_page[405];
-		res.setStatus(405);
-		res.setContentType(path);
-		jachoi::FileIO(path).read(body);
-	}
+	int is_dir = 0;
+	std::string path = cfg_check.makeFilePath(is_dir);
+	req.isAcceptLanguage(path, is_dir);
+
+	if (cfg_check.AuthorizationCheck(req.header["Authorization"]) == false)
+		errorRes(res, 401);
+	else if (path == "")
+		errorRes(res, 404);
+	else if (cfg_check.methodCheck("HEAD", allow_methods) == false)
+		errorRes(res, 405, allow_methods);
 	else
 	{
+		res.setContentType(path);
+		res.setContentLocation(req.path);
 		res.setStatus(200);
-		body = "";
+		res.makeRes("");
 	}
-	res.makeRes(body);
 }
 
 void WebServer::methodPUT(Response &res, Request &req)
@@ -212,28 +229,29 @@ void WebServer::methodPUT(Response &res, Request &req)
 	std::string path = cfg_check.findPath();
 	struct stat sb;
 	int stat_rtn = stat(path.c_str(), &sb);
+	std::vector<std::string> allow_methods;
 
-	res.setContentType(path);
-	if (cfg_check.methodCheck("PUT") == false)
+	if (cfg_check.AuthorizationCheck(req.header["Authorization"]) == false)
+		errorRes(res, 401);
+	else if (cfg_check.methodCheck("PUT", allow_methods) == false)
+		errorRes(res, 405, allow_methods);
+	else
 	{
-		path = conf.server->error_root + conf.server->error_page[405];
-		res.setStatus(405);
-		res.setContentType(path);
-		jachoi::FileIO(path).read(body);
+		if (stat_rtn == -1)
+		{
+			jachoi::FileIO(path).write(req.body);
+			res.setStatus(201);
+			res.setLocation(req.path);
+		}
+		else if (stat_rtn == 0 && S_ISREG(sb.st_mode))
+		{
+			jachoi::FileIO(path).append(req.body);
+			res.setStatus(200);
+			res.setContentLocation(req.path);
+		}
+		res.setLastModified(path);
+		res.makeRes("", true);
 	}
-	else if (stat_rtn == -1)
-	{
-		jachoi::FileIO(path).write(req.body);
-		res.setStatus(200);
-		body = req.body;
-	}
-	else if (stat_rtn == 0 && S_ISREG(sb.st_mode))
-	{
-		jachoi::FileIO(path).append(req.body);
-		res.setStatus(200);
-		jachoi::FileIO(path).read(body);
-	}
-	res.makeRes(body);
 }
 
 void WebServer::methodPOST(Response &res, Request &req)
@@ -241,50 +259,61 @@ void WebServer::methodPOST(Response &res, Request &req)
 	ConfigCheck cfg_check(conf, req.path);
 	std::string body;
 	std::string path = cfg_check.findPath();
-	struct stat sb;
-	int stat_rtn = stat(path.c_str(), &sb);
+	//struct stat sb;
+	//int stat_rtn = stat(path.c_str(), &sb);
+	std::vector<std::string> allow_methods;
 
-	res.setContentType(path);
-	if (cfg_check.methodCheck("POST") == false)
-	{
-		path = conf.server->error_root + conf.server->error_page[405];
-		res.setStatus(405);
-		res.setContentType(path);
-	}
+	if (cfg_check.AuthorizationCheck(req.header["Authorization"]) == false)
+		errorRes(res, 401);
+	else if (cfg_check.methodCheck("POST", allow_methods) == false)
+		errorRes(res, 405, allow_methods);
 	else if (cfg_check.client_max_body_size_Check(req.body.size()) == false)
-	{
-		std::cout << "error" << std::endl;
-		path = conf.server->error_root + conf.server->error_page[413];
-		res.setStatus(413);
-		res.setContentType(path);
-	}
-	else if (path.substr(path.rfind('.') + 1) == "bla")
-	{
-		body.clear();
-		cgi_stub(CGI_PATH, req, body);
-		jachoi::FileIO(path).write(body);
-		res.setStatus(200);
-		res.makeRes(body);
-		return;
-	}
+		errorRes(res, 413);
 	else
 	{
-		if (stat_rtn == 0 && S_ISDIR(sb.st_mode))
-			path += "post_file";
+		if (cfg_check.cgiCheck())
+			cgi_stub(CGI_PATH, req, body);
+		//else if (stat_rtn == 0 && S_ISDIR(sb.st_mode))
+		//{
+		//	path += "post_body";
+		//	if (req.path[req.path.length() - 1] != '/')
+		//		req.path += '/';
+		//	req.path += "post_body";
+		//}
 		jachoi::FileIO(path).write(req.body);
+		res.setContentType(path);
 		res.setStatus(200);
 		res.setContentLocation(req.path);
+		res.setLastModified(path);
+		res.makeRes(body);
 	}
-	res.makeRes(req.body);
 }
 
-void WebServer::methodInvalid(Response &res, Request &req)
+void WebServer::errorRes(Response &res, int errorCode, std::vector<std::string> allow_methods)
 {
-	(void)req;
-	std::string path = conf.server->error_root + conf.server->error_page[405];
 	std::string body;
-	res.setStatus(405);
-	res.setContentType(path);
+	std::string path = conf.server.error_root + conf.server.error_page[errorCode];
+
 	jachoi::FileIO(path).read(body);
+	res.setStatus(errorCode);
+	res.setContentType(path);
+	switch (errorCode)
+	{
+		case 401:
+		{
+			res.setWWWAuthenticate();
+			break;
+		}
+		case 405:
+		{
+			res.setAllow(allow_methods);
+			break;
+		}
+		case 503:
+		{
+			res.setRetryAfter();
+			break;
+		}
+	}
 	res.makeRes(body);
 }

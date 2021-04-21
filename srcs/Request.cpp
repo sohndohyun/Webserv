@@ -44,7 +44,7 @@ bool Request::needRecv() const
 MethodType Request::methodType() const
 {
 	const char* _known_methods[] = {
-		"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE" 
+		"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE"
 	};
 	for (size_t i = 0 ; i < sizeof(*_known_methods) ; i++)
 	{
@@ -57,7 +57,7 @@ MethodType Request::methodType() const
 void Request::parseFirstLine(std::string const &str)
 {
 	const char* _known_methods[] = {
-		"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE" 
+		"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE"
 	};
 	const char* _supported_version[] = {
 		"HTTP/1.1", "HTTP/1.0"
@@ -92,6 +92,9 @@ void Request::parseHeader()
 	if (leftStr.find("\r\n\r\n") == std::string::npos)
 		return;
 
+	//std::cout << "--------Req str---------" << std::endl;
+	//std::cout << leftStr.substr(0, 500) << std::endl;
+	//std::cout << "--------Req str---------" << std::endl;
 	size_t begin = leftStr.find("\r\n");
 	std::string line = leftStr.substr(0, begin);
 	parseFirstLine(line);
@@ -158,7 +161,7 @@ void Request::parseBody()
 					leftStr = leftStr.substr(begin);
 				break;
 			}
-			else 
+			else
 			{
 				size_t tbegin = end + 2;
 				end = tbegin + blockSize;
@@ -197,3 +200,84 @@ void Request::parseBody()
 			isBodyMade = true;
 	}
 }
+
+
+
+void Request::isAcceptLanguage(std::string &content_path, int is_dir)
+{
+	if (header.find("Accept-Language") == header.end() || is_dir == 0)
+		return ;
+	if (isAcceptCharset() == false)
+		return ;
+
+	if (path[path.length() - 1] != '/')
+		path += '/';
+	if (content_path.find("index.html") != std::string::npos)
+		path += "index.html";
+
+	std::vector<std::string> langs = jachoi::splitString(header["Accept-Language"], ',');
+	std::vector<std::string>::iterator iter = langs.begin();
+	for(; iter != langs.end(); iter++)
+	{
+		if ((*iter).find("ko") != std::string::npos)
+		{
+			if (content_path.find("index.html") != std::string::npos)
+			{
+				content_path = content_path.substr(0, content_path.find("index.html")) + "index_ko.html";
+				path = path.substr(0, path.find("index.html")) + "index_ko.html";
+			}
+			return ;
+		}
+	}
+}
+
+bool Request::isAcceptCharset()
+{
+	if (header.find("Accept-Charset") == header.end())
+		return (true);
+
+	std::vector<std::string> charsets = jachoi::splitString(header["Accept-Charset"], ',');
+	std::vector<std::string>::iterator iter = charsets.begin();
+	for(; iter != charsets.end(); iter++)
+	{
+		if ((*iter).find("utf-8") != std::string::npos ||
+			(*iter).find("*") != std::string::npos)
+			return (true);
+	}
+	return (false);
+}
+
+void Request::isReferer(AServer::t_analysis &analysis)
+{
+	if (header.find("Referer") == header.end())
+		return ;
+
+	if (analysis.referer.find(header["Referer"]) != analysis.referer.end())
+		analysis.referer[header["Referer"]]++;
+	else
+		analysis.referer[header["Referer"]] = 1;
+}
+
+void Request::isUserAgent(AServer::t_analysis &analysis)
+{
+	if (header.find("User-Agent") == header.end())
+		return ;
+
+	std::string webBrowser;
+	if (header["User-Agent"].find("Chrome") != std::string::npos)
+		webBrowser = "Chrome";
+	else if (header["User-Agent"].find("PostmanRuntime") != std::string::npos)
+		webBrowser = "Postman";
+	else if (header["User-Agent"].find("Safari") != std::string::npos)
+		webBrowser = "Safari";
+	else if (header["User-Agent"].find("curl") != std::string::npos)
+		webBrowser = "curl";
+	else
+		webBrowser = "else";
+
+	if (analysis.user_agent.find(webBrowser) != analysis.user_agent.end())
+		analysis.user_agent[webBrowser]++;
+	else
+		analysis.user_agent[webBrowser] = 1;
+}
+

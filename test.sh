@@ -1,6 +1,5 @@
-cat /dev/null > www/YoupiBanane/youpi.bla
-cat /dev/null > www/post_body/post_file
-rm -rf youppla.bla www/put_test/file_should_exist_after
+cat /dev/null > www/tester/YoupiBanane/youpi.bla
+rm -rf www/tester/YoupiBanane/youpla.bla www/tester/put_test/file_should_exist_after .tempIN .tempOUT www/tester/post_body
 make
 echo "Webserv executing..."
 ./Webserv

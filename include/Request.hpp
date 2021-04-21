@@ -3,13 +3,14 @@
 #include <string>
 #include <map>
 #include <vector>
+#include "AServer.hpp"
 
 enum MethodType
 {
 	GET,
-	HEAD, 
-	POST, 
-	PUT, 
+	HEAD,
+	POST,
+	PUT,
 	DELETE,
 	CONNECT,
 	OPTIONS,
@@ -33,7 +34,7 @@ public:
 	int errorCode;
 	std::string path;
 	std::string method;
-	
+
 public:
 	Request();
 	void init();
@@ -42,6 +43,10 @@ public:
 	bool needRecv() const;
 	MethodType methodType() const;
 
+	void isAcceptLanguage(std::string &content_path, int is_dir);
+	bool isAcceptCharset();
+	void isReferer(AServer::t_analysis &analysis);
+	void isUserAgent(AServer::t_analysis &analysis);
 
 private:
 	void parseFirstLine(std::string const &str);
