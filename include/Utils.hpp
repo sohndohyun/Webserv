@@ -27,4 +27,5 @@ namespace jachoi
 
 	std::vector<std::string> splitString(std::string str, char c);
 	int base64Decode(std::string str, int numBytes, std::string &dst);
+	int open(const char* path, int flag, int chmod = 0644);
 }

@@ -76,31 +76,28 @@ void AServer::run(std::string ip, std::vector<int> ports)
 		FD_ZERO(&wset);
 		for (size_t i = 0;i < listenSocks.size();i++)
 			FD_SET(listenSocks[i], &rset);
-		if (writeFiles.size() + readFiles.size() > 0)
+
+		for (size_t i = 0;i < writeFiles.size();i++)
 		{
-			for (size_t i = 0;i < writeFiles.size();i++)
-			{
-				if (fdMax < writeFiles[i]->fd)
-						fdMax = writeFiles[i]->fd;
-				FD_SET(writeFiles[i]->fd, &wset);
-			}
-			for (size_t i = 0;i < readFiles.size();i++)
-			{
-				if (fdMax < readFiles[i]->fd)
-						fdMax = readFiles[i]->fd;
-				FD_SET(readFiles[i]->fd, &rset);
-			}
+			if (fdMax < writeFiles[i]->fd)
+				fdMax = writeFiles[i]->fd;
+			FD_SET(writeFiles[i]->fd, &wset);
 		}
-		else
+		for (size_t i = 0;i < readFiles.size();i++)
 		{
-			for (size_t i = 0;i < clients.size();i++)
-			{
-				if (clients[i]->str.size() > 0)
-					FD_SET(clients[i]->fd, &wset);
-				else
-					FD_SET(clients[i]->fd, &rset);
-			}
+			if (fdMax < readFiles[i]->fd)
+				fdMax = readFiles[i]->fd;
+			FD_SET(readFiles[i]->fd, &rset);
 		}
+		
+		for (size_t i = 0;i < clients.size();i++)
+		{
+			if (clients[i]->str.size() > 0)
+				FD_SET(clients[i]->fd, &wset);
+			else
+				FD_SET(clients[i]->fd, &rset);
+		}
+		
 		
 		///////////////////////////////
 
@@ -127,10 +124,9 @@ void AServer::run(std::string ip, std::vector<int> ports)
 					fdMax = clntSocket;
 
 				Client* cl = new Client(clntSocket, "");
-				if (cl == NULL)
-					continue;
+				cl->port = ports[i];
 				clients.push_back(cl);
-				this->OnAccept(clntSocket, ports[i]);
+				this->OnAccept(clntSocket, cl->port);
 			}
 		}
 		///////////////////////////////
@@ -145,7 +141,7 @@ void AServer::run(std::string ip, std::vector<int> ports)
 				int str_len = recv(cl->fd, buf, BUFSIZ, 0);
 				if (str_len == 0)
 				{
-					OnDisconnect(cl->fd);
+					OnDisconnect(cl->fd, cl->port);
 					FD_CLR(cl->fd, &rset);
 					close(cl->fd);
 					delete cl;
@@ -154,18 +150,18 @@ void AServer::run(std::string ip, std::vector<int> ports)
 				}
 				else if (str_len < 0)
 				{
-					throw Exception("RECV ERROR!");
+					continue;
 				}
 				std::string temp;
 				temp.append(buf, str_len);
-				this->OnRecv(cl->fd, temp);
+				this->OnRecv(cl->fd, cl->port, temp);
 			}
 			else if (FD_ISSET(cl->fd, &wset))
 			{
 				int ret = send(cl->fd, cl->str.c_str(), cl->str.size(), 0);
 				if (ret == 0)
 				{
-					OnDisconnect(cl->fd);
+					OnDisconnect(cl->fd, cl->port);
 					FD_CLR(cl->fd, &wset);
 					close(cl->fd);
 					delete cl;
@@ -174,14 +170,14 @@ void AServer::run(std::string ip, std::vector<int> ports)
 				}
 				else if (ret < 0)
 				{
-					throw Exception("SEND ERROR!");
+					continue;
 				}
 				if (ret < static_cast<int>(cl->str.size()))
 					cl->str = cl->str.substr(ret);
 				else
 				{
 					cl->str.clear();
-					this->OnSend(cl->fd);
+					this->OnSend(cl->fd, cl->port);
 				}
 			}
 			++it;
@@ -194,7 +190,7 @@ void AServer::run(std::string ip, std::vector<int> ports)
 			Client *cl = (*it);
 			if (cl->willDie && FD_ISSET(cl->fd, &rset) == 0 && cl->str.size() <= 0)
 			{
-				OnDisconnect(cl->fd);
+				OnDisconnect(cl->fd, cl->port);
 				close(cl->fd);
 				delete cl;
 				it = clients.erase(it);

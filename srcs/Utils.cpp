@@ -1,3 +1,4 @@
+#include <fcntl.h>
 #include <string>
 #include <map>
 #include <algorithm>
@@ -8,6 +9,7 @@
 #include <stack>
 #include <string>
 #include <iostream>
+
 namespace jachoi
 {
 	std::string ltrim(std::string s)
@@ -285,5 +287,12 @@ namespace jachoi
 		}
 		return (int)dst.length();
 
+	}
+
+	int open(const char* path, int flag, int chmod)
+	{
+		int fd = ::open(path, flag, chmod);
+		fcntl(fd, F_SETFL, O_NONBLOCK);
+		return fd;
 	}
 }
