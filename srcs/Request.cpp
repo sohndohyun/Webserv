@@ -92,9 +92,6 @@ void Request::parseHeader()
 	if (leftStr.find("\r\n\r\n") == std::string::npos)
 		return;
 
-	//std::cout << "--------Req str---------" << std::endl;
-	//std::cout << leftStr.substr(0, 500) << std::endl;
-	//std::cout << "--------Req str---------" << std::endl;
 	size_t begin = leftStr.find("\r\n");
 	std::string line = leftStr.substr(0, begin);
 	parseFirstLine(line);
