@@ -176,7 +176,6 @@ WebServer::~WebServer()
 
 void WebServer::methodGET(int fd, int port,  Response *res, Request &req)
 {
-
 	ConfigCheck cfg_check(confs.conf[get_conf_idx(port)], req.path);
 	std::vector<std::string> allow_methods;
 	std::string body = "";

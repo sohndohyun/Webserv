@@ -65,9 +65,6 @@ void AServer::run(std::string ip, std::vector<int> ports)
 		listenSocks.push_back(listenSocket);
 	}
 
-	// timeval tv;
-	// tv.tv_sec = 2;
-
 	fd_set rset, wset;
 	BEGIN:
 	while (true)
@@ -254,7 +251,6 @@ void AServer::run(std::string ip, std::vector<int> ports)
 					continue;
 				}
 				wf->str.append(buf, str_len);
-				goto BEGIN;
 			}
 			it++;
 		}
