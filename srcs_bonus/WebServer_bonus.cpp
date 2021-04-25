@@ -37,6 +37,7 @@ void WebServer::OnRecv(int fd, int port, std::string const &str)
 	requests[fd]->add(str);
 	if (requests[fd]->needRecv())
 		return;
+	std::cout << fd << "(" << port << ") recved!" << std::endl;
 	request_process(fd, port, *requests[fd]);
 	if ((requests[fd]->header["Connection"] == "close"))
 		disconnect(fd);
@@ -87,7 +88,7 @@ int WebServer::cgi_stub(int tempfd, FileData *fData)
 {
 	lseek(tempfd, 0, SEEK_SET);
 
-	int fdout = utils::open(".TEMPOUT", O_CREAT | O_TRUNC | O_RDWR, 0644);
+	int fdout = utils::open(".TEMPOUT", O_CREAT | O_TRUNC | O_RDWR | O_NONBLOCK, 0644);
 	pid_t pid = fork();
 	if (pid < 0)
 		throw Exception("cgi: fork error");
@@ -111,17 +112,20 @@ void WebServer::OnSend(int fd, int port)
 {
 	(void)fd;
 	(void)port;
+	std::cout << fd << "(" << port << ") sended!" << std::endl;
 }
 
 void WebServer::OnAccept(int fd, int port)
 {
 	(void)&port;
+	std::cout << fd << "(" << port << ") accepted!" << std::endl;
 	requests.insert(std::make_pair(fd, new Request()));
 }
 
 void WebServer::OnDisconnect(int fd, int port)
 {
 	(void)port;
+	std::cout << fd << "(" << port << ") disconnected!" << std::endl;
 	std::map<int, Request*>::iterator it = requests.find(fd);
 	if (it != requests.end())
 	{
@@ -145,7 +149,7 @@ void WebServer::OnFileRead(int fd, std::string const &str, void *temp)
 		std::string s = str.substr(str.find("\r\n\r\n") + 4);
 		fData->res->makeRes(s);
 		fData->isCGI = false;
-		writeFile(utils::open(fData->path.c_str(), O_CREAT | O_WRONLY, 0644), s, fData);
+		writeFile(utils::open(fData->path.c_str(), O_CREAT | O_WRONLY | O_NONBLOCK, 0644), s, fData);
 	}
 	close(fd);
 }
@@ -212,7 +216,7 @@ void WebServer::methodGET(int fd, int port,  Response *res, Request &req)
 			if (body == "")
 			{
 				res->setLastModified(path);
-				readFile(utils::open(path.c_str(), O_RDONLY), new FileData(fd, res));
+				readFile(utils::open(path.c_str(), O_RDONLY | O_NONBLOCK), new FileData(fd, res));
 				return ;
 			}
 			res->makeRes(body);
@@ -222,7 +226,7 @@ void WebServer::methodGET(int fd, int port,  Response *res, Request &req)
 		else
 		{
 			res->setLastModified(path);
-			readFile(utils::open(path.c_str(), O_RDONLY), new FileData(fd, res));
+			readFile(utils::open(path.c_str(), O_RDONLY | O_NONBLOCK), new FileData(fd, res));
 		}
 	}
 }
@@ -274,7 +278,7 @@ void WebServer::methodPUT(int fd, int port, Response *res, Request &req)
 			res->setLocation(req.path);
 			res->setLastModified(path);
 			res->makeRes("", true);
-			writeFile(utils::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644), req.body, new FileData(fd, res));
+			writeFile(utils::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY | O_NONBLOCK, 0644), req.body, new FileData(fd, res));
 		}
 		else if (stat_rtn == 0 && S_ISREG(sb.st_mode))
 		{
@@ -282,7 +286,7 @@ void WebServer::methodPUT(int fd, int port, Response *res, Request &req)
 			res->setContentLocation(req.path);
 			res->setLastModified(path);
 			res->makeRes("", true);
-			writeFile(utils::open(path.c_str(), O_CREAT | O_APPEND | O_WRONLY, 0644), req.body, new FileData(fd, res));
+			writeFile(utils::open(path.c_str(), O_CREAT | O_APPEND | O_WRONLY | O_NONBLOCK, 0644), req.body, new FileData(fd, res));
 		}
 	}
 }
@@ -318,7 +322,7 @@ void WebServer::methodPOST(int fd, int port, Response *res, Request &req)
 			if (req.header.find("X-Secret-Header-For-Test") != req.header.end())
 				map_env["HTTP_X_SECRET_HEADER_FOR_TEST"] = req.header["X-Secret-Header-For-Test"];
 		
-			writeFile(utils::open(tempfile.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0644), req.body, 
+			writeFile(utils::open(tempfile.c_str(), O_CREAT | O_TRUNC | O_RDWR | O_NONBLOCK, 0644), req.body, 
 				new FileData(fd, res, true, utils::mtostrarr(map_env), path));
 			}
 		else
@@ -328,7 +332,7 @@ void WebServer::methodPOST(int fd, int port, Response *res, Request &req)
 			res->setContentLocation(req.path);
 			res->setLastModified(path);
 			res->makeRes(req.body);
-			writeFile(utils::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644), req.body, new FileData(fd, res));
+			writeFile(utils::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY | O_NONBLOCK, 0644), req.body, new FileData(fd, res));
 		}
 	}
 }
@@ -358,7 +362,7 @@ void WebServer::errorRes(int fd, int port, Response *res, int errorCode, const s
 			break;
 		}
 	}
-	readFile(utils::open(path.c_str(), O_RDONLY), new FileData(fd, res));
+	readFile(utils::open(path.c_str(), O_RDONLY | O_NONBLOCK), new FileData(fd, res));
 }
 
 int WebServer::get_conf_idx(int port)

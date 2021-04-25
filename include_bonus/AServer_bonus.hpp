@@ -5,6 +5,8 @@
 #include <exception>
 #include <vector>
 #include <map>
+#include <pthread.h>
+#include <queue>
 #ifdef BUFSIZ
 #undef BUFSIZ
 #define BUFSIZ 65535
@@ -14,26 +16,33 @@
 
 class AServer
 {
-protected:
+private:
 	class Client
 	{
 	private:
 		Client();
 	public:
-		Client(int, std::string const &);
+		Client(int, std::string const &, int);
 		int fd;
 		int port;
 		bool willDie;
 		std::string str;
 	};
 
-	class Workfile
+	enum CMDType
+	{
+		RECV, SEND, READ, WRITE, ACCEPT, DISCONNECT
+	};
+
+	class Command
 	{
 	private:
-		Workfile();
+		Command();
 	public:
-		Workfile(int, std::string const &, void *);
+		Command(CMDType, int, int, std::string const&, void *);
+		CMDType type;
 		int fd;
+		int port;
 		std::string str;
 		void *temp;
 	};
@@ -46,12 +55,27 @@ public:
 	}t_analysis;
 
 private:
-	std::vector<Client*> clients;
-	std::vector<Workfile*> writeFiles;
-	std::vector<Workfile*> readFiles;
+
+	std::vector<Client*> *clients;
+	std::vector<Command*> writeFiles;
+	std::vector<Command*> readFiles;
+	std::vector<int> listenSocks;
+	std::vector<int> ports;
+
+	std::queue<Command*> commands;
+
+	size_t workerCount;
+
+	pthread_mutex_t *clientMutexs;
+	static void *AcceptThread(void *arg);
+	static void *WorkerThread(void *arg);
+	static void *FileThread(void *arg);
+	static void *UpdateThread(void *arg);
+
+	void pushCommand(Command *cmd);
 
 public:
-	void run(std::string ip, std::vector<int> ports);
+	void run(std::string ip, std::vector<int> ports, size_t workerNo = 4);
 	void sendStr(int fd, std::string const &str);
 	void disconnect(int fd);
 

@@ -1,4 +1,4 @@
-#include "ConfigCheck.hpp"
+#include "ConfigCheck_bonus.hpp"
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
