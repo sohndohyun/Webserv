@@ -13,7 +13,6 @@
 
 size_t workThreadNo = 0;
 pthread_mutex_t workno_mutex;
-pthread_mutex_t file_mutex;
 pthread_mutex_t update_mutex;
 
 AServer::Client::Client(int fd, std::string const &str, int port) : fd(fd), port(port), willDie(false), str(str) {}
@@ -51,12 +50,11 @@ void *AServer::AcceptThread(void *arg)
 				socklen_t addrsize = sizeof(sockaddr_in);
 				int clntSocket = accept(server->listenSocks[i], (sockaddr*)&clntAddr, &addrsize);
 				if (clntSocket == -1)
-					continue ;	// TODO: log when accept failed
+					continue ;
 				fcntl(clntSocket, F_SETFL, O_NONBLOCK);
 				if (fdMax < clntSocket)
 					fdMax = clntSocket;
 
-				//size_t idx = clntSocket % server->workerCount;
 				server->pushCommand(new Command(ACCEPT, clntSocket, server->ports[i], "", NULL));
 			}
 		}
@@ -158,7 +156,6 @@ void* AServer::WorkerThread(void *arg)
 			{
 				it = clients.erase(it);
 				server->pushCommand(new Command(DISCONNECT, cl->fd, cl->port, "", NULL));
-//				close(cl->fd);
 				delete cl;
 				continue;
 			}
@@ -169,107 +166,106 @@ void* AServer::WorkerThread(void *arg)
 	return arg;
 }
 
-void *AServer::FileThread(void *arg)
+bool AServer::fileProcess()
 {
-	AServer* server = static_cast<AServer*>(arg);
 	int fdMax = 3;
-
 	fd_set wset, rset;
 	timeval tval;
-	tval.tv_usec = 100;
+	tval.tv_usec = 0;
 	tval.tv_sec = 0;
 
-	while (true)
+	FD_ZERO(&wset);
+	FD_ZERO(&rset);
+
+	for (size_t i = 0;i < writeFiles.size();i++)
 	{
-		FD_ZERO(&wset);
-		FD_ZERO(&rset);
-		pthread_mutex_lock(&file_mutex);
-		for (size_t i = 0;i < server->writeFiles.size();i++)
-		{
-			if (fdMax < server->writeFiles[i]->fd)
-				fdMax = server->writeFiles[i]->fd;
-			FD_SET(server->writeFiles[i]->fd, &wset);
-		}
-		for (size_t i = 0;i < server->readFiles.size();i++)
-		{
-			if (fdMax < server->readFiles[i]->fd)
-				fdMax = server->readFiles[i]->fd;
-			FD_SET(server->readFiles[i]->fd, &rset);
-		}
-		pthread_mutex_unlock(&file_mutex);
-		int selRet = select(fdMax + 1, &rset, &wset, NULL, &tval);
-		if (selRet == -1)
-		{
-			std::cerr << "FileThread: " << strerror(errno) << "\n";
-			break;
-		}
-		else if (selRet == 0)
-			continue ;
-		pthread_mutex_lock(&file_mutex);
-		for (std::vector<Command*>::iterator it = server->readFiles.begin(); it != server->readFiles.end();)
-		{
-			Command *wf = *it;
-			if (FD_ISSET(wf->fd, &rset))
-			{
-				char buf[BUFSIZ];
-				int str_len = read(wf->fd, buf, BUFSIZ);
-				if (str_len < 0)
-				{
-					it = server->readFiles.erase(it);
-					delete wf;
-					continue;
-				}
-				if (str_len == 0)
-				{
-					it = server->readFiles.erase(it);
-					server->pushCommand(new Command(READ, wf->fd, 0, wf->str, wf->temp));
-					delete wf;
-					continue;
-				}
-				wf->str.append(buf, str_len);
-			}
-			it++;
-		}
-		for (std::vector<Command*>::iterator it = server->writeFiles.begin(); it != server->writeFiles.end();)
-		{
-			Command *wf = *it;
-			if (FD_ISSET(wf->fd, &wset))
-			{
-				int ret = write(wf->fd, wf->str.c_str(), wf->str.size());
-				if (ret <= 0)
-				{
-					it = server->writeFiles.erase(it);
-					delete wf;
-				}
-				else
-				{
-					it = server->writeFiles.erase(it);
-					server->pushCommand(new Command(WRITE, wf->fd, 0, "", wf->temp));
-					delete wf;
-				}
-			}
-		}
-		
-		pthread_mutex_unlock(&file_mutex);
+		if (fdMax < writeFiles[i]->fd)
+			fdMax = writeFiles[i]->fd;
+		FD_SET(writeFiles[i]->fd, &wset);
+	}		
+	for (size_t i = 0;i < readFiles.size();i++)
+	{
+		if (fdMax < readFiles[i]->fd)
+			fdMax = readFiles[i]->fd;
+		FD_SET(readFiles[i]->fd, &rset);
 	}
 
-	return arg;
+	int selRet = select(fdMax + 1, &rset, &wset, NULL, &tval);
+	if (selRet == -1)
+	{
+		std::cerr << "FileThread: " << strerror(errno) << "\n";
+		return false;
+	}
+	else if (selRet == 0)
+		return false;
+	
+	for (std::vector<Command*>::iterator it = readFiles.begin(); it != readFiles.end();)
+	{
+		Command *wf = *it;
+		if (FD_ISSET(wf->fd, &rset))
+		{
+			char buf[BUFSIZ];
+			int str_len = read(wf->fd, buf, BUFSIZ);
+			if (str_len < 0)
+			{
+				it = readFiles.erase(it);
+				delete wf;
+				return true;
+			}
+			if (str_len == 0)
+			{
+				it = readFiles.erase(it);
+				OnFileRead(wf->fd, wf->str, wf->temp);
+				delete wf;
+				return true;
+			}
+			wf->str.append(buf, str_len);
+		}
+		it++;
+	}
+	for (std::vector<Command*>::iterator it = writeFiles.begin(); it != writeFiles.end();)
+	{
+		Command *wf = *it;
+		if (FD_ISSET(wf->fd, &wset))
+		{
+			int ret = write(wf->fd, wf->str.c_str(), wf->str.size());
+			if (ret <= 0)
+			{
+				it = writeFiles.erase(it);
+				delete wf;
+			}
+			else
+			{
+				it = writeFiles.erase(it);
+				OnFileWrite(wf->fd, wf->temp);
+				delete wf;
+			}
+			break;
+		}
+	}
+	return true;
 }
 
 void *AServer::UpdateThread(void *arg)
 {
 	AServer* server = static_cast<AServer*>(arg);
+	Command *cmd;
 
 	while (true)
 	{
+		if (server->fileProcess())
+			continue;
 		pthread_mutex_lock(&update_mutex);
-		if (server->commands.empty())
+		if (!server->commands.empty())
+		{
+			cmd = server->commands.front();
+			server->commands.pop();
+		}
+		else
 		{
 			pthread_mutex_unlock(&update_mutex);
 			continue;
 		}
-		Command* cmd = server->commands.front();
-		server->commands.pop();
 		pthread_mutex_unlock(&update_mutex);
 
 		switch(cmd->type)
@@ -280,12 +276,6 @@ void *AServer::UpdateThread(void *arg)
 		case SEND:
 			server->OnSend(cmd->fd, cmd->port);
 			break;
-		case READ:
-			server->OnFileRead(cmd->fd, cmd->str, cmd->temp);
-			break;
-		case WRITE:
-			server->OnFileWrite(cmd->fd, cmd->temp);
-			break;
 		case ACCEPT:
 			server->OnAccept(cmd->fd, cmd->port);
 			pthread_mutex_lock(&server->clientMutexs[cmd->fd % server->workerCount]);
@@ -295,6 +285,8 @@ void *AServer::UpdateThread(void *arg)
 		case DISCONNECT:
 			server->OnDisconnect(cmd->fd, cmd->port);
 			close(cmd->fd);
+			break;
+		default:
 			break;
 		}
 		delete cmd;
@@ -328,7 +320,6 @@ void AServer::run(std::string ip, std::vector<int> ports, size_t workerCount)
 		pthread_mutex_init(clientMutexs + i, NULL);
 
 	pthread_mutex_init(&workno_mutex, NULL);
-	pthread_mutex_init(&file_mutex, NULL);
 	pthread_mutex_init(&update_mutex, NULL);
 
 	listenSocks.clear();
@@ -369,11 +360,9 @@ void AServer::run(std::string ip, std::vector<int> ports, size_t workerCount)
 	}
 
 	pthread_t acceptT;
-	pthread_t fileT;
 	pthread_t updateT;
 	pthread_t *workTs = new pthread_t[workerCount];
 	pthread_create(&acceptT, NULL, AcceptThread, this);
-	pthread_create(&fileT, NULL, FileThread, this);
 	for (size_t i = 0;i < workerCount;i++)
 		pthread_create(&workTs[i], NULL, WorkerThread, this);
 	pthread_create(&updateT, NULL, UpdateThread, this);
@@ -384,7 +373,6 @@ void AServer::run(std::string ip, std::vector<int> ports, size_t workerCount)
 	for (size_t i = 0;i < workerCount;i++)
 		pthread_mutex_destroy(clientMutexs + i);
 	pthread_mutex_destroy(&workno_mutex);
-	pthread_mutex_destroy(&file_mutex);
 	pthread_mutex_destroy(&update_mutex);
 	delete[] clientMutexs;
 	delete[] clients;
@@ -423,38 +411,27 @@ void AServer::sendStr(int fd, std::string const &str)
 
 void AServer::writeFile(int fd, std::string const &str, void *temp)
 {
-	pthread_mutex_lock(&file_mutex);
 	for (size_t i = 0;i < writeFiles.size();i++)
 	{
 		if (writeFiles[i]->fd == fd)
 		{
-			pthread_mutex_unlock(&file_mutex);
 			return;
 		}
 	}
 	if (str.size())
-	{
 		writeFiles.push_back(new Command(WRITE, fd, 0, str, temp));
-		pthread_mutex_unlock(&file_mutex);
-	}
 	else
-	{
-		pthread_mutex_unlock(&file_mutex);
-		pushCommand(new Command(WRITE, fd, 0, "", temp));
-	}
+		OnFileWrite(fd, temp);
 }
 
 void AServer::readFile(int fd, void *temp)
 {
-	pthread_mutex_lock(&file_mutex);
 	for (size_t i = 0;i < readFiles.size();i++)
 	{
 		if (readFiles[i]->fd == fd)
 		{
-			pthread_mutex_unlock(&file_mutex);
 			return;
 		}
 	}
 	readFiles.push_back(new Command(READ, fd, 0, "", temp));
-	pthread_mutex_unlock(&file_mutex);
 }

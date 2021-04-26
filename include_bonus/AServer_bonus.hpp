@@ -5,8 +5,8 @@
 #include <exception>
 #include <vector>
 #include <map>
-#include <pthread.h>
 #include <queue>
+#include <pthread.h>
 #ifdef BUFSIZ
 #undef BUFSIZ
 #define BUFSIZ 65535
@@ -69,10 +69,10 @@ private:
 	pthread_mutex_t *clientMutexs;
 	static void *AcceptThread(void *arg);
 	static void *WorkerThread(void *arg);
-	static void *FileThread(void *arg);
 	static void *UpdateThread(void *arg);
 
 	void pushCommand(Command *cmd);
+	bool fileProcess();
 
 public:
 	void run(std::string ip, std::vector<int> ports, size_t workerNo = 4);
