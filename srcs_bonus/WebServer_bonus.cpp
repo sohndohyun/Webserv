@@ -87,7 +87,9 @@ int WebServer::cgi_stub(int tempfd, FileData *fData)
 {
 	lseek(tempfd, 0, SEEK_SET);
 
-	int fdout = utils::open(".TEMPOUT", O_CREAT | O_TRUNC | O_RDWR, 0644);
+	std::string temp = "temp/.out";
+
+	int fdout = utils::open(temp.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0644);
 	pid_t pid = fork();
 	if (pid < 0)
 		throw Exception("cgi: fork error");
@@ -116,12 +118,14 @@ void WebServer::OnSend(int fd, int port)
 void WebServer::OnAccept(int fd, int port)
 {
 	(void)&port;
+	std::cout << fd << "(" << port << ") accepted!" << std::endl;
 	requests.insert(std::make_pair(fd, new Request()));
 }
 
 void WebServer::OnDisconnect(int fd, int port)
 {
 	(void)port;
+	std::cout << fd << "(" << port << ") disconnected!" << std::endl;
 	std::map<int, Request*>::iterator it = requests.find(fd);
 	if (it != requests.end())
 	{
@@ -145,6 +149,7 @@ void WebServer::OnFileRead(int fd, std::string const &str, void *temp)
 		std::string s = str.substr(str.find("\r\n\r\n") + 4);
 		fData->res->makeRes(s);
 		fData->isCGI = false;
+		//sendStr(fData->fd, fData->res->res_str);
 		writeFile(utils::open(fData->path.c_str(), O_CREAT | O_WRONLY, 0644), s, fData);
 	}
 	close(fd);
@@ -305,7 +310,7 @@ void WebServer::methodPOST(int fd, int port, Response *res, Request &req)
 	{
 		if (cfg_check.cgiCheck())
 		{
-			std::string tempfile = ".TEMP";
+			std::string tempfile = "temp/.in";
 			res->setContentType(path);
 			res->setStatus(200);
 			res->setContentLocation(req.path);
@@ -320,7 +325,7 @@ void WebServer::methodPOST(int fd, int port, Response *res, Request &req)
 		
 			writeFile(utils::open(tempfile.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0644), req.body, 
 				new FileData(fd, res, true, utils::mtostrarr(map_env), path));
-			}
+		}
 		else
 		{
 			res->setContentType(path);
