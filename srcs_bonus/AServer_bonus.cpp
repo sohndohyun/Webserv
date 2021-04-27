@@ -1,4 +1,4 @@
-#include "AServer.hpp"
+#include "AServer_bonus.hpp"
 #include <algorithm>
 #include <unistd.h>
 #include <cstdlib>
@@ -87,7 +87,7 @@ void AServer::run(std::string ip, std::vector<int> ports)
 				fdMax = readFiles[i]->fd;
 			FD_SET(readFiles[i]->fd, &rset);
 		}
-		
+
 		for (size_t i = 0;i < clients.size();i++)
 		{
 			if (clients[i]->str.size() > 0)
@@ -95,8 +95,8 @@ void AServer::run(std::string ip, std::vector<int> ports)
 			else
 				FD_SET(clients[i]->fd, &rset);
 		}
-		
-		
+
+
 		///////////////////////////////
 
 		//SELECT///////////////////////

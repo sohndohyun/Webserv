@@ -43,7 +43,7 @@ public:
 	bool needRecv() const;
 	MethodType methodType() const;
 
-	void isAcceptLanguage(std::string &content_path, int is_dir);
+	void isAcceptLanguage(std::string &content_path, int is_dir, bool plugin_index_ko);
 	bool isAcceptCharset();
 	void isReferer(AServer::t_analysis &analysis);
 	void isUserAgent(AServer::t_analysis &analysis);

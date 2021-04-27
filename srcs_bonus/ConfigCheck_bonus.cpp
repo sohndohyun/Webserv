@@ -1,4 +1,4 @@
-#include "ConfigCheck.hpp"
+#include "ConfigCheck_bonus.hpp"
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -240,8 +240,11 @@ bool ConfigCheck::auth_ID_PWD_check(std::string htpasswd, std::string auth_str)
 	return false;
 }
 
-bool ConfigCheck::AuthorizationCheck(std::string auth_str)
+bool ConfigCheck::AuthorizationCheck(std::string auth_str, bool plugin_auth)
 {
+	if (plugin_auth == false)
+		return true;
+
 	std::string location = findLocation();
 	if (location == "/" || findPath().rfind('/') == conf.server.loca.root.rfind('/'))
 	{
@@ -292,12 +295,4 @@ std::string ConfigCheck::makeAnalysisHTML(AServer::t_analysis analysis)
 	str += "</b></pre>\n\t</body>\n</html>";
 
 	return str;
-}
-
-bool ConfigCheck::analysisCheck()
-{
-	std::string location = findLocation();
-	if (location == "/analysis")
-		return true;
-	return false;
 }

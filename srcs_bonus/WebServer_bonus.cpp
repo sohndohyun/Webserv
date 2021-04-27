@@ -14,9 +14,9 @@
 
 WebServer::FileData::FileData(int fd, Response *res, bool isCGI, char **envp, std::string const &path) :
 	fd(fd), res(res), isCGI(isCGI), envp(envp), path(path) {}
-WebServer::FileData::~FileData() 
-{ 
-	if (res) 
+WebServer::FileData::~FileData()
+{
+	if (res)
 		delete res;
 	if (envp)
 	{
@@ -30,7 +30,7 @@ WebServer::FileData::~FileData()
 	}
 }
 
-WebServer::WebServer(ConfigParse &conf): confs(conf){}
+WebServer::WebServer(ConfigParse &conf, Plugin::t_plugin plugin): confs(conf), plugin(plugin) {}
 
 void WebServer::OnRecv(int fd, int port, std::string const &str)
 {
@@ -181,7 +181,7 @@ void WebServer::methodGET(int fd, int port,  Response *res, Request &req)
 	std::string body = "";
 	struct stat sb;
 
-	if (cfg_check.analysisCheck())
+	if (plugin.analysis == true && req.path == "/analysis")
 	{
 		res->setContentType(".html");
 		res->setStatus(200);
@@ -192,9 +192,9 @@ void WebServer::methodGET(int fd, int port,  Response *res, Request &req)
 
 	int is_dir = 0;
 	std::string path = cfg_check.makeFilePath(is_dir);
-	req.isAcceptLanguage(path, is_dir);
+	req.isAcceptLanguage(path, is_dir, plugin.index_ko);
 
-	if (cfg_check.AuthorizationCheck(req.header["Authorization"]) == false)
+	if (cfg_check.AuthorizationCheck(req.header["Authorization"], plugin.auth) == false)
 		errorRes(fd, port, res, 401);
 	else if (path == "")
 		errorRes(fd, port, res, 404);
@@ -234,9 +234,9 @@ void WebServer::methodHEAD(int fd, int port, Response *res, Request &req)
 
 	int is_dir = 0;
 	std::string path = cfg_check.makeFilePath(is_dir);
-	req.isAcceptLanguage(path, is_dir);
+	req.isAcceptLanguage(path, is_dir, plugin.index_ko);
 
-	if (cfg_check.AuthorizationCheck(req.header["Authorization"]) == false)
+	if (cfg_check.AuthorizationCheck(req.header["Authorization"], plugin.auth) == false)
 		errorRes(fd, port, res, 401);
 	else if (path == "")
 		errorRes(fd, port, res, 404);
@@ -262,7 +262,7 @@ void WebServer::methodPUT(int fd, int port, Response *res, Request &req)
 	int stat_rtn = stat(path.c_str(), &sb);
 	std::vector<std::string> allow_methods;
 
-	if (cfg_check.AuthorizationCheck(req.header["Authorization"]) == false)
+	if (cfg_check.AuthorizationCheck(req.header["Authorization"], plugin.auth) == false)
 		errorRes(fd, port, res, 401);
 	else if (cfg_check.methodCheck("PUT", allow_methods) == false)
 		errorRes(fd, port, res, 405, allow_methods);
@@ -291,11 +291,9 @@ void WebServer::methodPOST(int fd, int port, Response *res, Request &req)
 {
 	ConfigCheck cfg_check(confs.conf[get_conf_idx(port)], req.path);
 	std::string path = cfg_check.findPath();
-	//struct stat sb;
-	//int stat_rtn = stat(path.c_str(), &sb);
 	std::vector<std::string> allow_methods;
 
-	if (cfg_check.AuthorizationCheck(req.header["Authorization"]) == false)
+	if (cfg_check.AuthorizationCheck(req.header["Authorization"], plugin.auth) == false)
 		errorRes(fd, port, res, 401);
 	else if (cfg_check.methodCheck("POST", allow_methods) == false)
 		errorRes(fd, port, res, 405, allow_methods);
@@ -310,15 +308,15 @@ void WebServer::methodPOST(int fd, int port, Response *res, Request &req)
 			res->setStatus(200);
 			res->setContentLocation(req.path);
 			res->setLastModified(path);
-		
+
 			std::map<std::string, std::string> map_env;
 			map_env["REQUEST_METHOD"] = req.method;
 			map_env["SERVER_PROTOCOL"] = "HTTP/1.1";
 			map_env["PATH_INFO"] = req.path;
 			if (req.header.find("X-Secret-Header-For-Test") != req.header.end())
 				map_env["HTTP_X_SECRET_HEADER_FOR_TEST"] = req.header["X-Secret-Header-For-Test"];
-		
-			writeFile(utils::open(tempfile.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0644), req.body, 
+
+			writeFile(utils::open(tempfile.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0644), req.body,
 				new FileData(fd, res, true, utils::mtostrarr(map_env), path));
 			}
 		else

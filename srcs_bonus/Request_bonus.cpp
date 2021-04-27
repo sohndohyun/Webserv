@@ -199,8 +199,10 @@ void Request::parseBody()
 
 
 
-void Request::isAcceptLanguage(std::string &content_path, int is_dir)
+void Request::isAcceptLanguage(std::string &content_path, int is_dir, bool plugin_index_ko)
 {
+	if (plugin_index_ko == false)
+		return ;
 	if (header.find("Accept-Language") == header.end() || is_dir == 0)
 		return ;
 	if (isAcceptCharset() == false)

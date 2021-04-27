@@ -2,6 +2,7 @@
 #define WEBSERVER_HPP
 #include "AServer_bonus.hpp"
 #include "Request_bonus.hpp"
+#include "Plugin.hpp"
 #include <map>
 
 #ifdef __linux__
@@ -32,12 +33,13 @@ private:
 
 	std::map<int, std::string> reqStr;
 	ConfigParse &confs;
+	Plugin::t_plugin plugin;
 
 public:
 	AServer::t_analysis analysis;
 
 public:
-	WebServer(ConfigParse &conf);
+	WebServer(ConfigParse &conf, Plugin::t_plugin plugin);
 
 	virtual void OnRecv(int fd, int port, std::string const &str);
 	virtual void OnSend(int fd, int port);
