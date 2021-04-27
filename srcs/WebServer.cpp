@@ -289,7 +289,8 @@ void WebServer::methodPUT(int fd, int port, Response *res, Request &req)
 
 void WebServer::methodPOST(int fd, int port, Response *res, Request &req)
 {
-	ConfigCheck cfg_check(confs.conf[get_conf_idx(port)], req.path);
+	ConfigParse::t_conf conf = confs.conf[get_conf_idx(port)];
+	ConfigCheck cfg_check(conf, req.path);
 	std::string path = cfg_check.findPath();
 	//struct stat sb;
 	//int stat_rtn = stat(path.c_str(), &sb);
@@ -311,13 +312,7 @@ void WebServer::methodPOST(int fd, int port, Response *res, Request &req)
 			res->setContentLocation(req.path);
 			res->setLastModified(path);
 		
-			std::map<std::string, std::string> map_env;
-			map_env["REQUEST_METHOD"] = req.method;
-			map_env["SERVER_PROTOCOL"] = "HTTP/1.1";
-			map_env["PATH_INFO"] = req.path;
-			if (req.header.find("X-Secret-Header-For-Test") != req.header.end())
-				map_env["HTTP_X_SECRET_HEADER_FOR_TEST"] = req.header["X-Secret-Header-For-Test"];
-		
+			std::map<std::string, std::string> map_env = utils::set_cgi_enviroment(conf, req, path, port);
 			writeFile(utils::open(tempfile.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0644), req.body, 
 				new FileData(fd, res, true, utils::mtostrarr(map_env), path));
 			}
