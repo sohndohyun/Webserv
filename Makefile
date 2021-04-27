@@ -35,7 +35,7 @@ $(NAME): $(OBJS)
 	$(CC) $(FLAG) $(HEADER) $^ -o $(NAME)
 
 bonus : $(OBJS_BONUS)
-	$(CC) $(FLAG) $(HEADER_BONUS) $^ -o $(NAME)
+	$(CC) $(FLAG) $(HEADER_BONUS) $^ -o $(NAME) -lpthread
 
 %.o: %.cpp
 	$(CC) $(FLAG) $(HEADER) $(HEADER_BONUS) -o $@ -c $<
