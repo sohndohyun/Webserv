@@ -25,6 +25,7 @@ void Request::init()
 void Request::add(std::string const &str)
 {
 	leftStr.append(str);
+	_deserialize.append(str);
 	if (!isHeaderMade)
 		parseHeader();
 	if (isHeaderMade && !isBodyMade)
@@ -284,3 +285,9 @@ void Request::isUserAgent(AServer::t_analysis &analysis)
 		analysis.user_agent[webBrowser] = 1;
 }
 
+std::string Request::deserialize()
+{
+	if (needRecv())
+		return "";
+	return _deserialize;
+}
