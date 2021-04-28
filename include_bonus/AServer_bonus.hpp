@@ -31,7 +31,7 @@ private:
 
 	enum CMDType
 	{
-		RECV, SEND, READ, WRITE, ACCEPT, DISCONNECT
+		RECV, SEND, READ, WRITE, ACCEPT, DISCONNECT, PROXY
 	};
 
 	class Command
@@ -70,6 +70,7 @@ private:
 	static void *AcceptThread(void *arg);
 	static void *WorkerThread(void *arg);
 	static void *UpdateThread(void *arg);
+	static void *ProxyThread(void *arg);
 
 	void pushCommand(Command *cmd);
 	bool fileProcess();
@@ -82,6 +83,8 @@ public:
 	void writeFile(int fd, std::string const &str, void *temp);
 	void readFile(int fd, void *temp);
 
+	void proxySend(std::string const &url, int port, std::string const &str, void *temp);
+
 	virtual void OnRecv(int fd, int port, std::string const &str) = 0;
 	virtual void OnSend(int fd, int port) = 0;
 	virtual void OnAccept(int fd, int port) = 0;
@@ -89,6 +92,8 @@ public:
 
 	virtual void OnFileRead(int fd, std::string const &str, void *temp) = 0;
 	virtual void OnFileWrite(int fd, void *temp) = 0;
+
+	virtual void OnProxyRecv(int fd, std::string const &str, void *temp) = 0;
 };
 
 #endif
