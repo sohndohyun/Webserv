@@ -212,6 +212,8 @@ void Request::isAcceptLanguage(std::string &content_path, int is_dir)
 		return ;
 	if (isAcceptCharset() == false)
 		return ;
+	if (content_path.rfind(".html") != content_path.size() - 5)
+		return ;
 
 	if (path[path.length() - 1] != '/')
 		path += '/';

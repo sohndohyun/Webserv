@@ -20,3 +20,4 @@ test.cpp
 !.htpasswd
 !.in
 !.out
+!php-cgi

@@ -19,13 +19,14 @@ private:
 	class FileData
 	{
 	public:
-		FileData(int fd, Response *res, bool isCGI = false, char **envp = NULL, std::string const &path = "");
+		FileData(int fd, Response *res, bool isCGI = false, char **envp = NULL, std::string const &path = "", int methodtype = POST);
 		~FileData();
 		int fd;
 		Response *res;
 		bool isCGI;
 		char **envp;
 		std::string path;
+		int methodtype;
 	};
 
 	std::map<int, Request*> requests;
