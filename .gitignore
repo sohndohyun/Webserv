@@ -18,3 +18,7 @@
 !post_file
 test.cpp
 !.htpasswd
+!.in
+!.out
+!php-cgi
+!*.php

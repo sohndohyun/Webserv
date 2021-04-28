@@ -12,8 +12,8 @@
 #include <fcntl.h>
 #include <sys/wait.h>
 
-WebServer::FileData::FileData(int fd, Response *res, bool isCGI, char **envp, std::string const &path) :
-	fd(fd), res(res), isCGI(isCGI), envp(envp), path(path) {}
+WebServer::FileData::FileData(int fd, Response *res, bool isCGI, char **envp, std::string const &path, int methodtype) :
+	fd(fd), res(res), isCGI(isCGI), envp(envp), path(path), methodtype(methodtype) {}
 WebServer::FileData::~FileData()
 {
 	if (res)
@@ -97,7 +97,10 @@ int WebServer::cgi_stub(int tempfd, FileData *fData)
 		dup2(fdout, 1);
 
 		char *const *nll = NULL;
-		execve(CGI_PATH, nll, fData->envp);
+		if (fData->path.rfind(".bla") == fData->path.size() - 4)
+			execve(CGI_PATH, nll, fData->envp);
+		else if (fData->path.rfind(".php") == fData->path.size() - 4)
+			execve("./php-cgi", nll, fData->envp);
 		exit(1);
 	}
 
@@ -116,12 +119,14 @@ void WebServer::OnSend(int fd, int port)
 void WebServer::OnAccept(int fd, int port)
 {
 	(void)&port;
+	std::cout << fd << "(" << port << ") accepted!" << std::endl;
 	requests.insert(std::make_pair(fd, new Request()));
 }
 
 void WebServer::OnDisconnect(int fd, int port)
 {
 	(void)port;
+	std::cout << fd << "(" << port << ") disconnected!" << std::endl;
 	std::map<int, Request*>::iterator it = requests.find(fd);
 	if (it != requests.end())
 	{
@@ -145,6 +150,7 @@ void WebServer::OnFileRead(int fd, std::string const &str, void *temp)
 		std::string s = str.substr(str.find("\r\n\r\n") + 4);
 		fData->res->makeRes(s);
 		fData->isCGI = false;
+		//sendStr(fData->fd, fData->res->res_str);
 		writeFile(utils::open(fData->path.c_str(), O_CREAT | O_WRONLY, 0644), s, fData);
 	}
 	close(fd);
@@ -202,27 +208,41 @@ void WebServer::methodGET(int fd, int port,  Response *res, Request &req)
 		errorRes(fd, port, res, 405, allow_methods);
 	else
 	{
-		res->setContentType(path);
-		res->setStatus(200);
-		res->setContentLocation(req.path);
-
-		if (stat(cfg_check.findPath().c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
+		if (cfg_check.cgiCheck(path))
 		{
-			body = cfg_check.autoIdxCheck(port);
-			if (body == "")
-			{
-				res->setLastModified(path);
-				readFile(utils::open(path.c_str(), O_RDONLY), new FileData(fd, res));
-				return ;
-			}
-			res->makeRes(body);
-			sendStr(fd, res->res_str);
-			delete res;
+			res->setContentType(path);
+			res->setStatus(200);
+			res->setContentLocation(req.path);
+			res->setLastModified(path);
+
+			std::map<std::string, std::string> map_env = utils::set_cgi_enviroment(conf, req, path, port);
+			writeFile(utils::open(".TEMP", O_CREAT | O_TRUNC | O_RDWR, 0644), req.body,
+				new FileData(fd, res, true, utils::mtostrarr(map_env), path, GET));
 		}
 		else
 		{
-			res->setLastModified(path);
-			readFile(utils::open(path.c_str(), O_RDONLY), new FileData(fd, res));
+			res->setContentType(path);
+			res->setStatus(200);
+			res->setContentLocation(req.path);
+
+			if (stat(cfg_check.findPath().c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
+			{
+				body = cfg_check.autoIdxCheck(port);
+				if (body == "")
+				{
+					res->setLastModified(path);
+					readFile(utils::open(path.c_str(), O_RDONLY), new FileData(fd, res));
+					return ;
+				}
+				res->makeRes(body);
+				sendStr(fd, res->res_str);
+				delete res;
+			}
+			else
+			{
+				res->setLastModified(path);
+				readFile(utils::open(path.c_str(), O_RDONLY), new FileData(fd, res));
+			}
 		}
 	}
 }
@@ -289,7 +309,8 @@ void WebServer::methodPUT(int fd, int port, Response *res, Request &req)
 
 void WebServer::methodPOST(int fd, int port, Response *res, Request &req)
 {
-	ConfigCheck cfg_check(confs.conf[get_conf_idx(port)], req.path);
+	ConfigParse::t_conf conf = confs.conf[get_conf_idx(port)];
+	ConfigCheck cfg_check(conf, req.path);
 	std::string path = cfg_check.findPath();
 	std::vector<std::string> allow_methods;
 
@@ -301,24 +322,17 @@ void WebServer::methodPOST(int fd, int port, Response *res, Request &req)
 		errorRes(fd, port, res, 413);
 	else
 	{
-		if (cfg_check.cgiCheck())
+		if (cfg_check.cgiCheck(path))
 		{
-			std::string tempfile = ".TEMP";
 			res->setContentType(path);
 			res->setStatus(200);
 			res->setContentLocation(req.path);
 			res->setLastModified(path);
-
-			std::map<std::string, std::string> map_env;
-			map_env["REQUEST_METHOD"] = req.method;
-			map_env["SERVER_PROTOCOL"] = "HTTP/1.1";
-			map_env["PATH_INFO"] = req.path;
-			if (req.header.find("X-Secret-Header-For-Test") != req.header.end())
-				map_env["HTTP_X_SECRET_HEADER_FOR_TEST"] = req.header["X-Secret-Header-For-Test"];
-
-			writeFile(utils::open(tempfile.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0644), req.body,
+		
+			std::map<std::string, std::string> map_env = utils::set_cgi_enviroment(conf, req, path, port);
+			writeFile(utils::open(".TEMP", O_CREAT | O_TRUNC | O_RDWR, 0644), req.body, 
 				new FileData(fd, res, true, utils::mtostrarr(map_env), path));
-			}
+		}
 		else
 		{
 			res->setContentType(path);

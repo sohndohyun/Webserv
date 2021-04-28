@@ -198,20 +198,20 @@ bool ConfigCheck::client_max_body_size_Check(int body_size)
 	return (true);
 }
 
-bool ConfigCheck::cgiCheck()
+bool ConfigCheck::cgiCheck(const std::string& path)
 {
 	std::string location = findLocation();
 
 	if (location == "/" || findPath().rfind('/') == conf.server.loca.root.rfind('/'))
 	{
-		if (req_path.rfind('.') != std::string::npos &&
-			req_path.substr(req_path.rfind('.')) == conf.server.loca.cgi)
+		if (path.rfind('.') != std::string::npos &&
+			path.substr(path.rfind('.')) == conf.server.loca.cgi)
 			return (true);
 	}
 	if (location != "" && location != "/")
 	{
-		if (req_path.rfind('.') != std::string::npos &&
-			req_path.substr(req_path.rfind('.')) == conf.loca_map[location].cgi)
+		if (path.rfind('.') != std::string::npos &&
+			path.substr(path.rfind('.')) == conf.loca_map[location].cgi)
 			return (true);
 	}
 	return (false);

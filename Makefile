@@ -1,6 +1,5 @@
 NAME = Webserv
-NAME_BONUS = Webserv_bonus
-FLAG =	-Wall -Wextra -Werror -std=c++98
+FLAG =	-Wall -Wextra -Werror -std=c++98 -g
 HEADER = -I./include
 HEADER_BONUS = -I./include_bonus
 CC = clang++
@@ -25,7 +24,8 @@ SRCS_BONUS = \
 		srcs_bonus/Request_bonus.cpp \
 		srcs_bonus/ConfigCheck_bonus.cpp \
 		srcs_bonus/main_bonus.cpp \
-		srcs_bonus/Plugin.cpp
+		srcs_bonus/Plugin.cpp \
+		srcs_bonus/Regex_bonus.cpp
 
 OBJS = $(SRCS:.cpp=.o)
 OBJS_BONUS = $(SRCS_BONUS:.cpp=.o)
@@ -36,7 +36,7 @@ $(NAME): $(OBJS)
 	$(CC) $(FLAG) $(HEADER) $^ -o $(NAME)
 
 bonus : $(OBJS_BONUS)
-	$(CC) $(FLAG) $(HEADER_BONUS) $^ -o $(NAME_BONUS)
+	$(CC) $(FLAG) $(HEADER_BONUS) $^ -o $(NAME) -lpthread
 
 %.o: %.cpp
 	$(CC) $(FLAG) $(HEADER) $(HEADER_BONUS) -o $@ -c $<
@@ -44,9 +44,11 @@ bonus : $(OBJS_BONUS)
 clean:
 	rm -f $(OBJS)
 	rm -f $(OBJS_BONUS)
+	rm -f .TEMP
+	rm -f .TEMPOUT
+	bash test.sh
 
 fclean: clean
 	rm -f $(NAME)
-	rm -f $(NAME_BONUS)
 
 re: fclean all

@@ -27,7 +27,7 @@ public:
 
 	bool methodCheck(std::string method, std::vector<std::string> &allow_methods);
 	bool client_max_body_size_Check(int body_size);
-	bool cgiCheck();
+	bool cgiCheck(const std::string &path);
 	bool AuthorizationCheck(std::string auth_str);
 	bool analysisCheck();
 	std::string makeAnalysisHTML(AServer::t_analysis analysis);

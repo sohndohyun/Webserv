@@ -84,6 +84,13 @@ void Request::parseFirstLine(std::string const &str)
 	path = str.substr(first + 1, last - first -1);
 	size_t i;
 	for (i = 0 ; (i < path.size()) && path[i] != '#' && path[i] != '?'; i++);
+	size_t query_start = path.find('?');
+	if (query_start != std::string::npos)
+	{
+		size_t j;
+		for (j = 0; path[query_start + j] && path[query_start + j] != '#'; j++);
+		querystring = path.substr(query_start + 1, j);
+	}
 	path = path.substr(0, i);
 }
 
@@ -204,6 +211,8 @@ void Request::isAcceptLanguage(std::string &content_path, int is_dir)
 	if (header.find("Accept-Language") == header.end() || is_dir == 0)
 		return ;
 	if (isAcceptCharset() == false)
+		return ;
+	if (content_path.rfind(".html") != content_path.size() - 5)
 		return ;
 
 	if (path[path.length() - 1] != '/')

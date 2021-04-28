@@ -9,6 +9,8 @@
 #include <stack>
 #include <string>
 #include <iostream>
+#include "ConfigParse_bonus.hpp"
+#include "Request_bonus.hpp"
 
 namespace utils
 {
@@ -297,4 +299,141 @@ namespace utils
 		fcntl(fd, F_SETFL, O_NONBLOCK);
 		return fd;
 	}
+
+	std::map<std::string, std::string> set_cgi_enviroment(ConfigParse::t_conf& conf ,Request& req, const std::string& path, int port)
+	{
+		std::map<std::string, std::string> map_env;
+		map_env["AUTH_TYPE"] = "null";
+		map_env["CONTENT_LENGTH"] = "-1";
+		map_env["CONTENT_TYPE"] = "null";
+		map_env["GATEWAY_INTERFACE"] = "CGI/1.1";
+		map_env["PATH_INFO"] = req.path;
+		map_env["PATH_TRANSLATED"] = path;
+		map_env["QUERY_STRING"] = req.querystring;
+		map_env["REMOTE_ADDR"] = "127.0.0.1";
+		map_env["REMOTE_IDENT"] = "null";
+		map_env["REMOTE_USER"] = "null";
+		map_env["REQUEST_METHOD"] = req.method;
+		map_env["REQUEST_URI"] = req.path;
+		map_env["SCRIPT_NAME"] = req.path;
+		map_env["SERVER_NAME"] = conf.server.name;
+		map_env["SERVER_PORT"] = to_string(port);
+		map_env["SERVER_PROTOCOL"] = "HTTP/1.1";
+		map_env["SERVER_SOFTWARE"] = "Webserv";
+		for (std::map<std::string ,std::string>::iterator it = req.header.begin();
+				it != req.header.end(); it++)
+		{
+			std::string key;
+			if (it->first.size())
+			{
+				key.append("HTTP_");
+				for (size_t i = 0 ; i < it->first.size(); i++)
+				{
+					if (it->first[i] == '-')
+						key += '_';
+					else
+						key += std::toupper(it->first[i]);
+				}
+				map_env[key] = it->second;
+			}
+		}
+		return map_env;
+	}
+
+	std::string interpret_bf(const std::string& commands)
+	{
+		std::string s;
+		std::vector<int> data(1, 0);
+		std::vector<int>::iterator dataPtr = data.begin();
+
+		std::string::const_iterator instructionPtr = commands.begin();
+		std::stack<std::string::const_iterator> instructionStack;
+
+		while (instructionPtr != commands.end())
+		{
+			switch (*instructionPtr)
+			{
+			case '<':
+			{
+				dataPtr--;
+				break;
+			}
+			case '>':
+			{
+				dataPtr++;
+				if (dataPtr == data.end()) {
+					data.push_back(0);
+					dataPtr = data.end()-1;
+				}
+				break;
+			}
+			case '+':
+			{
+				(*dataPtr) += 1;
+				break;
+			}
+			case '-':
+			{
+				(*dataPtr) -= 1;
+				break;
+			}
+			case '.':
+			{
+				s += char(*dataPtr);
+				break;
+			}
+			case ',':
+			{
+				return "";
+			}
+			case '[':
+			{
+				instructionStack.push(instructionPtr);
+
+				if (*dataPtr == 0)
+				{
+					std::string::const_iterator startInstructionPtr = instructionPtr;
+					while (++instructionPtr != commands.end())
+					{
+						if (*instructionPtr == '[')
+							instructionStack.push(instructionPtr);
+						else if (*instructionPtr == ']')
+						{
+							if (instructionStack.empty())
+								return "";
+
+							std::string::const_iterator tempInstructionPtr = instructionStack.top();
+							instructionStack.pop();
+
+							if (startInstructionPtr == tempInstructionPtr)
+								break;
+						}
+					}
+				}
+				break;
+			}
+			case ']':
+			{
+				if (instructionStack.empty())
+					return "";
+
+				if (*dataPtr != 0)
+					instructionPtr = instructionStack.top();
+				else
+					instructionStack.pop();
+
+				break;
+			}
+			default:
+				break;
+			}
+
+			instructionPtr++;
+		}
+		if (!instructionStack.empty())
+			return "";
+		return s;
+	}
+
+
 }

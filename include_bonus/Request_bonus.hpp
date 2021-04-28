@@ -34,7 +34,8 @@ public:
 	int errorCode;
 	std::string path;
 	std::string method;
-
+	std::string querystring;
+	
 public:
 	Request();
 	void init();
