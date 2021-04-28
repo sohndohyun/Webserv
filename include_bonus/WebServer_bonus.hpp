@@ -29,6 +29,7 @@ private:
 	};
 
 	std::map<int, Request*> requests;
+	std::map<int, Request*> proxyRecvs;
 
 	std::map<int, std::string> reqStr;
 	ConfigParse &confs;
@@ -46,6 +47,7 @@ public:
 
 	virtual void OnFileRead(int fd, std::string const &str, void *temp);
 	virtual void OnFileWrite(int fd, void *temp);
+	virtual void OnProxyRecv(int fd, std::string const &str, void *temp);
 
 	virtual ~WebServer();
 

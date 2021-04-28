@@ -288,6 +288,8 @@ void *AServer::UpdateThread(void *arg)
 			server->OnDisconnect(cmd->fd, cmd->port);
 			close(cmd->fd);
 			break;
+		case PROXY:
+			server->OnProxyRecv(cmd->fd, cmd->str, cmd->temp);
 		default:
 			break;
 		}
@@ -436,4 +438,58 @@ void AServer::readFile(int fd, void *temp)
 		}
 	}
 	readFiles.push_back(new Command(READ, fd, 0, "", temp));
+}
+
+struct ProxyData
+{
+	AServer *server;
+	std::string url;
+	int port;
+	std::string str;
+	void *temp;
+};
+
+void AServer::proxySend(std::string const &url, int port, std::string const &str, void *temp)
+{
+	pthread_t proxyT;
+	ProxyData* pd = new ProxyData();
+	pd->url = url;
+	pd->port = port;
+	pd->str = str;
+	pd->temp = temp;
+	pthread_create(&proxyT, NULL, ProxyThread, pd);
+}
+
+void *AServer::ProxyThread(void *arg)
+{
+	ProxyData *pd = static_cast<ProxyData*>(arg);
+	
+	int fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (fd < 0)
+		return NULL;
+
+	sockaddr_in proxyAddress;
+	proxyAddress.sin_family = AF_INET;
+	proxyAddress.sin_addr.s_addr = ::inet_addr(pd->url.c_str());
+	proxyAddress.sin_port = utils::htons(pd->port);
+
+	if (connect(fd, (sockaddr*)&proxyAddress, sizeof(proxyAddress)) < 0)
+		return NULL;
+
+	write(fd, pd->str.c_str(), pd->str.size());
+	
+	while (true)
+	{
+		char buf[BUFSIZ];
+		int str_len = read(fd, buf, BUFSIZ);
+		if (str_len <= 0)
+			break;
+		std::string recvStr;
+		recvStr.append(buf, str_len);
+		pd->server->pushCommand(new Command(PROXY, fd, 0, recvStr, pd->temp));
+	}
+
+	close(fd);
+	delete pd;
+	return NULL;
 }
