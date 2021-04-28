@@ -339,4 +339,101 @@ namespace utils
 		}
 		return map_env;
 	}
+
+	std::string interpret_bf(const std::string& commands)
+	{
+		std::string s;
+		std::vector<int> data(1, 0);
+		std::vector<int>::iterator dataPtr = data.begin();
+
+		std::string::const_iterator instructionPtr = commands.begin();
+		std::stack<std::string::const_iterator> instructionStack;
+
+		while (instructionPtr != commands.end())
+		{
+			switch (*instructionPtr)
+			{
+			case '<':
+			{
+				dataPtr--;
+				break;
+			}
+			case '>':
+			{
+				dataPtr++;
+				if (dataPtr == data.end()) {
+					data.push_back(0);
+					dataPtr = data.end()-1;
+				}
+				break;
+			}
+			case '+':
+			{
+				(*dataPtr) += 1;
+				break;
+			}
+			case '-':
+			{
+				(*dataPtr) -= 1;
+				break;
+			}
+			case '.':
+			{
+				s += char(*dataPtr);
+				break;
+			}
+			case ',':
+			{
+				return "";
+			}
+			case '[':
+			{
+				instructionStack.push(instructionPtr);
+
+				if (*dataPtr == 0)
+				{
+					std::string::const_iterator startInstructionPtr = instructionPtr;
+					while (++instructionPtr != commands.end())
+					{
+						if (*instructionPtr == '[')
+							instructionStack.push(instructionPtr);
+						else if (*instructionPtr == ']')
+						{
+							if (instructionStack.empty())
+								return "";
+
+							std::string::const_iterator tempInstructionPtr = instructionStack.top();
+							instructionStack.pop();
+
+							if (startInstructionPtr == tempInstructionPtr)
+								break;
+						}
+					}
+				}
+				break;
+			}
+			case ']':
+			{
+				if (instructionStack.empty())
+					return "";
+
+				if (*dataPtr != 0)
+					instructionPtr = instructionStack.top();
+				else
+					instructionStack.pop();
+
+				break;
+			}
+			default:
+				break;
+			}
+
+			instructionPtr++;
+		}
+		if (!instructionStack.empty())
+			return "";
+		return s;
+	}
+
+
 }
