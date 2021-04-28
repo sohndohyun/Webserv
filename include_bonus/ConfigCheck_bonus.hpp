@@ -11,7 +11,7 @@ class ConfigCheck
 private:
 	ConfigParse::t_conf &conf;
 	std::string req_path;
-
+	std::string regex_path;
 private:
 	std::string findLocation();
 	std::string getRootURL(int port);
