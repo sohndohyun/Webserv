@@ -309,3 +309,26 @@ std::string ConfigCheck::makeAnalysisHTML(AServer::t_analysis analysis)
 
 	return str;
 }
+
+bool ConfigCheck::isProxy()
+{
+	std::string location = findLocation();
+
+	if ((int)conf.loca_map[location].proxy.size() > 0)
+	{
+		return true;
+	}
+	return false;
+}
+
+std::string ConfigCheck::returnURL(int idx)
+{
+	std::string location = findLocation();
+
+	return (conf.loca_map[location].proxy[idx]);
+}
+
+std::string ConfigCheck::makeReq()
+{
+	
+}

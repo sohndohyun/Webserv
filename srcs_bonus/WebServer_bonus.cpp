@@ -366,6 +366,10 @@ void WebServer::methodPOST(int fd, int port, Response *res, Request &req)
 					new FileData(fd, res, true, utils::mtostrarr(map_env), path));
 			}
 		}
+		else if(cfg_check.isProxy())
+		{
+			proxySend(cfg_check.returnURL(0), utils::stoi(cfg_check.returnURL(1)), cfg_check.makeReq(), new FileData(fd, NULL));
+		}
 		else
 		{
 			res->setContentType(path);

@@ -212,6 +212,8 @@ void ConfigParse::locationParse(std::vector<std::string> section)
 			loca.auth_basic = value;
 		else if (key == "auth_basic_user_file")
 			loca.auth_basic_user_file = value;
+		else if (key == "proxy")
+			loca.proxy = utils::splitString(value, ':');
 		else
 			throw Exception("ConfigParse: Invalid key: " + key);
 	}
