@@ -154,7 +154,11 @@ void WebServer::OnFileRead(int fd, std::string const &str, void *temp)
 		if (fData->methodtype == POST)
 			writeFile(utils::open(fData->path.c_str(), O_CREAT | O_WRONLY, 0644), s, fData);
 		else
+		{
 			sendStr(fData->fd, fData->res->res_str);
+			delete fData;
+
+		}
 	}
 	close(fd);
 }

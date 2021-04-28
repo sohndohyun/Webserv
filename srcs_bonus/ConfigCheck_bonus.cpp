@@ -6,6 +6,7 @@
 #include "FileIO_bonus.hpp"
 #include <vector>
 #include <iostream>
+#include "Regex_bonus.hpp"
 
 ConfigCheck::ConfigCheck(ConfigParse::t_conf &conf, std::string req_path): conf(conf), req_path(req_path) {}
 
@@ -24,7 +25,19 @@ std::string ConfigCheck::findLocation()
 				return (iter->first);
 		}
 	}
-	return ("");
+	
+	std::map<std::string, ConfigParse::t_location>::iterator iter = conf.loca_map.begin();
+	for(; iter != conf.loca_map.end(); iter++)
+	{
+		regex::Regex r(iter->first.substr(1));
+		if (r.match(req_path.substr(1)))
+		{
+			req_path = iter->second.index[0];
+			return "/";
+		}
+	}
+	
+	return "";
 }
 
 std::string ConfigCheck::getRootURL(int port)

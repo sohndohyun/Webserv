@@ -23,19 +23,21 @@ AServer::Command::Command(CMDType type, int fd, int port, std::string const &str
 void *AServer::AcceptThread(void *arg)
 {
 	AServer* server = static_cast<AServer*>(arg);
-	int fdMax = 3;
-
-	fd_set set;
-	FD_ZERO(&set);
-	for (size_t i = 0;i < server->listenSocks.size();i++)
-	{
-		if (fdMax < server->listenSocks[i])
-			fdMax = server->listenSocks[i];
-		FD_SET(server->listenSocks[i], &set);
-	}
+	timeval tval;
+	tval.tv_usec = 10;
+	tval.tv_sec = 0;
 	while (true)
 	{
-		int selRet = select(fdMax + 1, &set, NULL, NULL, NULL);
+		int fdMax = -1;
+		fd_set set;
+		FD_ZERO(&set);
+		for (size_t i = 0;i < server->listenSocks.size();i++)
+		{
+			if (fdMax < server->listenSocks[i])
+				fdMax = server->listenSocks[i];
+			FD_SET(server->listenSocks[i], &set);
+		}
+		int selRet = select(fdMax + 1, &set, NULL, NULL, &tval);
 		if (selRet == -1)
 		{
 			std::cerr << "AcceptThread: select error\n";
@@ -95,7 +97,6 @@ void* AServer::WorkerThread(void *arg)
 			if (fdMax < clients[i]->fd)
 				fdMax = clients[i]->fd;
 		}
-
 		pthread_mutex_unlock(&server->clientMutexs[threadNo]);
 
 		int selRet = select(fdMax + 1, &rset, &wset, NULL, &tval);
