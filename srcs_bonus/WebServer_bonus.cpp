@@ -84,7 +84,7 @@ void WebServer::request_process(int fd, int port, Request &req)
 }
 
 int WebServer::cgi_stub(int tempfd, FileData *fData)
-{
+{	
 	lseek(tempfd, 0, SEEK_SET);
 
 	int fdout = utils::open(".TEMPOUT", O_CREAT | O_TRUNC | O_RDWR, 0644);
@@ -336,10 +336,19 @@ void WebServer::methodPOST(int fd, int port, Response *res, Request &req)
 			res->setStatus(200);
 			res->setContentLocation(req.path);
 			res->setLastModified(path);
-		
-			std::map<std::string, std::string> map_env = utils::set_cgi_enviroment(conf, req, path, port);
-			writeFile(utils::open(".TEMP", O_CREAT | O_TRUNC | O_RDWR, 0644), req.body, 
-				new FileData(fd, res, true, utils::mtostrarr(map_env), path));
+			if (path.rfind(".bf") == path.size() - 3)
+			{
+				std::string body = utils::interpret_bf(req.body);
+				res->makeRes(body);
+				writeFile(utils::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644),
+					body, new FileData(fd, res));
+			}
+			else
+			{
+				std::map<std::string, std::string> map_env = utils::set_cgi_enviroment(conf, req, path, port);
+				writeFile(utils::open(".TEMP", O_CREAT | O_TRUNC | O_RDWR, 0644), req.body, 
+					new FileData(fd, res, true, utils::mtostrarr(map_env), path));
+			}
 		}
 		else
 		{
