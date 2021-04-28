@@ -2,6 +2,7 @@
 #define WEBSERVER_HPP
 #include "AServer_bonus.hpp"
 #include "Request_bonus.hpp"
+#include "Plugin.hpp"
 #include <map>
 
 #ifdef __linux__
@@ -19,25 +20,27 @@ private:
 	class FileData
 	{
 	public:
-		FileData(int fd, Response *res, bool isCGI = false, char **envp = NULL, std::string const &path = "");
+		FileData(int fd, Response *res, bool isCGI = false, char **envp = NULL, std::string const &path = "", int methodtype = POST);
 		~FileData();
 		int fd;
 		Response *res;
 		bool isCGI;
 		char **envp;
 		std::string path;
+		int methodtype;
 	};
 
 	std::map<int, Request*> requests;
 
 	std::map<int, std::string> reqStr;
 	ConfigParse &confs;
+	Plugin::t_plugin plugin;
 
 public:
 	AServer::t_analysis analysis;
 
 public:
-	WebServer(ConfigParse &conf);
+	WebServer(ConfigParse &conf, Plugin::t_plugin plugin);
 
 	virtual void OnRecv(int fd, int port, std::string const &str);
 	virtual void OnSend(int fd, int port);

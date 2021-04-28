@@ -5,15 +5,20 @@
 #include "Utils_bonus.hpp"
 #include "FileIO_bonus.hpp"
 
-ConfigParse::ConfigParse(): _confIdx(-1)
+ConfigParse::ConfigParse(std::string plugin_config): _confIdx(-1)
 {
-	int configFD = open(CONFIG_PATH, O_RDONLY);
+	int configFD;
 	char buf;
+	std::string section_str = "";
+	std::string str = "";
+
+	if (plugin_config == "")
+		configFD = open(CONFIG_PATH, O_RDONLY);
+	else
+		configFD = open(plugin_config.c_str(), O_RDONLY);
 	if (configFD < 0)
 		throw Exception("ConfigParse : Config file doesn't open");
 
-	std::string section_str = "";
-	std::string str = "";
 	while (read(configFD, &buf, 1))
 	{
 		str += buf;
@@ -36,8 +41,8 @@ ConfigParse::ConfigParse(): _confIdx(-1)
 		sectionParse(section_str);
 	close(configFD);
 
-	
-	
+
+
 	for(size_t i = 0; i < conf.size(); i++)
 	{
 		if (conf[i].server.loca.auth_basic_user_file != "")

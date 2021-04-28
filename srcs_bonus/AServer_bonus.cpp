@@ -95,6 +95,7 @@ void* AServer::WorkerThread(void *arg)
 			if (fdMax < clients[i]->fd)
 				fdMax = clients[i]->fd;
 		}
+
 		pthread_mutex_unlock(&server->clientMutexs[threadNo]);
 
 		int selRet = select(fdMax + 1, &rset, &wset, NULL, &tval);

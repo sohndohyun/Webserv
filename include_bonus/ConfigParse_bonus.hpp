@@ -6,7 +6,7 @@
 # include <map>
 # include <vector>
 
-# define CONFIG_PATH "./config/config.ini"
+# define CONFIG_PATH "./config/config_bonus.ini"
 
 class ConfigParse{
 private:
@@ -52,7 +52,7 @@ public:
 	std::vector<int> port;
 
 public:
-	ConfigParse();
+	ConfigParse(std::string plugin_config);
 	virtual ~ConfigParse();
 };
 

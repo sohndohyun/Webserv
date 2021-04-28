@@ -20,6 +20,7 @@ void Request::init()
 	leftStr.clear();
 	body.clear();
 	header.clear();
+	_deserialize.clear();
 }
 
 void Request::add(std::string const &str)
@@ -207,11 +208,15 @@ void Request::parseBody()
 
 
 
-void Request::isAcceptLanguage(std::string &content_path, int is_dir)
+void Request::isAcceptLanguage(std::string &content_path, int is_dir, bool plugin_index_ko)
 {
+	if (plugin_index_ko == false)
+		return ;
 	if (header.find("Accept-Language") == header.end() || is_dir == 0)
 		return ;
 	if (isAcceptCharset() == false)
+		return ;
+	if (content_path.rfind(".html") != content_path.size() - 5)
 		return ;
 
 	if (path[path.length() - 1] != '/')

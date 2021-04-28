@@ -21,3 +21,4 @@ test.cpp
 !.in
 !.out
 !php-cgi
+!*.php

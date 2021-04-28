@@ -24,6 +24,7 @@ SRCS_BONUS = \
 		srcs_bonus/Request_bonus.cpp \
 		srcs_bonus/ConfigCheck_bonus.cpp \
 		srcs_bonus/main_bonus.cpp \
+		srcs_bonus/Plugin.cpp \
 		srcs_bonus/Regex_bonus.cpp
 
 OBJS = $(SRCS:.cpp=.o)

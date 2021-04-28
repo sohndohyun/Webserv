@@ -210,7 +210,7 @@ void WebServer::methodGET(int fd, int port,  Response *res, Request &req)
 		errorRes(fd, port, res, 405, allow_methods);
 	else
 	{
-		if (cfg_check.cgiCheck())
+		if (cfg_check.cgiCheck(path))
 		{
 			res->setContentType(path);
 			res->setStatus(200);
@@ -326,7 +326,7 @@ void WebServer::methodPOST(int fd, int port, Response *res, Request &req)
 		errorRes(fd, port, res, 413);
 	else
 	{
-		if (cfg_check.cgiCheck())
+		if (cfg_check.cgiCheck(path))
 		{
 			res->setContentType(path);
 			res->setStatus(200);
