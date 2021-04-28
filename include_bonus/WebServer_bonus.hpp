@@ -27,6 +27,7 @@ private:
 		bool isCGI;
 		char **envp;
 		std::string path;
+		int methodtype;
 	};
 
 	std::map<int, Request*> requests;

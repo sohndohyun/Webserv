@@ -27,7 +27,8 @@ private:
 	bool isChunk;
 	bool isBodyMade;
 	int bodysize;
-
+	std::string _deserialize;
+	
 public:
 	std::map<std::string, std::string> header;
 	std::string body;

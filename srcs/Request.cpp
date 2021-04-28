@@ -20,11 +20,13 @@ void Request::init()
 	leftStr.clear();
 	body.clear();
 	header.clear();
+	_deserialize.clear();
 }
 
 void Request::add(std::string const &str)
 {
 	leftStr.append(str);
+	_deserialize.append(str);
 	if (!isHeaderMade)
 		parseHeader();
 	if (isHeaderMade && !isBodyMade)

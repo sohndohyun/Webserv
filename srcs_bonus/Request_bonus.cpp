@@ -20,6 +20,7 @@ void Request::init()
 	leftStr.clear();
 	body.clear();
 	header.clear();
+	_deserialize.clear();
 }
 
 void Request::add(std::string const &str)
@@ -214,6 +215,8 @@ void Request::isAcceptLanguage(std::string &content_path, int is_dir, bool plugi
 	if (header.find("Accept-Language") == header.end() || is_dir == 0)
 		return ;
 	if (isAcceptCharset() == false)
+		return ;
+	if (content_path.rfind(".html") != content_path.size() - 5)
 		return ;
 
 	if (path[path.length() - 1] != '/')

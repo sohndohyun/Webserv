@@ -114,7 +114,8 @@ void WebServer::OnSend(int fd, int port)
 {
 	(void)fd;
 	(void)port;
-}
+	// std::cout << "Ddddd" << std::endl;
+} 
 
 void WebServer::OnAccept(int fd, int port)
 {
@@ -150,8 +151,10 @@ void WebServer::OnFileRead(int fd, std::string const &str, void *temp)
 		std::string s = str.substr(str.find("\r\n\r\n") + 4);
 		fData->res->makeRes(s);
 		fData->isCGI = false;
-		//sendStr(fData->fd, fData->res->res_str);
-		writeFile(utils::open(fData->path.c_str(), O_CREAT | O_WRONLY, 0644), s, fData);
+		if (fData->methodtype == POST)
+			writeFile(utils::open(fData->path.c_str(), O_CREAT | O_WRONLY, 0644), s, fData);
+		else
+			sendStr(fData->fd, fData->res->res_str);
 	}
 	close(fd);
 }
@@ -182,7 +185,8 @@ WebServer::~WebServer()
 
 void WebServer::methodGET(int fd, int port,  Response *res, Request &req)
 {
-	ConfigCheck cfg_check(confs.conf[get_conf_idx(port)], req.path);
+	ConfigParse::t_conf conf = confs.conf[get_conf_idx(port)];
+	ConfigCheck cfg_check(conf, req.path);
 	std::vector<std::string> allow_methods;
 	std::string body = "";
 	struct stat sb;

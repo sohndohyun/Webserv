@@ -105,7 +105,7 @@ void Response::setContentType(const std::string& content_path)
 		header["Content-Type"] = "text/javascript";
 	else if (type == "jpeg" || type == "jpg")
 		header["Content-Type"] = "image/jpeg";
-	else if (type == "bla")
+	else if (type == "bla" || type == "php")
 		header["Content-Type"] = "text/html; charset=utf-8";
 	else
 		header["Content-Type"] = "text/plain";
