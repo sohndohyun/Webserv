@@ -27,7 +27,7 @@ private:
 	bool isChunk;
 	bool isBodyMade;
 	int bodysize;
-
+	std::string _deserialize;
 public:
 	std::map<std::string, std::string> header;
 	std::string body;
@@ -35,7 +35,7 @@ public:
 	std::string path;
 	std::string method;
 	std::string querystring;
-	
+
 public:
 	Request();
 	void init();
@@ -48,7 +48,7 @@ public:
 	bool isAcceptCharset();
 	void isReferer(AServer::t_analysis &analysis);
 	void isUserAgent(AServer::t_analysis &analysis);
-
+	std::string deserialize();
 private:
 	void parseFirstLine(std::string const &str);
 	void parseHeader();
