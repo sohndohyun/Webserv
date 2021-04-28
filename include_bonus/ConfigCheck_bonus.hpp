@@ -31,9 +31,11 @@ public:
 	bool AuthorizationCheck(std::string auth_str, bool plugin_auth);
 	std::string makeAnalysisHTML(AServer::t_analysis analysis);
 	std::string autoIdxCheck(int port);
+
 	bool isProxy();
-	std::string returnURL(int idx);
-	std::string makeReq();
+	std::string returnIP();
+	int returnPORT();
+	std::string makeReq(const std::string &req_str);
 };
 
 #endif
