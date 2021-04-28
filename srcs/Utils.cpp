@@ -297,4 +297,44 @@ namespace utils
 		fcntl(fd, F_SETFL, O_NONBLOCK);
 		return fd;
 	}
+
+	std::map<std::string, std::string> set_cgi_enviroment(ConfigParse::t_conf& conf ,Request& req, const std::string& path, int port)
+	{
+		std::map<std::string, std::string> map_env;
+		map_env["AUTH_TYPE"] = "null";
+		map_env["CONTENT_LENGTH"] = "-1";
+		map_env["CONTENT_TYPE"] = "null";
+		map_env["GATEWAY_INTERFACE"] = "CGI/1.1";
+		map_env["PATH_INFO"] = req.path;
+		map_env["PATH_TRANSLATED"] = path;
+		map_env["QUERY_STRING"] = req.querystring;
+		map_env["REMOTE_ADDR"] = "127.0.0.1";
+		map_env["REMOTE_IDENT"] = "null";
+		map_env["REMOTE_USER"] = "null";
+		map_env["REQUEST_METHOD"] = req.method;
+		map_env["REQUEST_URI"] = req.path;
+		map_env["SCRIPT_NAME"] = req.path;
+		map_env["SERVER_NAME"] = conf.server.name;
+		map_env["SERVER_PORT"] = to_string(port);
+		map_env["SERVER_PROTOCOL"] = "HTTP/1.1";
+		map_env["SERVER_SOFTWARE"] = "Webserv";
+		for (std::map<std::string ,std::string>::iterator it = req.header.begin();
+				it != req.header.end(); it++)
+		{
+			std::string key;
+			if (it->first.size())
+			{
+				key.append("HTTP_");
+				for (size_t i = 0 ; i < it->first.size(); i++)
+				{
+					if (it->first[i] == '-')
+						key += '_';
+					else
+						key += std::toupper(it->first[i]);
+				}
+				map_env[key] = it->second;
+			}
+		}
+		return map_env;
+	}
 }
