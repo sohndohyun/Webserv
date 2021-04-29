@@ -12,6 +12,7 @@
 #include <errno.h>
 #include <cstring>
 #include <pthread.h>
+#include <netdb.h>
 #include "Request.hpp"
 
 size_t workThreadNo = 0;
@@ -293,6 +294,8 @@ void *AServer::UpdateThread(void *arg)
 			break;
 		case PROXY:
 			server->OnProxyRecv(cmd->fd, cmd->str, cmd->temp);
+			close(cmd->fd);
+			break;
 		default:
 			break;
 		}
@@ -473,14 +476,22 @@ void *AServer::ProxyThread(void *arg)
 	if (fd < 0)
 		return NULL;
 
+	hostent *lh = gethostbyname(pd->url.c_str());
+	if (lh == NULL)
+	{
+		pd->server->pushCommand(new Command(PROXY, fd, 0, "", pd->temp));
+		return NULL;
+	}
 	sockaddr_in proxyAddress;
 	proxyAddress.sin_family = AF_INET;
-	proxyAddress.sin_addr.s_addr = ::inet_addr(pd->url.c_str());
+	proxyAddress.sin_addr.s_addr = *(u_long *) lh->h_addr_list[0];
 	proxyAddress.sin_port = utils::htons(pd->port);
 
 	if (connect(fd, (sockaddr*)&proxyAddress, sizeof(proxyAddress)) < 0)
+	{
+		pd->server->pushCommand(new Command(PROXY, fd, 0, "", pd->temp));
 		return NULL;
-
+	}
 	write(fd, pd->str.c_str(), pd->str.size());
 	Request req;
 	while (true)
@@ -494,7 +505,6 @@ void *AServer::ProxyThread(void *arg)
 		if (!req.needRecv())
 			pd->server->pushCommand(new Command(PROXY, fd, 0, req.deserialize(), pd->temp));
 	}
-	std::cout << "sended?" << std::endl;
 	close(fd);
 	delete pd;
 	return NULL;
