@@ -12,8 +12,8 @@
 #include <fcntl.h>
 #include <sys/wait.h>
 
-WebServer::FileData::FileData(int fd, Response *res, bool isCGI, char **envp, std::string const &path, int methodtype) :
-	fd(fd), res(res), isCGI(isCGI), envp(envp), path(path), methodtype(methodtype) {}
+WebServer::FileData::FileData(int fd, int port, Response *res, bool isCGI, char **envp, std::string const &path, int methodtype) :
+	fd(fd), port(port), res(res), isCGI(isCGI), envp(envp), path(path), methodtype(methodtype) {}
 WebServer::FileData::~FileData()
 {
 	if (res)
@@ -51,7 +51,7 @@ void WebServer::request_process(int fd, int port, Request &req)
 	if (req.errorCode != 200)
 	{
 		errorRes(fd, port, res, req.errorCode);
-		sendStr(fd, res->res_str);
+	//	sendStr(fd, res->res_str);
 		return ;
 	}
 
@@ -181,10 +181,17 @@ void WebServer::OnFileWrite(int fd, void *temp)
 
 void WebServer::OnProxyRecv(int fd, std::string const &str, void *temp)
 {
+	(void)fd;
 	FileData *fData = static_cast<FileData*>(temp);
-
-	sendStr(fData->fd, str);
-	close(fd);
+	if (str == "")
+	{
+		errorRes(fData->fd, fData->port, fData->res, 404);
+		fData->res = NULL;
+	}
+	else
+		sendStr(fData->fd, str);
+	
+	delete fData;
 }
 
 WebServer::~WebServer()
@@ -233,7 +240,7 @@ void WebServer::methodGET(int fd, int port,  Response *res, Request &req)
 
 			std::map<std::string, std::string> map_env = utils::set_cgi_enviroment(conf, req, path, port);
 			writeFile(utils::open(".TEMP", O_CREAT | O_TRUNC | O_RDWR, 0644), req.body,
-				new FileData(fd, res, true, utils::mtostrarr(map_env), path, GET));
+				new FileData(fd, port, res, true, utils::mtostrarr(map_env), path, GET));
 		}
 		else
 		{
@@ -243,7 +250,7 @@ void WebServer::methodGET(int fd, int port,  Response *res, Request &req)
 
 			if(cfg_check.isProxy())
 			{
-				proxySend(cfg_check.returnIP(), cfg_check.returnPORT(), cfg_check.makeReq(req.deserialize()), new FileData(fd, NULL));
+				proxySend(cfg_check.returnIP(), cfg_check.returnPORT(), cfg_check.makeReq(req.deserialize()), new FileData(fd, port, res));
 			}
 			else if (stat(cfg_check.findPath().c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
 			{
@@ -251,7 +258,7 @@ void WebServer::methodGET(int fd, int port,  Response *res, Request &req)
 				if (body == "")
 				{
 					res->setLastModified(path);
-					readFile(utils::open(path.c_str(), O_RDONLY), new FileData(fd, res));
+					readFile(utils::open(path.c_str(), O_RDONLY), new FileData(fd, port, res));
 					return ;
 				}
 				res->makeRes(body);
@@ -261,7 +268,7 @@ void WebServer::methodGET(int fd, int port,  Response *res, Request &req)
 			else
 			{
 				res->setLastModified(path);
-				readFile(utils::open(path.c_str(), O_RDONLY), new FileData(fd, res));
+				readFile(utils::open(path.c_str(), O_RDONLY), new FileData(fd, port, res));
 			}
 		}
 	}
@@ -310,7 +317,7 @@ void WebServer::methodPUT(int fd, int port, Response *res, Request &req)
 	{
 		if(cfg_check.isProxy())
 		{
-			proxySend(cfg_check.returnIP(), cfg_check.returnPORT(), cfg_check.makeReq(req.deserialize()), new FileData(fd, NULL));
+			proxySend(cfg_check.returnIP(), cfg_check.returnPORT(), cfg_check.makeReq(req.deserialize()), new FileData(fd, port, res));
 		}
 		else if (stat_rtn == -1)
 		{
@@ -318,7 +325,7 @@ void WebServer::methodPUT(int fd, int port, Response *res, Request &req)
 			res->setLocation(req.path);
 			res->setLastModified(path);
 			res->makeRes("", true);
-			writeFile(utils::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644), req.body, new FileData(fd, res));
+			writeFile(utils::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644), req.body, new FileData(fd, port, res));
 		}
 
 		else if (stat_rtn == 0 && S_ISREG(sb.st_mode))
@@ -327,7 +334,7 @@ void WebServer::methodPUT(int fd, int port, Response *res, Request &req)
 			res->setContentLocation(req.path);
 			res->setLastModified(path);
 			res->makeRes("", true);
-			writeFile(utils::open(path.c_str(), O_CREAT | O_APPEND | O_WRONLY, 0644), req.body, new FileData(fd, res));
+			writeFile(utils::open(path.c_str(), O_CREAT | O_APPEND | O_WRONLY, 0644), req.body, new FileData(fd, port, res));
 		}
 	}
 }
@@ -358,18 +365,18 @@ void WebServer::methodPOST(int fd, int port, Response *res, Request &req)
 				std::string body = utils::interpret_bf(req.body);
 				res->makeRes(body);
 				writeFile(utils::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644),
-					body, new FileData(fd, res));
+					body, new FileData(fd, port, res));
 			}
 			else
 			{
 				std::map<std::string, std::string> map_env = utils::set_cgi_enviroment(conf, req, path, port);
 				writeFile(utils::open(".TEMP", O_CREAT | O_TRUNC | O_RDWR, 0644), req.body,
-					new FileData(fd, res, true, utils::mtostrarr(map_env), path));
+					new FileData(fd, port, res, true, utils::mtostrarr(map_env), path));
 			}
 		}
 		else if(cfg_check.isProxy())
 		{
-			proxySend(cfg_check.returnIP(), cfg_check.returnPORT(), cfg_check.makeReq(req.deserialize()), new FileData(fd, NULL));
+			proxySend(cfg_check.returnIP(), cfg_check.returnPORT(), cfg_check.makeReq(req.deserialize()), new FileData(fd, port, res));
 		}
 		else
 		{
@@ -378,7 +385,7 @@ void WebServer::methodPOST(int fd, int port, Response *res, Request &req)
 			res->setContentLocation(req.path);
 			res->setLastModified(path);
 			res->makeRes(req.body);
-			writeFile(utils::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644), req.body, new FileData(fd, res));
+			writeFile(utils::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644), req.body, new FileData(fd, port, res));
 		}
 	}
 }
@@ -408,7 +415,7 @@ void WebServer::errorRes(int fd, int port, Response *res, int errorCode, const s
 			break;
 		}
 	}
-	readFile(utils::open(path.c_str(), O_RDONLY), new FileData(fd, res));
+	readFile(utils::open(path.c_str(), O_RDONLY), new FileData(fd, port, res));
 }
 
 int WebServer::get_conf_idx(int port)

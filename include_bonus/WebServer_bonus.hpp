@@ -20,9 +20,10 @@ private:
 	class FileData
 	{
 	public:
-		FileData(int fd, Response *res, bool isCGI = false, char **envp = NULL, std::string const &path = "", int methodtype = POST);
+		FileData(int fd, int port, Response *res, bool isCGI = false, char **envp = NULL, std::string const &path = "", int methodtype = POST);
 		~FileData();
 		int fd;
+		int port;
 		Response *res;
 		bool isCGI;
 		char **envp;

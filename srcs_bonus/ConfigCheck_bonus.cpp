@@ -326,7 +326,7 @@ std::string ConfigCheck::returnIP()
 	std::string location = findLocation();
 
 	std::string ip = conf.loca_map[location].proxy;
-	ip = ip.substr(0, ip.find(':'));
+	ip = ip.substr(0, ip.rfind(':'));
 	return (ip);
 }
 
@@ -336,9 +336,9 @@ int ConfigCheck::returnPORT()
 
 	std::string port = conf.loca_map[location].proxy;
 	if (port.find('/') == std::string::npos)
-		port = port.substr(port.find(':') + 1, port.length() - port.find(':'));
+		port = port.substr(port.rfind(':') + 1, port.length() - port.rfind(':'));
 	else
-		port = port.substr(port.find(':') + 1, port.find('/') - port.find(':') - 1);
+		port = port.substr(port.rfind(':') + 1, port.find('/') - port.rfind(':') - 1);
 	return (utils::stoi(port));
 }
 
