@@ -174,6 +174,7 @@ void ConfigParse::locationParse(std::vector<std::string> section)
 
 	loca.client_max_body_size = 0;
 	loca.auth_basic_user_file = "";
+	loca.proxy = "";
 
 	std::vector<std::string>::iterator iter;
 	for(iter = section.begin() + 1; iter != section.end(); iter++)
@@ -212,6 +213,8 @@ void ConfigParse::locationParse(std::vector<std::string> section)
 			loca.auth_basic = value;
 		else if (key == "auth_basic_user_file")
 			loca.auth_basic_user_file = value;
+		else if (key == "proxy")
+			loca.proxy = value;
 		else
 			throw Exception("ConfigParse: Invalid key: " + key);
 	}

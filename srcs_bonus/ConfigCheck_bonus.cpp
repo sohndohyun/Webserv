@@ -25,7 +25,7 @@ std::string ConfigCheck::findLocation()
 				return (iter->first);
 		}
 	}
-	
+
 	std::map<std::string, ConfigParse::t_location>::iterator iter = conf.loca_map.begin();
 	for(; iter != conf.loca_map.end(); iter++)
 	{
@@ -36,7 +36,7 @@ std::string ConfigCheck::findLocation()
 			return "/";
 		}
 	}
-	
+
 	return "";
 }
 
@@ -308,4 +308,42 @@ std::string ConfigCheck::makeAnalysisHTML(AServer::t_analysis analysis)
 	str += "</b></pre>\n\t</body>\n</html>";
 
 	return str;
+}
+
+
+
+bool ConfigCheck::isProxy()
+{
+	std::string location = findLocation();
+
+	if (conf.loca_map[location].proxy != "")
+		return true;
+	return false;
+}
+
+std::string ConfigCheck::returnIP()
+{
+	std::string location = findLocation();
+
+	std::string ip = conf.loca_map[location].proxy;
+	ip = ip.substr(0, ip.find(':'));
+	return (ip);
+}
+
+int ConfigCheck::returnPORT()
+{
+	std::string location = findLocation();
+
+	std::string port = conf.loca_map[location].proxy;
+	port = port.substr(port.find(':') + 1, port.length() - port.find(':'));
+	return (utils::stoi(port));
+}
+
+std::string ConfigCheck::makeReq(const std::string &req_str)
+{
+	std::string location = findLocation();
+
+	std::string line1 = req_str.substr(0, req_str.find(' ')) + " " + conf.loca_map[location].proxy + " HTTP/1.1\r\n";
+	line1 += req_str.substr(req_str.find('\n') + 1, req_str.length() - req_str.find('\n'));
+	return (line1);
 }

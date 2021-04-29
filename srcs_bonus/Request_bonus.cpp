@@ -292,9 +292,7 @@ void Request::isUserAgent(AServer::t_analysis &analysis)
 		analysis.user_agent[webBrowser] = 1;
 }
 
-std::string Request::deserialize()
+std::string &Request::deserialize()
 {
-	if (needRecv())
-		return "";
 	return _deserialize;
 }

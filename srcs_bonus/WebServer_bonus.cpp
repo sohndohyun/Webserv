@@ -84,7 +84,7 @@ void WebServer::request_process(int fd, int port, Request &req)
 }
 
 int WebServer::cgi_stub(int tempfd, FileData *fData)
-{	
+{
 	lseek(tempfd, 0, SEEK_SET);
 
 	int fdout = utils::open(".TEMPOUT", O_CREAT | O_TRUNC | O_RDWR, 0644);
@@ -115,7 +115,7 @@ void WebServer::OnSend(int fd, int port)
 	(void)fd;
 	(void)port;
 	// std::cout << "Ddddd" << std::endl;
-} 
+}
 
 void WebServer::OnAccept(int fd, int port)
 {
@@ -185,7 +185,7 @@ void WebServer::OnProxyRecv(int fd, std::string const &str, void *temp)
 
 	if (proxyRecvs.find(fd) == proxyRecvs.end())
 		proxyRecvs.insert(std::make_pair(fd, new Request()));
-	
+
 	proxyRecvs[fd]->add(str);
 	if (proxyRecvs[fd]->needRecv())
 	{
@@ -362,9 +362,13 @@ void WebServer::methodPOST(int fd, int port, Response *res, Request &req)
 			else
 			{
 				std::map<std::string, std::string> map_env = utils::set_cgi_enviroment(conf, req, path, port);
-				writeFile(utils::open(".TEMP", O_CREAT | O_TRUNC | O_RDWR, 0644), req.body, 
+				writeFile(utils::open(".TEMP", O_CREAT | O_TRUNC | O_RDWR, 0644), req.body,
 					new FileData(fd, res, true, utils::mtostrarr(map_env), path));
 			}
+		}
+		else if(cfg_check.isProxy())
+		{
+			proxySend(cfg_check.returnIP(), cfg_check.returnPORT(), cfg_check.makeReq(req.deserialize()), new FileData(fd, NULL));
 		}
 		else
 		{

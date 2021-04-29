@@ -48,7 +48,7 @@ public:
 	bool isAcceptCharset();
 	void isReferer(AServer::t_analysis &analysis);
 	void isUserAgent(AServer::t_analysis &analysis);
-	std::string deserialize();
+	std::string &deserialize();
 private:
 	void parseFirstLine(std::string const &str);
 	void parseHeader();

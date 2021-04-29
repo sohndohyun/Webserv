@@ -460,6 +460,7 @@ void AServer::proxySend(std::string const &url, int port, std::string const &str
 	pd->str = str;
 	pd->temp = temp;
 	pthread_create(&proxyT, NULL, ProxyThread, pd);
+	pthread_detach(proxyT);
 }
 
 void *AServer::ProxyThread(void *arg)
