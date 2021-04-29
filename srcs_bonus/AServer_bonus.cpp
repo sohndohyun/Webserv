@@ -12,6 +12,7 @@
 #include <errno.h>
 #include <cstring>
 #include <pthread.h>
+#include "Request.hpp"
 
 size_t workThreadNo = 0;
 pthread_mutex_t workno_mutex;
@@ -455,6 +456,7 @@ void AServer::proxySend(std::string const &url, int port, std::string const &str
 {
 	pthread_t proxyT;
 	ProxyData* pd = new ProxyData();
+	pd->server = this;
 	pd->url = url;
 	pd->port = port;
 	pd->str = str;
@@ -480,7 +482,7 @@ void *AServer::ProxyThread(void *arg)
 		return NULL;
 
 	write(fd, pd->str.c_str(), pd->str.size());
-	
+	Request req;
 	while (true)
 	{
 		char buf[BUFSIZ];
@@ -488,10 +490,11 @@ void *AServer::ProxyThread(void *arg)
 		if (str_len <= 0)
 			break;
 		std::string recvStr;
-		recvStr.append(buf, str_len);
-		pd->server->pushCommand(new Command(PROXY, fd, 0, recvStr, pd->temp));
+		req.add(std::string(buf, str_len));
+		if (!req.needRecv())
+			pd->server->pushCommand(new Command(PROXY, fd, 0, req.deserialize(), pd->temp));
 	}
-
+	std::cout << "sended?" << std::endl;
 	close(fd);
 	delete pd;
 	return NULL;

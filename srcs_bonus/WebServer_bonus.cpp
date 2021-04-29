@@ -183,16 +183,8 @@ void WebServer::OnProxyRecv(int fd, std::string const &str, void *temp)
 {
 	FileData *fData = static_cast<FileData*>(temp);
 
-	if (proxyRecvs.find(fd) == proxyRecvs.end())
-		proxyRecvs.insert(std::make_pair(fd, new Request()));
-
-	proxyRecvs[fd]->add(str);
-	if (proxyRecvs[fd]->needRecv())
-	{
-		sendStr(fData->fd, proxyRecvs[fd]->deserialize());
-		close(fd);
-		delete proxyRecvs[fd];
-	}
+	sendStr(fData->fd, str);
+	close(fd);
 }
 
 WebServer::~WebServer()
