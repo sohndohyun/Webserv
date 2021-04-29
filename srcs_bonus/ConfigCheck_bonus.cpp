@@ -342,8 +342,36 @@ int ConfigCheck::returnPORT()
 std::string ConfigCheck::makeReq(const std::string &req_str)
 {
 	std::string location = findLocation();
+	std::string proxy = conf.loca_map[location].proxy;
+	std::string line1 = req_str.substr(0, req_str.find(' ')) + " ";
+	std::string host;
 
-	std::string line1 = req_str.substr(0, req_str.find(' ')) + " " + conf.loca_map[location].proxy + " HTTP/1.1\r\n";
-	line1 += req_str.substr(req_str.find('\n') + 1, req_str.length() - req_str.find('\n'));
+	size_t find = proxy.find('/');
+	if (find != std::string::npos)
+	{
+		host = proxy.substr(0, find);
+		line1 += proxy.substr(find, proxy.length() - find);
+	}
+	else
+		host = proxy;
+
+	if (req_path.length() > location.length())
+		line1 += req_path.substr(location.length(), req_path.length() - location.length());
+	else
+		line1 += "/";
+	line1 +=  + " HTTP/1.1\r\n" + req_str.substr(req_str.find('\n') + 1, req_str.length() - req_str.find('\n'));
+
+	find = line1.find("Host:");
+	size_t i;
+	for(i = 0; i < line1.length(); i++)
+	{
+		if (i > find && line1[i] == '\r' && line1[i + 1] == '\n')
+		{
+			i++;
+			break ;
+		}
+	}
+	line1 = line1.substr(0, find) + "Host: " + host + "\r\n" + line1.substr(i + 1, line1.length() - i);
+
 	return (line1);
 }
