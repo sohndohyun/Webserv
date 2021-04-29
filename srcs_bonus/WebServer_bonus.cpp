@@ -241,7 +241,11 @@ void WebServer::methodGET(int fd, int port,  Response *res, Request &req)
 			res->setStatus(200);
 			res->setContentLocation(req.path);
 
-			if (stat(cfg_check.findPath().c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
+			if(cfg_check.isProxy())
+			{
+				proxySend(cfg_check.returnIP(), cfg_check.returnPORT(), cfg_check.makeReq(req.deserialize()), new FileData(fd, NULL));
+			}
+			else if (stat(cfg_check.findPath().c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
 			{
 				body = cfg_check.autoIdxCheck(port);
 				if (body == "")
@@ -304,7 +308,11 @@ void WebServer::methodPUT(int fd, int port, Response *res, Request &req)
 		errorRes(fd, port, res, 405, allow_methods);
 	else
 	{
-		if (stat_rtn == -1)
+		if(cfg_check.isProxy())
+		{
+			proxySend(cfg_check.returnIP(), cfg_check.returnPORT(), cfg_check.makeReq(req.deserialize()), new FileData(fd, NULL));
+		}
+		else if (stat_rtn == -1)
 		{
 			res->setStatus(201);
 			res->setLocation(req.path);
@@ -312,6 +320,7 @@ void WebServer::methodPUT(int fd, int port, Response *res, Request &req)
 			res->makeRes("", true);
 			writeFile(utils::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644), req.body, new FileData(fd, res));
 		}
+
 		else if (stat_rtn == 0 && S_ISREG(sb.st_mode))
 		{
 			res->setStatus(200);
