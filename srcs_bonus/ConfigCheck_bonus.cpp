@@ -335,7 +335,10 @@ int ConfigCheck::returnPORT()
 	std::string location = findLocation();
 
 	std::string port = conf.loca_map[location].proxy;
-	port = port.substr(port.find(':') + 1, port.length() - port.find(':'));
+	if (port.find('/') == std::string::npos)
+		port = port.substr(port.find(':') + 1, port.length() - port.find(':'));
+	else
+		port = port.substr(port.find(':') + 1, port.find('/') - port.find(':') - 1);
 	return (utils::stoi(port));
 }
 
