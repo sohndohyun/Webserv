@@ -8,7 +8,7 @@
 #include <iostream>
 #include "Regex_bonus.hpp"
 
-ConfigCheck::ConfigCheck(ConfigParse::t_conf &conf, std::string req_path): conf(conf), req_path(req_path) {}
+ConfigCheck::ConfigCheck(ConfigParse::t_conf &conf, std::string req_path): conf(conf), req_path(utils::refine_path(req_path)) {}
 
 ConfigCheck::~ConfigCheck() {}
 
@@ -32,7 +32,7 @@ std::string ConfigCheck::findLocation()
 		regex::Regex r(iter->first.substr(1));
 		if (r.match(req_path.substr(1)))
 		{
-			req_path = iter->second.index[0];
+			req_path = "/"+  iter->second.index[0];
 			return "/";
 		}
 	}
@@ -128,6 +128,7 @@ std::string ConfigCheck::makeFilePath(int &is_dir)
 	{
 		temp = req_path.substr(1, req_path.length() - 1);
 		path = conf.server.loca.root + temp;
+
 		if (stat(path.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
 		{
 			is_dir = 1;
