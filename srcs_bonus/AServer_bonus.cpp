@@ -235,6 +235,7 @@ bool AServer::fileProcess()
 		if (FD_ISSET(wf->fd, &wset))
 		{
 			int ret = write(wf->fd, wf->str.c_str(), wf->str.size());
+		//	std::cout << strerror(errno) << std::endl;
 			if (ret <= 0)
 			{
 				it = writeFiles.erase(it);
@@ -249,6 +250,7 @@ bool AServer::fileProcess()
 			break;
 		}
 	}
+
 	return true;
 }
 
@@ -421,6 +423,7 @@ void AServer::sendStr(int fd, std::string const &str)
 
 void AServer::writeFile(int fd, std::string const &str, void *temp)
 {
+
 	for (size_t i = 0;i < writeFiles.size();i++)
 	{
 		if (writeFiles[i]->fd == fd)

@@ -114,7 +114,6 @@ void WebServer::OnSend(int fd, int port)
 {
 	(void)fd;
 	(void)port;
-	std::cout << "send!" << std::endl;
 }
 
 void WebServer::OnAccept(int fd, int port)
@@ -144,15 +143,18 @@ void WebServer::OnFileRead(int fd, std::string const &str, void *temp)
 		sendStr(fData->fd, fData->res->res_str);
 		delete fData;
 	}
-	else
+	else if (fData->methodtype == POST)
 	{
 		std::string s = str.substr(str.find("\r\n\r\n") + 4);
 		fData->res->makeRes(s);
-		fData->isCGI = false;
-		if (fData->methodtype == POST)
-			writeFile(utils::open(fData->path.c_str(), O_CREAT | O_WRONLY, 0644), s, fData);
-		else
-			sendStr(fData->fd, fData->res->res_str);
+		sendStr(fData->fd, fData->res->res_str);
+		delete fData;
+	}
+	else if (fData->methodtype == GET)
+	{
+		fData->methodtype = POST;
+		int tempFD = cgi_stub(fd, fData);
+		readFile(tempFD, fData);
 	}
 	close(fd);
 }
@@ -160,7 +162,6 @@ void WebServer::OnFileRead(int fd, std::string const &str, void *temp)
 void WebServer::OnFileWrite(int fd, void *temp)
 {
 	FileData *fData = static_cast<FileData*>(temp);
-	// std::cout << fData->path << std::endl;
 	if (fData->isCGI)
 	{
 		readFile(cgi_stub(fd, fData), fData);
@@ -218,8 +219,7 @@ void WebServer::methodGET(int fd, int port,  Response *res, Request &req)
 			res->setLastModified(path);
 
 			std::map<std::string, std::string> map_env = utils::set_cgi_enviroment(conf, req, path, port);
-			writeFile(utils::open(".TEMP", O_CREAT | O_TRUNC | O_RDWR, 0644), req.body,
-				new FileData(fd, res, true, utils::mtostrarr(map_env), path, GET));
+			readFile(utils::open(path.c_str(), O_RDONLY), new FileData(fd, res, true, utils::mtostrarr(map_env), path, GET));
 		}
 		else
 		{
@@ -334,8 +334,10 @@ void WebServer::methodPOST(int fd, int port, Response *res, Request &req)
 			res->setLastModified(path);
 
 			std::map<std::string, std::string> map_env = utils::set_cgi_enviroment(conf, req, path, port);
-			writeFile(utils::open(".TEMP", O_CREAT | O_TRUNC | O_RDWR, 0644), req.body,
-				new FileData(fd, res, true, utils::mtostrarr(map_env), path, POST));
+			
+				writeFile(utils::open(path.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0644), req.body,
+					new FileData(fd, res, true, utils::mtostrarr(map_env), path));
+			
 		}
 		else
 		{

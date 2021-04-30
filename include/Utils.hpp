@@ -33,5 +33,6 @@ namespace utils
 	int base64Decode(const std::string& str, int numBytes, std::string &dst);
 	int open(const char* path, int flag, int chmod = 0644);
 	std::map<std::string, std::string> set_cgi_enviroment(ConfigParse::t_conf&, Request& req, const std::string& path, int port);
+	std::string refine_path(const std::string &s);
 }
 #endif

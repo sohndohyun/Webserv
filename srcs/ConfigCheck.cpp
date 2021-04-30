@@ -7,7 +7,7 @@
 #include <vector>
 #include <iostream>
 
-ConfigCheck::ConfigCheck(ConfigParse::t_conf &conf, std::string req_path): conf(conf), req_path(req_path) {}
+ConfigCheck::ConfigCheck(ConfigParse::t_conf &conf, std::string req_path): conf(conf), req_path(utils::refine_path(req_path)) {}
 
 ConfigCheck::~ConfigCheck() {}
 
