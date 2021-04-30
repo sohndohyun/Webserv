@@ -12,8 +12,7 @@
 #include <fcntl.h>
 #include <sys/wait.h>
 
-WebServer::FileData::FileData(int fd, int port, Response *res, bool isCGI, char **envp, std::string const &path, int methodtype) :
-	fd(fd), port(port), res(res), isCGI(isCGI), envp(envp), path(path), methodtype(methodtype) {}
+WebServer::FileData::FileData(int fd, int port, Response *res, bool isCGI, char **envp, std::string const &path, int methodtype) : fd(fd), port(port), res(res), isCGI(isCGI), envp(envp), path(path), methodtype(methodtype) {}
 WebServer::FileData::~FileData()
 {
 	if (res)
@@ -23,21 +22,20 @@ WebServer::FileData::~FileData()
 		char **temp = envp;
 		while (*temp)
 		{
-			delete[] *temp;
+			delete[] * temp;
 			temp++;
 		}
 		delete[] envp;
 	}
 }
 
-WebServer::WebServer(ConfigParse &conf, Plugin::t_plugin plugin): confs(conf), plugin(plugin) {}
+WebServer::WebServer(ConfigParse &conf, Plugin::t_plugin plugin) : confs(conf), plugin(plugin) {}
 
 void WebServer::OnRecv(int fd, int port, std::string const &str)
 {
 	requests[fd]->add(str);
 	if (requests[fd]->needRecv())
 		return;
-	std::cout << "\nfinish\n" << std::endl;
 	request_process(fd, port, *requests[fd]);
 	if ((requests[fd]->header["Connection"] == "close"))
 		disconnect(fd);
@@ -52,34 +50,33 @@ void WebServer::request_process(int fd, int port, Request &req)
 	if (req.errorCode != 200)
 	{
 		errorRes(fd, port, res, req.errorCode);
-	//	sendStr(fd, res->res_str);
-		return ;
+		return;
 	}
 	switch (req.methodType())
 	{
-		case GET:
-		{
-			methodGET(fd, port, res, req);
-			break;
-		}
-		case POST:
-		{
-			methodPOST(fd, port, res, req);
-			break;
-		}
-		case HEAD:
-		{
-			methodHEAD(fd, port,res, req);
-			break;
-		}
-		case PUT:
-		{
-			methodPUT(fd, port,res, req);
-			break;
-		}
-		default:
-			errorRes(fd, port, res, 503);
-			break;
+	case GET:
+	{
+		methodGET(fd, port, res, req);
+		break;
+	}
+	case POST:
+	{
+		methodPOST(fd, port, res, req);
+		break;
+	}
+	case HEAD:
+	{
+		methodHEAD(fd, port, res, req);
+		break;
+	}
+	case PUT:
+	{
+		methodPUT(fd, port, res, req);
+		break;
+	}
+	default:
+		errorRes(fd, port, res, 503);
+		break;
 	}
 }
 
@@ -114,7 +111,6 @@ void WebServer::OnSend(int fd, int port)
 {
 	(void)fd;
 	(void)port;
-	// std::cout << "Ddddd" << std::endl;
 }
 
 void WebServer::OnAccept(int fd, int port)
@@ -128,7 +124,7 @@ void WebServer::OnDisconnect(int fd, int port)
 {
 	(void)port;
 	std::cout << fd << "(" << port << ") disconnected!" << std::endl;
-	std::map<int, Request*>::iterator it = requests.find(fd);
+	std::map<int, Request *>::iterator it = requests.find(fd);
 	if (it != requests.end())
 	{
 		delete it->second;
@@ -138,7 +134,7 @@ void WebServer::OnDisconnect(int fd, int port)
 
 void WebServer::OnFileRead(int fd, std::string const &str, void *temp)
 {
-	FileData *fData = static_cast<FileData*>(temp);
+	FileData *fData = static_cast<FileData *>(temp);
 
 	if (!fData->isCGI)
 	{
@@ -146,26 +142,24 @@ void WebServer::OnFileRead(int fd, std::string const &str, void *temp)
 		sendStr(fData->fd, fData->res->res_str);
 		delete fData;
 	}
-	else
+	else if (fData->methodtype == POST)
 	{
 		std::string s = str.substr(str.find("\r\n\r\n") + 4);
 		fData->res->makeRes(s);
-		fData->isCGI = false;
-		if (fData->methodtype == POST)
-			writeFile(utils::open(fData->path.c_str(), O_CREAT | O_WRONLY, 0644), s, fData);
-		else
-		{
-			sendStr(fData->fd, fData->res->res_str);
-			delete fData;
-
-		}
+		sendStr(fData->fd, fData->res->res_str);
+		delete fData;
+	}
+	else if (fData->methodtype == GET)
+	{
+		fData->methodtype = POST;
+		readFile(cgi_stub(fd, fData), fData);
 	}
 	close(fd);
 }
 
 void WebServer::OnFileWrite(int fd, void *temp)
 {
-	FileData *fData = static_cast<FileData*>(temp);
+	FileData *fData = static_cast<FileData *>(temp);
 
 	if (fData->isCGI)
 	{
@@ -182,7 +176,7 @@ void WebServer::OnFileWrite(int fd, void *temp)
 void WebServer::OnProxyRecv(int fd, std::string const &str, void *temp)
 {
 	(void)fd;
-	FileData *fData = static_cast<FileData*>(temp);
+	FileData *fData = static_cast<FileData *>(temp);
 	if (str == "")
 	{
 		errorRes(fData->fd, fData->port, fData->res, 404);
@@ -190,19 +184,19 @@ void WebServer::OnProxyRecv(int fd, std::string const &str, void *temp)
 	}
 	else
 		sendStr(fData->fd, str);
-	
+
 	delete fData;
 }
 
 WebServer::~WebServer()
 {
-	std::map<int, Request*>::iterator it = requests.begin();
-	for(;it != requests.end();it++)
+	std::map<int, Request *>::iterator it = requests.begin();
+	for (; it != requests.end(); it++)
 		delete it->second;
 	requests.clear();
 }
 
-void WebServer::methodGET(int fd, int port,  Response *res, Request &req)
+void WebServer::methodGET(int fd, int port, Response *res, Request &req)
 {
 	ConfigParse::t_conf conf = confs.conf[get_conf_idx(port)];
 	ConfigCheck cfg_check(conf, req.path);
@@ -216,14 +210,13 @@ void WebServer::methodGET(int fd, int port,  Response *res, Request &req)
 		res->setStatus(200);
 		res->makeRes(cfg_check.makeAnalysisHTML(analysis));
 		sendStr(fd, res->res_str);
-		delete res; return;
+		delete res;
+		return;
 	}
 
 	int is_dir = 0;
 	std::string path = cfg_check.makeFilePath(is_dir);
 	req.isAcceptLanguage(path, is_dir, plugin.index_ko);
-
-	std::cout << "path: "<< path << std::endl;
 
 	if (cfg_check.AuthorizationCheck(req.header["Authorization"], plugin.auth) == false)
 		errorRes(fd, port, res, 401);
@@ -241,8 +234,7 @@ void WebServer::methodGET(int fd, int port,  Response *res, Request &req)
 			res->setLastModified(path);
 
 			std::map<std::string, std::string> map_env = utils::set_cgi_enviroment(conf, req, path, port);
-			writeFile(utils::open(".TEMP", O_CREAT | O_TRUNC | O_RDWR, 0644), req.body,
-				new FileData(fd, port, res, true, utils::mtostrarr(map_env), path, GET));
+			readFile(utils::open(path.c_str(), O_RDONLY), new FileData(fd, port, res, true, utils::mtostrarr(map_env), path, GET));
 		}
 		else
 		{
@@ -250,7 +242,7 @@ void WebServer::methodGET(int fd, int port,  Response *res, Request &req)
 			res->setStatus(200);
 			res->setContentLocation(req.path);
 
-			if(cfg_check.isProxy())
+			if (cfg_check.isProxy())
 			{
 				proxySend(cfg_check.returnIP(), cfg_check.returnPORT(), cfg_check.makeReq(req.deserialize()), new FileData(fd, port, res));
 			}
@@ -261,7 +253,7 @@ void WebServer::methodGET(int fd, int port,  Response *res, Request &req)
 				{
 					res->setLastModified(path);
 					readFile(utils::open(path.c_str(), O_RDONLY), new FileData(fd, port, res));
-					return ;
+					return;
 				}
 				res->makeRes(body);
 				sendStr(fd, res->res_str);
@@ -317,7 +309,7 @@ void WebServer::methodPUT(int fd, int port, Response *res, Request &req)
 		errorRes(fd, port, res, 405, allow_methods);
 	else
 	{
-		if(cfg_check.isProxy())
+		if (cfg_check.isProxy())
 		{
 			proxySend(cfg_check.returnIP(), cfg_check.returnPORT(), cfg_check.makeReq(req.deserialize()), new FileData(fd, port, res));
 		}
@@ -368,16 +360,16 @@ void WebServer::methodPOST(int fd, int port, Response *res, Request &req)
 				std::cout << body << std::endl;
 				res->makeRes(body);
 				writeFile(utils::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644),
-					body, new FileData(fd, port, res));
+						  req.body, new FileData(fd, port, res));
 			}
 			else
 			{
 				std::map<std::string, std::string> map_env = utils::set_cgi_enviroment(conf, req, path, port);
-				writeFile(utils::open(".TEMP", O_CREAT | O_TRUNC | O_RDWR, 0644), req.body,
-					new FileData(fd, port, res, true, utils::mtostrarr(map_env), path));
+				writeFile(utils::open(path.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0644), req.body,
+						  new FileData(fd, port, res, true, utils::mtostrarr(map_env), path));
 			}
 		}
-		else if(cfg_check.isProxy())
+		else if (cfg_check.isProxy())
 		{
 			proxySend(cfg_check.returnIP(), cfg_check.returnPORT(), cfg_check.makeReq(req.deserialize()), new FileData(fd, port, res));
 		}
@@ -393,37 +385,37 @@ void WebServer::methodPOST(int fd, int port, Response *res, Request &req)
 	}
 }
 
-void WebServer::errorRes(int fd, int port, Response *res, int errorCode, const std::vector<std::string>& allow_methods)
+void WebServer::errorRes(int fd, int port, Response *res, int errorCode, const std::vector<std::string> &allow_methods)
 {
-	ConfigParse::t_conf& conf = confs.conf[get_conf_idx(port)];
+	ConfigParse::t_conf &conf = confs.conf[get_conf_idx(port)];
 	std::string path = conf.server.error_root + conf.server.error_page[errorCode];
 
 	res->setStatus(errorCode);
 	res->setContentType(path);
 	switch (errorCode)
 	{
-		case 401:
-		{
-			res->setWWWAuthenticate();
-			break;
-		}
-		case 405:
-		{
-			res->setAllow(allow_methods);
-			break;
-		}
-		case 503:
-		{
-			res->setRetryAfter();
-			break;
-		}
+	case 401:
+	{
+		res->setWWWAuthenticate();
+		break;
+	}
+	case 405:
+	{
+		res->setAllow(allow_methods);
+		break;
+	}
+	case 503:
+	{
+		res->setRetryAfter();
+		break;
+	}
 	}
 	readFile(utils::open(path.c_str(), O_RDONLY), new FileData(fd, port, res));
 }
 
 int WebServer::get_conf_idx(int port)
 {
-	for (size_t i = 0 ; i < confs.conf.size(); i++)
+	for (size_t i = 0; i < confs.conf.size(); i++)
 	{
 		std::vector<int>::iterator it = std::find(confs.conf[i].server.port.begin(), confs.conf[i].server.port.end(), port);
 		if (it != confs.conf[i].server.port.end())

@@ -245,9 +245,9 @@ void AServer::run(std::string ip, std::vector<int> ports)
 				if (str_len == 0)
 				{
 					FD_CLR(wf->fd, &rset);
+					it = readFiles.erase(it);
 					OnFileRead(wf->fd, wf->str, wf->temp);
 					delete wf;
-					it = readFiles.erase(it);
 					continue;
 				}
 				wf->str.append(buf, str_len);
@@ -305,8 +305,9 @@ void AServer::readFile(int fd, void *temp)
 {
 	for (size_t i = 0;i < readFiles.size();i++)
 	{
-		if (readFiles[i]->fd == fd)
+		if (readFiles[i]->fd == fd){
 			return;
+		}
 	}
 	readFiles.push_back(new Workfile(fd, "", temp));
 }
