@@ -199,7 +199,6 @@ bool AServer::fileProcess()
 	int selRet = select(fdMax + 1, &rset, &wset, NULL, &tval);
 	if (selRet == -1)
 	{
-		std::cerr << "FileThread: " << strerror(errno) << "\n";
 		return false;
 	}
 	else if (selRet == 0)
