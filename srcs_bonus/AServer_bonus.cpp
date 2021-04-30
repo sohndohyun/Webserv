@@ -506,7 +506,10 @@ void *AServer::ProxyThread(void *arg)
 		std::string recvStr;
 		req.add(std::string(buf, str_len));
 		if (!req.needRecv())
+		{
+			std::cout << req.body << std::endl;
 			pd->server->pushCommand(new Command(PROXY, fd, 0, req.deserialize(), pd->temp));
+		}
 	}
 	close(fd);
 	delete pd;

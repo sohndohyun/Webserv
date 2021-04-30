@@ -183,8 +183,9 @@ void WebServer::OnProxyRecv(int fd, std::string const &str, void *temp)
 		fData->res = NULL;
 	}
 	else
+	{
 		sendStr(fData->fd, str);
-
+	}
 	delete fData;
 }
 
@@ -246,7 +247,7 @@ void WebServer::methodGET(int fd, int port, Response *res, Request &req)
 			{
 				proxySend(cfg_check.returnIP(), cfg_check.returnPORT(), cfg_check.makeReq(req.deserialize()), new FileData(fd, port, res));
 			}
-			if (stat(cfg_check.findPath().c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
+			else if (stat(cfg_check.findPath().c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
 			{
 				body = cfg_check.autoIdxCheck(port);
 				if (body == "")
