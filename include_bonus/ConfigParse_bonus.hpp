@@ -52,6 +52,8 @@ public:
 	std::vector<t_conf> conf;
 	std::vector<int> port;
 
+	int thread_num;
+
 public:
 	ConfigParse(std::string plugin_config);
 	virtual ~ConfigParse();

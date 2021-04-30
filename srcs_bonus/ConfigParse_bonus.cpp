@@ -11,6 +11,7 @@ ConfigParse::ConfigParse(std::string plugin_config): _confIdx(-1)
 	char buf;
 	std::string section_str = "";
 	std::string str = "";
+	thread_num = 0;
 
 	if (plugin_config == "")
 		configFD = open(CONFIG_PATH, O_RDONLY);
@@ -41,7 +42,8 @@ ConfigParse::ConfigParse(std::string plugin_config): _confIdx(-1)
 		sectionParse(section_str);
 	close(configFD);
 
-
+	if (thread_num == 0)
+		throw Exception("ConfigParse: There is no thread number.");
 
 	for(size_t i = 0; i < conf.size(); i++)
 	{
@@ -65,7 +67,21 @@ void ConfigParse::sectionParse(std::string str)
 	if (section[0][0] != '[' || section[0][section[0].size() - 1] != ']')
 		throw Exception("ConfigParse: Invalid section name");
 
-	if (section[0] == "[server]")
+	if (section[0] == "[thread]")
+	{
+		if (thread_num != 0)
+			throw Exception("ConfigParse: Thread section is overlapped!");
+		std::string str = section[1];
+		int findIdx = str.find("=");
+		if ((size_t)findIdx == std::string::npos)
+			throw Exception("ConfigParse: Invalid thread: " + str);
+		std::string key = str.substr(0, findIdx);
+		if (key != "thread")
+			throw Exception("ConfigParse: Invalid thread: " + str);
+		std::string value = str.substr(findIdx + 1, str.size() - findIdx);
+		thread_num = utils::stoi(value);
+	}
+	else if (section[0] == "[server]")
 	{
 		t_conf new_server;
 		conf.push_back(new_server);
