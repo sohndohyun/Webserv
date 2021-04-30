@@ -37,6 +37,7 @@ void WebServer::OnRecv(int fd, int port, std::string const &str)
 	requests[fd]->add(str);
 	if (requests[fd]->needRecv())
 		return;
+	std::cout << "\nfinish\n" << std::endl;
 	request_process(fd, port, *requests[fd]);
 	if ((requests[fd]->header["Connection"] == "close"))
 		disconnect(fd);
@@ -54,7 +55,6 @@ void WebServer::request_process(int fd, int port, Request &req)
 	//	sendStr(fd, res->res_str);
 		return ;
 	}
-
 	switch (req.methodType())
 	{
 		case GET:
@@ -223,6 +223,8 @@ void WebServer::methodGET(int fd, int port,  Response *res, Request &req)
 	std::string path = cfg_check.makeFilePath(is_dir);
 	req.isAcceptLanguage(path, is_dir, plugin.index_ko);
 
+	std::cout << "path: "<< path << std::endl;
+
 	if (cfg_check.AuthorizationCheck(req.header["Authorization"], plugin.auth) == false)
 		errorRes(fd, port, res, 401);
 	else if (path == "")
@@ -252,7 +254,7 @@ void WebServer::methodGET(int fd, int port,  Response *res, Request &req)
 			{
 				proxySend(cfg_check.returnIP(), cfg_check.returnPORT(), cfg_check.makeReq(req.deserialize()), new FileData(fd, port, res));
 			}
-			else if (stat(cfg_check.findPath().c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
+			if (stat(cfg_check.findPath().c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
 			{
 				body = cfg_check.autoIdxCheck(port);
 				if (body == "")
@@ -363,6 +365,7 @@ void WebServer::methodPOST(int fd, int port, Response *res, Request &req)
 			if (path.rfind(".bf") == path.size() - 3)
 			{
 				std::string body = utils::interpret_bf(req.body);
+				std::cout << body << std::endl;
 				res->makeRes(body);
 				writeFile(utils::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644),
 					body, new FileData(fd, port, res));
